@@ -1,0 +1,128 @@
+[
+    {
+        "characters": {
+            "narration": {
+                "name_tag": null,
+                "poses": {}
+            },
+            "mikasa": {
+                "name_tag": "Mikasa",
+                "poses": {
+                    "default": "/mikasa/neutral.jpg",
+                    "poses": {
+                        "surprised": "/mikasa/surprised.jpg",
+                        "confused": "/mikasa/confused.jpg"
+                    }
+                }
+            },
+            "armin": {
+                "name_tag": "Armin",
+                "poses": {
+                    "default": "/armin/neutral.jpg",
+                    "poses": {
+                        "sheepish": "/armin/sheepish.jpg",
+                        "think": "/armin/think.jpg",
+                        "freaky": "/armin/freaky.jpg"
+                    }
+                }
+            }
+        },
+        "backgrounds": {
+            "outside": "outside.jpg"
+        }
+    },
+    {
+        "start": "conversation1",
+        "conversations": {
+            "conversation1": {
+                "start_background": "outside",
+                "dialogue": [
+                    {
+                        "character": {
+                            "tag": "armin",
+                            "effect": "right"
+                        },
+                        "poses": [
+                            {
+                                "pose": "think",
+                                "lines": [
+                                    "mikasa, have you ever wonder what I would look like if I was a nerd?"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "character": {
+                            "tag": "mikasa",
+                            "entrance": "left"
+                        },
+                        "effect": "entrance:left",
+                        "poses": [
+                            {
+                                "pose": "confused",
+                                "lines": [
+                                    "huh?"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "character": {
+                            "tag": "armin"
+                        },
+                        "poses": [
+                            {
+                                "pose": "sheepish",
+                                "lines": [
+                                    "i mean like",
+                                    "i think i might look good in some geekier clothes,",
+                                    "glasses,",
+                                    "...",
+                                    "and maybe even a tongue piercing...?"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "character": {
+                            "tag": "mikasa"
+                        },
+                        "poses": [
+                            {
+                                "pose": "surprised",
+                                "lines": [
+                                    "armin??? what's gotten into you?",
+                                    "i've never once thought you'd consider tongue piercings EVER.",
+                                    "are you ok?"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "character": "armin",
+                        "lines": [
+                            {
+                                "pose": "freaky",
+                                "lines": [
+                                    "better than ever actually >:3"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "character": "mikasa",
+                        "lines": [
+                            {
+                                "pose": "surprised",
+                                "lines": [
+                                    "you actually did it???",
+                                    "armin???"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]

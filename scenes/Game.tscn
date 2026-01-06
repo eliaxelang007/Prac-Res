@@ -1,0 +1,263 @@
+[gd_scene load_steps=21 format=3 uid="uid://bbnm4onb4v6wu"]
+
+[ext_resource type="Script" uid="uid://b68pkhgxuiie8" path="res://scripts/game.gd" id="1_cpr0p"]
+[ext_resource type="Texture2D" uid="uid://da1cx3vqrniht" path="res://backgrounds/bedroom.png" id="1_ibkli"]
+[ext_resource type="Script" uid="uid://p5gt3xr1i24h" path="res://scripts/dialogue_box.gd" id="2_78awf"]
+[ext_resource type="Texture2D" uid="uid://c7hhxruln5a6c" path="res://characters/mikasa/mikasa.webp" id="2_qbsmt"]
+[ext_resource type="Texture2D" uid="uid://dma2hc3sple2l" path="res://characters/mikasa/shocked.jpg" id="4_s0nni"]
+[ext_resource type="Texture2D" uid="uid://ca70p7o5uo6tx" path="res://characters/armin/freaky.jpg" id="5_aug50"]
+[ext_resource type="Texture2D" uid="uid://54hjii4l7lf1" path="res://characters/mmm/artem.webp" id="6_qy1jj"]
+[ext_resource type="Texture2D" uid="uid://bgug0ex6mps4i" path="res://characters/mmm/bartholomew.webp" id="7_3xj3m"]
+[ext_resource type="Texture2D" uid="uid://df3scgm01hv6g" path="res://characters/mmm/ken_sato.webp" id="8_mcffj"]
+[ext_resource type="Texture2D" uid="uid://dfhq3qwa5bd4t" path="res://characters/mmm/nightwing.webp" id="9_2rd6h"]
+
+[sub_resource type="Resource" id="Resource_s0nni"]
+script = ExtResource("2_78awf")
+name = "Mikasa"
+dialogue = "Armin..."
+sprite = ExtResource("2_qbsmt")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="Resource" id="Resource_aug50"]
+script = ExtResource("2_78awf")
+name = "Mikasa"
+dialogue = "You..."
+sprite = ExtResource("2_qbsmt")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="Resource" id="Resource_kiw3p"]
+script = ExtResource("2_78awf")
+name = "Mikasa (Shocked)"
+dialogue = "Actually went through with it???"
+sprite = ExtResource("4_s0nni")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="Resource" id="Resource_400sg"]
+script = ExtResource("2_78awf")
+name = "Armin (Freaky)"
+dialogue = "yes >:P"
+sprite = ExtResource("5_aug50")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="Resource" id="Resource_7ua8r"]
+script = ExtResource("2_78awf")
+name = "Artem"
+dialogue = "hello 🍑💦"
+sprite = ExtResource("6_qy1jj")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="Resource" id="Resource_r7sob"]
+script = ExtResource("2_78awf")
+name = "Bartholomew"
+dialogue = "hi... >:/ 🍆"
+sprite = ExtResource("7_3xj3m")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="Resource" id="Resource_y5y3l"]
+script = ExtResource("2_78awf")
+name = "Ken Sato"
+dialogue = "hello beauiful"
+sprite = ExtResource("8_mcffj")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="Resource" id="Resource_vjgi4"]
+script = ExtResource("2_78awf")
+name = "Nightwing"
+dialogue = "heyyyyyy.... tryn'a smash?"
+sprite = ExtResource("9_2rd6h")
+metadata/_custom_type_script = "uid://p5gt3xr1i24h"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ibkli"]
+bg_color = Color(0.94902, 0.87451, 0.901961, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qbsmt"]
+bg_color = Color(0.956863, 0.635294, 0.792157, 1)
+border_width_left = 7
+border_width_top = 7
+border_width_right = 7
+border_width_bottom = 7
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[node name="Game" type="Control" node_paths=PackedStringArray("dialogue_text", "name_text", "pose")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_cpr0p")
+dialogue_text = NodePath("Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/Dialogue Box/MarginContainer/Dialogue Text")
+name_text = NodePath("Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/Name Box/Name Text")
+pose = NodePath("MarginContainer/HBoxContainer/Character")
+dialogue = Array[ExtResource("2_78awf")]([SubResource("Resource_s0nni"), SubResource("Resource_aug50"), SubResource("Resource_kiw3p"), SubResource("Resource_400sg"), SubResource("Resource_7ua8r"), SubResource("Resource_r7sob"), SubResource("Resource_y5y3l"), SubResource("Resource_vjgi4")])
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_ibkli")
+expand_mode = 2
+stretch_mode = 6
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_top = 400
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+custom_minimum_size = Vector2(0, 1300)
+layout_mode = 2
+
+[node name="Left Spacer" type="Control" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Character" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+texture = ExtResource("2_qbsmt")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Right Spacer" type="Control" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Talk UI" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Talk UI"]
+layout_mode = 2
+
+[node name="Top Spacer" type="Control" parent="Talk UI/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Talk UI/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Left Spacer" type="Control" parent="Talk UI/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Talk UI/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.84
+theme_override_constants/separation = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.01
+theme_override_constants/separation = 0
+
+[node name="Left Spacer" type="Control" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.5
+
+[node name="Name Box" type="Panel" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.61
+theme_override_styles/panel = SubResource("StyleBoxFlat_ibkli")
+
+[node name="Name Text" type="Label" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer/Name Box"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.733333, 0.345098, 0.603922, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 30
+text = "Test Name"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Right Spacer" type="Control" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 6.05
+
+[node name="Dialogue Box" type="Panel" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.63
+theme_override_styles/panel = SubResource("StyleBoxFlat_qbsmt")
+
+[node name="MarginContainer" type="MarginContainer" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/Dialogue Box"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 25
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 25
+theme_override_constants/margin_bottom = 15
+
+[node name="Dialogue Text" type="Label" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/Dialogue Box/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 30
+text = "Test Dialogue"
+
+[node name="Button" type="Button" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/Dialogue Box/MarginContainer"]
+custom_minimum_size = Vector2(100, 50)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
+
+[node name="Label" type="Label" parent="Talk UI/VBoxContainer/HBoxContainer/VBoxContainer/Dialogue Box/MarginContainer/Button"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -34.5
+offset_top = -21.0
+offset_right = 34.5
+offset_bottom = 21.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
+theme_override_font_sizes/font_size = 30
+text = "Next"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Right Spacer" type="Control" parent="Talk UI/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3

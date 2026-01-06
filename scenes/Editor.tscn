@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://ciw3rsvx4btrj"]
+
+[ext_resource type="PackedScene" uid="uid://bbnm4onb4v6wu" path="res://scenes/Game.tscn" id="1_ndpqs"]
+
+[node name="Editor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Game" parent="." instance=ExtResource("1_ndpqs")]
+layout_mode = 2
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+scale = Vector2(0.5, 0.5)
