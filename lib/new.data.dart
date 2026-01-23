@@ -1,9 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:prac_res/archive.dart';
+import 'package:result_type/result_type.dart';
 
+part 'new.data.freezed.dart';
 part "new.data.g.dart";
+
+/* ++ Resources ++ */
 
 @JsonSerializable(genericArgumentFactories: true, constructor: "_")
 class Resource<Metadata, Value> {
@@ -14,104 +20,346 @@ class Resource<Metadata, Value> {
 
   factory Resource.fromJson(
     Map<String, dynamic> json,
-    Metadata Function(Object? json) fromJsonMetadata,
-    Value Function(Object? json) fromJsonValue,
-  ) => _$ResourceFromJson(json, fromJsonMetadata, fromJsonValue);
+    Metadata Function(Object? metadataJson) metadataFromJson,
+    Value Function(Object? valueJson) valueFromJson,
+  ) => _$ResourceFromJson(json, metadataFromJson, valueFromJson);
 
   Map<String, dynamic> toJson(
-    Object? Function(Metadata value) toJsonMetadata,
-    Object? Function(Value value) toJsonValue,
-  ) => _$ResourceToJson(this, toJsonMetadata, toJsonValue);
+    Object? Function(Metadata metadata) metadataToJson,
+    Object? Function(Value value) valueToJson,
+  ) => _$ResourceToJson(this, metadataToJson, valueToJson);
 }
 
-// class BinaryConverter implements JsonConverter<Uint8List, String> {
-//   const BinaryConverter();
-
-//   static Uint8List staticFromJson(String json) => base64Decode(json);
-//   static String staticToJson(Uint8List bytes) => base64Encode(bytes);
-
-//   @override
-//   Uint8List fromJson(String json) => staticFromJson(json);
-
-//   @override
-//   String toJson(Uint8List bytes) => staticToJson(bytes);
-// }
-
-extension type Name._(String _value) implements String {
-  static Name fromJson(Object? json) => Name._(json! as String);
-  static String toJson(Name name) => name._value;
-}
-extension type Image._(Uint8List _bytes) implements Uint8List {
-  static Image fromJson(Object? json) => Image._(base64Decode(json! as String));
-  static String toJson(Image image) => base64Encode(image);
+extension type Id._(String _id) implements String {
+  static Id fromJson(Object? json) => Id._(json! as String);
+  static String toJson(Id id) => id;
 }
 
-extension type ImageResource._(Resource<Name, Image> _resource)
-    implements Resource<Name, Image> {
-  factory ImageResource.fromJson(Map<String, dynamic> json) =>
-      ImageResource._(Resource.fromJson(json, Name.fromJson, Image.fromJson));
-
-  Map<String, dynamic> toJson() => _resource.toJson(Name.toJson, Image.toJson);
-}
-
-extension type Id._(String _id) implements String {}
-
-extension type ImageResourceCollection._(
-  Resource<Name, Map<Id, ImageResource>> _collection
+extension type ResourceCollection<Metadata, ItemId, Item>._(
+  Resource<Metadata, Map<ItemId, Item>> _resourceCollection
 )
-    implements Resource<Name, Map<Id, ImageResource>> {
-  factory ImageResourceCollection.fromJson(Map<String, dynamic> json) {
-    return ImageResourceCollection._(
+    implements Resource<Metadata, Map<ItemId, Item>> {
+  factory ResourceCollection.fromJson(
+    Map<String, dynamic> json,
+    Metadata Function(Object? json) metadataFromJson,
+    ItemId Function(Object? json) itemIdFromJson,
+    Item Function(Object? json) itemFromJson,
+  ) {
+    return ResourceCollection._(
       Resource.fromJson(
         json,
-        Name.fromJson,
+        metadataFromJson,
         (json) => ((json!) as Map<String, dynamic>).map(
-          (key, value) => MapEntry(Id._(key), ImageResource.fromJson(value)),
+          (idJson, itemJson) =>
+              MapEntry(itemIdFromJson(idJson), itemFromJson(itemJson)),
         ),
       ),
     );
   }
 
-  Map<String, dynamic> toJson() => _collection.toJson(
+  Map<String, dynamic> toJson(
+    Object? Function(Metadata metadata) metadataToJson,
+    String Function(ItemId id) itemIdToJson,
+    Object? Function(Item item) itemToJson,
+  ) => _resourceCollection.toJson(
+    metadataToJson,
+    (map) =>
+        map.map((id, item) => MapEntry(itemIdToJson(id), itemToJson(item))),
+  );
+
+  Folder intoArchiveItem(
+    ArchiveItemName name,
+    Object? Function(Metadata metadata) metadataToJson,
+    String Function(ItemId id) itemIdToJson,
+    Object? Function(Item item) itemToJson,
+  ) {
+    return Folder(
+      name: name,
+      children: 
+        _resourceCollection
+          .value
+          .entries
+          .map(
+            (entry) => File(
+              name: ArchiveItemName.create(itemIdToJson(entry.key)).unwrap(),
+              bytes: utf8.encode(jsonEncode(itemToJson(entry.value)))
+            )
+          )
+          .toList()
+    );
+  }
+}
+
+/* ++ Image Resources ++ */
+
+extension type Name._(String _name) implements String {
+  static Name fromJson(Object? json) => Name._(json! as String);
+  static String toJson(Name name) => name._name;
+}
+
+extension type ImageData._(Uint8List _image) implements Uint8List {
+  static ImageData fromJson(Object? json) =>
+      ImageData._(base64Decode(json! as String));
+  static String toJson(ImageData image) => base64Encode(image._image);
+}
+
+extension type ImageResource._(Resource<Name, ImageData> _resource)
+    implements Resource<Name, ImageData> {
+  factory ImageResource.fromJson(Map<String, dynamic> json) => ImageResource._(
+    Resource.fromJson(json, Name.fromJson, ImageData.fromJson),
+  );
+
+  Map<String, dynamic> toJson() =>
+      _resource.toJson(Name.toJson, ImageData.toJson);
+
+  static Map<String, dynamic> staticToJson(ImageResource resource) =>
+      resource.toJson();
+}
+
+extension type ImageResourceCollection._(
+  ResourceCollection<Name, Id, ImageResource> _imageCollection
+)
+    implements ResourceCollection<Name, Id, ImageResource> {
+  factory ImageResourceCollection.fromJson(Map<String, dynamic> json) {
+    return ImageResourceCollection._(
+      ResourceCollection.fromJson(
+        json,
+        Name.fromJson,
+        Id.fromJson,
+        (json) => ImageResource.fromJson(json! as Map<String, dynamic>),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => _imageCollection.toJson(
     Name.toJson,
-    (map) => map.map((key, value) => MapEntry(key as String, value.toJson())),
+    Id.toJson,
+    ImageResource.staticToJson,
   );
 }
 
-extension type PoseId(Id id) implements Id {} // TODO: Use in accessor.
+extension type PoseId._(Id _id) implements Id {} // TODO: Use in accessor.
 extension type Pose._(ImageResource _pose) implements ImageResource {}
 
+/// Json files of these will be stored in a subfolder called [/actors],
+/// and the names of the json files will be the [Actor]'s id.
+///
+/// This way, we don't have to load all the actors at the same time.
+extension type ActorId._(Id _id) implements Id {} // TODO: Use in accessor.
 extension type Actor._(ImageResourceCollection _actor)
     implements ImageResourceCollection {
   factory Actor.fromJson(Map<String, dynamic> json) =>
       Actor._(ImageResourceCollection.fromJson(json));
 }
 
-extension type BackgroundId(Id id) implements Id {} // TODO: Use in accessor.
+extension type BackgroundId._(Id _id) implements Id {} // TODO: Use in accessor.
 extension type Background._(ImageResource _background)
     implements ImageResource {}
 
+/// Json files of these will be stored in a subfolder called [/places],
+/// and the names of the json files will be the [Place]'s id.
+///
+/// This way, we won't have to load all the places at the same time.
+extension type PlaceId._(Id _id) implements Id {} // TODO: Use in accessor.
 extension type Place._(ImageResourceCollection _place)
     implements ImageResourceCollection {
   factory Place.fromJson(Map<String, dynamic> json) =>
       Place._(ImageResourceCollection.fromJson(json));
 }
 
-@JsonSerializable(genericArgumentFactories: true, constructor: "_")
-class FullId<CollectionId extends Id, ItemId extends Id> {
-  final CollectionId collectionId;
-  final ItemId itemId;
+/* -- Image Resources -- */
 
-  FullId._({required this.collectionId, required this.itemId});
+/* ++ Save Data Resource ++ */
 
-  factory FullId.fromJson(
-    Map<String, dynamic> json,
-    CollectionId Function(Object? json) fromJsonMetadata,
-    ItemId Function(Object? json) fromJsonValue,
-  ) => _$FullIdFromJson(json, fromJsonMetadata, fromJsonValue);
+extension type Option._(String _option) implements String {}
+extension type SelectionId._(Id _id) implements Id {}
 
-  Map<String, dynamic> toJson(
-    Object? Function(CollectionId value) toJsonMetadata,
-    Object? Function(ItemId value) toJsonValue,
-  ) => _$FullIdToJson(this, toJsonMetadata, toJsonValue);
+enum SelectionError implements Exception {
+  invalidOption(
+    "[selected] has to be either [null] or contained in the set of [options]!",
+  );
+
+  final String message;
+
+  const SelectionError(this.message);
+
+  @override
+  String toString() {
+    return message;
+  }
+}
+
+@JsonSerializable()
+class Selection {
+  final Set<Option> options;
+  final Option? selected;
+
+  static Result<Null, SelectionError> _validate(
+    Set<Option> options,
+    Option? selected,
+  ) {
+    return (selected == null || options.contains(selected))
+        ? Success(null)
+        : Failure(SelectionError.invalidOption);
+  }
+
+  static Result<Selection, SelectionError> create({
+    required Set<Option> options,
+    required Option? selected,
+  }) {
+    return _validate(
+      options,
+      selected,
+    ).map((_) => Selection._(options: options, selected: selected));
+  }
+
+  factory Selection({required Set<Option> options, required Option? selected}) {
+    return create(options: options, selected: selected).unwrap(); // We need this for json_serializable.dart!
+  }
+
+  Selection._({required this.options, required this.selected});
+
+  factory Selection.fromJson(Map<String, dynamic> json) =>
+      _$SelectionFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SelectionToJson(this);
+
+  static Map<String, dynamic> staticToJson(Selection selection) =>
+      selection.toJson();
+}
+
+extension type SelectionResource._(Resource<Name, Selection> _resource)
+    implements Resource<Name, Selection> {
+  factory SelectionResource.fromJson(Map<String, dynamic> json) =>
+      SelectionResource._(
+        Resource.fromJson(
+          json,
+          Name.fromJson,
+          (json) => Selection.fromJson(json! as Map<String, dynamic>),
+        ),
+      );
+
+  Map<String, dynamic> toJson() =>
+      _resource.toJson(Name.toJson, Selection.staticToJson);
+
+  static Map<String, dynamic> staticToJson(SelectionResource selection) =>
+      selection.toJson();
+}
+
+extension type Selections._(
+  ResourceCollection<Name, Id, SelectionResource> _imageCollection
+)
+    implements ResourceCollection<Name, Id, SelectionResource> {
+  factory Selections.fromJson(Map<String, dynamic> json) {
+    return Selections._(
+      ResourceCollection.fromJson(
+        json,
+        Name.fromJson,
+        Id.fromJson,
+        (json) => SelectionResource.fromJson(json! as Map<String, dynamic>),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => _imageCollection.toJson(
+    Name.toJson,
+    Id.toJson,
+    SelectionResource.staticToJson,
+  );
+}
+
+/* -- Save Data Resource -- */
+
+/* -- Resources -- */
+
+extension type FullId._(Resource<Id, Id> _fullId) implements Resource<Id, Id> {
+  factory FullId.fromJson(Map<String, dynamic> json) =>
+      FullId._(Resource.fromJson(json, Id.fromJson, Id.fromJson));
+
+  Map<String, dynamic> toJson() => _fullId.toJson(Id.toJson, Id.toJson);
+}
+
+extension type FullBackgroundId._(FullId _fullId) implements FullId {
+  factory FullBackgroundId.fromJson(Map<String, dynamic> json) =>
+      FullBackgroundId._(FullId.fromJson(json));
+}
+
+extension type FullPoseId._(FullId _fullId) implements FullId {
+  factory FullPoseId.fromJson(Map<String, dynamic> json) =>
+      FullPoseId._(FullId.fromJson(json));
+}
+
+@JsonSerializable(constructor: "_")
+class DialogueBox {
+  final String? name;
+  final String dialogue;
+
+  DialogueBox._({required this.name, required this.dialogue});
+
+  factory DialogueBox.fromJson(Map<String, dynamic> json) =>
+      _$DialogueBoxFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DialogueBoxToJson(this);
+}
+
+@Freezed(unionKey: 'type')
+sealed class ScenePart with _$ScenePart {
+  const factory ScenePart.frame({
+    required FullBackgroundId background,
+    required List<FullPoseId> poses,
+    required DialogueBox? dialogueBox,
+  }) = Frame;
+
+  // TODO: Unimplemented!
+  const factory ScenePart.frameResolver() = FrameResolver;
+
+  factory ScenePart.fromJson(Map<String, dynamic> json) =>
+      _$ScenePartFromJson(json);
+}
+
+@JsonSerializable(constructor: "_")
+class OrderedScenePart {
+  /// Scene parts are ordered like how Google Docs orders inputs from multiple users with each other.
+  /// It's similar to operational transform but simplified!
+  final double order;
+  final ScenePart part;
+
+  OrderedScenePart._({required this.order, required this.part});
+
+  factory OrderedScenePart.fromJson(Map<String, dynamic> json) =>
+      _$OrderedScenePartFromJson(json);
+
+  Map<String, dynamic> toJson() => _$OrderedScenePartToJson(this);
+
+  static Map<String, dynamic> staticToJson(OrderedScenePart part) =>
+      part.toJson();
+}
+
+extension type ScenePartId._(String id) implements String {}
+extension type SceneId._(String id) implements String {}
+
+/// Json files of these will be stored in a subfolder called [/scenes],
+/// and the names of the json files will be the [Scene]'s id.
+///
+/// Scenes can jump to each other with frame resolvers, but that hasn't been implemented yet!
+extension type Scene._(ResourceCollection<Name, Id, OrderedScenePart> _scene)
+    implements ResourceCollection<Name, Id, OrderedScenePart> {
+  factory Scene.fromJson(Map<String, dynamic> json) {
+    return Scene._(
+      ResourceCollection.fromJson(
+        json,
+        Name.fromJson,
+        Id.fromJson,
+        (json) => OrderedScenePart.fromJson(json! as Map<String, dynamic>),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() =>
+      _scene.toJson(Name.toJson, Id.toJson, OrderedScenePart.staticToJson);
+}
+
+class SceneGroup {
+  final Selections selections;
+  final Plac
 }

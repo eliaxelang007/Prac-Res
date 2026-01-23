@@ -188,7 +188,6 @@ class FullPoseId implements IntoJson {
 }
 
 extension type Option._(String option) implements String {}
-
 extension type SelectionId._(String id) implements String {}
 
 enum SelectionError implements Exception {
@@ -232,7 +231,11 @@ class Selection implements IntoJson {
     required Set<Option> options,
     required Option? selected,
   }) {
-    return create(name: name, options: options, selected: selected).unwrap();
+    return create(
+      name: name,
+      options: options,
+      selected: selected,
+    ).unwrap(); // We need this for json_serializable.dart!
   }
 
   Selection._({

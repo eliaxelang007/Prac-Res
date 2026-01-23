@@ -147,7 +147,7 @@ extension type const ArchiveItemName._(String fullFilename) implements String {
     return _validate(fullFilename).map((_) => ArchiveItemName._(fullFilename));
   }
 
-  factory ArchiveItemName(String fullFilename) {
-    return ArchiveItemName.create(fullFilename).unwrap();
-  }
+  // factory ArchiveItemName(String fullFilename) {
+  //   return ArchiveItemName.create(fullFilename).unwrap();
+  // }
 }
