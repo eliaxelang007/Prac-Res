@@ -59,6 +59,8 @@ class Folder extends ArchiveItem {
     writer.writeFolder(name, children);
   }
 
+  /// This strips the [Folder] of its name and turns it into a [RootFolder]
+  /// that can be zipped up into an archive.
   RootFolder toRootFolder() {
     return RootFolder(children: children);
   }
@@ -90,6 +92,7 @@ class RootFolder extends ArchiveWritable {
     writer.writeFolder("", children);
   }
 
+  /// This gives a [RootFolder] a name and turns it into a [Folder].
   Folder toFolder(ArchiveItemName name) {
     return Folder(name: name, children: children);
   }
