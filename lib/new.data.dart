@@ -67,7 +67,7 @@ extension type ResourceCollection<Metadata, ItemId, Item>._(
         map.map((id, item) => MapEntry(itemIdToJson(id), itemToJson(item))),
   );
 
-  Folder intoArchiveItem(
+  Folder toArchiveItem(
     ArchiveItemName name,
     Object? Function(Metadata metadata) metadataToJson,
     String Function(ItemId id) itemIdToJson,
@@ -75,17 +75,16 @@ extension type ResourceCollection<Metadata, ItemId, Item>._(
   ) {
     return Folder(
       name: name,
-      children: 
-        _resourceCollection
-          .value
-          .entries
+      children: _resourceCollection.value.entries
           .map(
-            (entry) => File(
-              name: ArchiveItemName.create(itemIdToJson(entry.key)).unwrap(),
-              bytes: utf8.encode(jsonEncode(itemToJson(entry.value)))
-            )
+            (entry) => File.fromJson(
+              ArchiveItemName.create(
+                "${itemIdToJson(entry.key)}.json",
+              ).unwrap(),
+              itemToJson(entry.value),
+            ),
           )
-          .toList()
+          .toList(),
     );
   }
 }
@@ -136,6 +135,8 @@ extension type ImageResourceCollection._(
     Id.toJson,
     ImageResource.staticToJson,
   );
+
+  // static Map<String, dynamic> staticToJson(ImageResourceCollection imageCollection) => imageCollection.toJson();
 }
 
 extension type PoseId._(Id _id) implements Id {} // TODO: Use in accessor.
@@ -150,6 +151,8 @@ extension type Actor._(ImageResourceCollection _actor)
     implements ImageResourceCollection {
   factory Actor.fromJson(Map<String, dynamic> json) =>
       Actor._(ImageResourceCollection.fromJson(json));
+
+  static Map<String, dynamic> staticToJson(Actor actor) => actor.toJson();
 }
 
 extension type BackgroundId._(Id _id) implements Id {} // TODO: Use in accessor.
@@ -165,6 +168,8 @@ extension type Place._(ImageResourceCollection _place)
     implements ImageResourceCollection {
   factory Place.fromJson(Map<String, dynamic> json) =>
       Place._(ImageResourceCollection.fromJson(json));
+
+  static Map<String, dynamic> staticToJson(Place place) => place.toJson();
 }
 
 /* -- Image Resources -- */
@@ -214,7 +219,10 @@ class Selection {
   }
 
   factory Selection({required Set<Option> options, required Option? selected}) {
-    return create(options: options, selected: selected).unwrap(); // We need this for json_serializable.dart!
+    return create(
+      options: options,
+      selected: selected,
+    ).unwrap(); // We need this for json_serializable.dart!
   }
 
   Selection._({required this.options, required this.selected});
@@ -266,6 +274,13 @@ extension type Selections._(
     Id.toJson,
     SelectionResource.staticToJson,
   );
+
+  File toArchiveItem() {
+    return File.fromJson(
+      ArchiveItemName.create("selections.json").unwrap(),
+      toJson(),
+    );
+  }
 }
 
 /* -- Save Data Resource -- */
@@ -357,9 +372,68 @@ extension type Scene._(ResourceCollection<Name, Id, OrderedScenePart> _scene)
 
   Map<String, dynamic> toJson() =>
       _scene.toJson(Name.toJson, Id.toJson, OrderedScenePart.staticToJson);
+
+  static Map<String, dynamic> staticToJson(Scene scene) => scene.toJson();
+}
+
+extension type Places._(ResourceCollection<Name, Id, Place> _places)
+    implements ResourceCollection<Name, Id, Place> {
+  Folder toArchiveItem() {
+    return _places.toArchiveItem(
+      ArchiveItemName.create("places").unwrap(),
+      Name.toJson,
+      Id.toJson,
+      Place.staticToJson,
+    );
+  }
+}
+
+extension type Actors._(ResourceCollection<Name, Id, Actor> _places)
+    implements ResourceCollection<Name, Id, Actor> {
+  Folder toArchiveItem() {
+    return _places.toArchiveItem(
+      ArchiveItemName.create("actors").unwrap(),
+      Name.toJson,
+      Id.toJson,
+      Actor.staticToJson,
+    );
+  }
+}
+
+extension type Scenes._(ResourceCollection<Name, Id, Scene> _places)
+    implements ResourceCollection<Name, Id, Scene> {
+  Folder toArchiveItem() {
+    return _places.toArchiveItem(
+      ArchiveItemName.create("scenes").unwrap(),
+      Name.toJson,
+      Id.toJson,
+      Scene.staticToJson,
+    );
+  }
 }
 
 class SceneGroup {
   final Selections selections;
-  final Plac
+  final Places places;
+  final Actors actors;
+  final Scenes scenes;
+
+  SceneGroup({
+    required this.selections,
+    required this.places,
+    required this.actors,
+    required this.scenes,
+  });
+
+  Folder toArchiveItem() {
+    return Folder(
+      name: ArchiveItemName.create("scene_group").unwrap(),
+      children: [
+        selections.toArchiveItem(),
+        places.toArchiveItem(),
+        actors.toArchiveItem(),
+        scenes.toArchiveItem(),
+      ],
+    );
+  }
 }

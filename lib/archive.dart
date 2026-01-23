@@ -58,6 +58,10 @@ class Folder extends ArchiveItem {
   void writeToArchive(ArchiveWriter writer) {
     writer.writeFolder(name, children);
   }
+
+  RootFolder toRootFolder() {
+    return RootFolder(children: children);
+  }
 }
 
 class File extends ArchiveItem implements ArchiveWritable {
@@ -66,7 +70,7 @@ class File extends ArchiveItem implements ArchiveWritable {
 
   File({required this.name, required this.bytes});
 
-  static File fromJson(ArchiveItemName name, Map<String, dynamic> json) {
+  static File fromJson(ArchiveItemName name, Object? json) {
     return File(name: name, bytes: utf8.encode(jsonEncode(json)));
   }
 
@@ -84,6 +88,10 @@ class RootFolder extends ArchiveWritable {
   @override
   void writeToArchive(ArchiveWriter writer) {
     writer.writeFolder("", children);
+  }
+
+  Folder toFolder(ArchiveItemName name) {
+    return Folder(name: name, children: children);
   }
 }
 
