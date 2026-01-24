@@ -35,8 +35,50 @@ extension type Id._(String _id) implements String {
   static String toJson(Id id) => id;
 }
 
+extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
+    implements Map<ItemId, Item> {
+  factory Collection.fromJson(
+    Map<String, dynamic> json,
+    ItemId Function(Object? json) itemIdFromJson,
+    Item Function(Object? json) itemFromJson,
+  ) {
+    return Collection._(
+      json.map(
+        (idJson, itemJson) =>
+            MapEntry(itemIdFromJson(idJson), itemFromJson(itemJson)),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson(
+    String Function(ItemId id) itemIdToJson,
+    Object? Function(Item item) itemToJson,
+  ) => _collection.map(
+    (id, item) => MapEntry(itemIdToJson(id), itemToJson(item)),
+  );
+
+  RootFolder toRootFolder(
+    ArchiveItemName name,
+    String Function(ItemId id) itemIdToJson,
+    Object? Function(Item item) itemToJson,
+  ) {
+    return RootFolder(
+      children: _collection.entries
+          .map(
+            (entry) => File.fromJson(
+              ArchiveItemName.create(
+                "${itemIdToJson(entry.key)}.json",
+              ).unwrap(),
+              itemToJson(entry.value),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
 extension type ResourceCollection<Metadata, ItemId, Item>._(
-  Resource<Metadata, Map<ItemId, Item>> _resourceCollection
+  Resource<Metadata, Collection<ItemId, Item>> _resourceCollection
 )
     implements Resource<Metadata, Map<ItemId, Item>> {
   factory ResourceCollection.fromJson(
@@ -49,9 +91,10 @@ extension type ResourceCollection<Metadata, ItemId, Item>._(
       Resource.fromJson(
         json,
         metadataFromJson,
-        (json) => ((json!) as Map<String, dynamic>).map(
-          (idJson, itemJson) =>
-              MapEntry(itemIdFromJson(idJson), itemFromJson(itemJson)),
+        (json) => Collection.fromJson(
+          json! as Map<String, dynamic>,
+          itemIdFromJson,
+          itemFromJson,
         ),
       ),
     );
@@ -63,11 +106,10 @@ extension type ResourceCollection<Metadata, ItemId, Item>._(
     Object? Function(Item item) itemToJson,
   ) => _resourceCollection.toJson(
     metadataToJson,
-    (map) =>
-        map.map((id, item) => MapEntry(itemIdToJson(id), itemToJson(item))),
+    (collection) => collection.toJson(itemIdToJson, itemToJson),
   );
 
-  Folder toArchiveItem(
+  Folder toFolder(
     ArchiveItemName name,
     Object? Function(Metadata metadata) metadataToJson,
     String Function(ItemId id) itemIdToJson,
@@ -254,28 +296,22 @@ extension type SelectionResource._(Resource<Name, Selection> _resource)
       selection.toJson();
 }
 
-extension type Selections._(
-  ResourceCollection<Name, Id, SelectionResource> _imageCollection
-)
-    implements ResourceCollection<Name, Id, SelectionResource> {
+extension type Selections._(Collection<Id, SelectionResource> _imageCollection)
+    implements Collection<Id, SelectionResource> {
   factory Selections.fromJson(Map<String, dynamic> json) {
     return Selections._(
-      ResourceCollection.fromJson(
+      Collection.fromJson(
         json,
-        Name.fromJson,
         Id.fromJson,
         (json) => SelectionResource.fromJson(json! as Map<String, dynamic>),
       ),
     );
   }
 
-  Map<String, dynamic> toJson() => _imageCollection.toJson(
-    Name.toJson,
-    Id.toJson,
-    SelectionResource.staticToJson,
-  );
+  Map<String, dynamic> toJson() =>
+      _imageCollection.toJson(Id.toJson, SelectionResource.staticToJson);
 
-  File toArchiveItem() {
+  File toFile() {
     return File.fromJson(
       ArchiveItemName.create("selections.json").unwrap(),
       toJson(),
@@ -287,6 +323,10 @@ extension type Selections._(
 
 /* -- Resources -- */
 
+/// Why is this an extension type of [Resource<Id, Id>] you ask?
+/// Well, it's really just because I was lazy and I saw that they have the same shape anyways.
+/// And as a bonus, you can think of the [metadata] as the collection id, and the [value] inside it as the item id,
+/// And that makes sense because [metadata] is data about [value].
 extension type FullId._(Resource<Id, Id> _fullId) implements Resource<Id, Id> {
   factory FullId.fromJson(Map<String, dynamic> json) =>
       FullId._(Resource.fromJson(json, Id.fromJson, Id.fromJson));
@@ -378,8 +418,8 @@ extension type Scene._(ResourceCollection<Name, Id, OrderedScenePart> _scene)
 
 extension type Places._(ResourceCollection<Name, Id, Place> _places)
     implements ResourceCollection<Name, Id, Place> {
-  Folder toArchiveItem() {
-    return _places.toArchiveItem(
+  Folder toFolder() {
+    return _places.toFolder(
       ArchiveItemName.create("places").unwrap(),
       Name.toJson,
       Id.toJson,
@@ -390,8 +430,8 @@ extension type Places._(ResourceCollection<Name, Id, Place> _places)
 
 extension type Actors._(ResourceCollection<Name, Id, Actor> _places)
     implements ResourceCollection<Name, Id, Actor> {
-  Folder toArchiveItem() {
-    return _places.toArchiveItem(
+  Folder toFolder() {
+    return _places.toFolder(
       ArchiveItemName.create("actors").unwrap(),
       Name.toJson,
       Id.toJson,
@@ -402,8 +442,8 @@ extension type Actors._(ResourceCollection<Name, Id, Actor> _places)
 
 extension type Scenes._(ResourceCollection<Name, Id, Scene> _places)
     implements ResourceCollection<Name, Id, Scene> {
-  Folder toArchiveItem() {
-    return _places.toArchiveItem(
+  Folder toFolder() {
+    return _places.toFolder(
       ArchiveItemName.create("scenes").unwrap(),
       Name.toJson,
       Id.toJson,
@@ -429,10 +469,10 @@ class SceneGroup {
     return Folder(
       name: ArchiveItemName.create("scene_group").unwrap(),
       children: [
-        selections.toArchiveItem(),
-        places.toArchiveItem(),
-        actors.toArchiveItem(),
-        scenes.toArchiveItem(),
+        selections.toFile(),
+        places.toFolder(),
+        actors.toFolder(),
+        scenes.toFolder(),
       ],
     );
   }
