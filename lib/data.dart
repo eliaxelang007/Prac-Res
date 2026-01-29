@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:prac_res/archive.dart';
 import 'package:result_type/result_type.dart';
 
@@ -20,8 +19,8 @@ class Resource<Metadata, Value> {
 
   factory Resource.fromJson(
     Map<String, dynamic> json,
-    Metadata Function(Object? metadataJson) metadataFromJson,
-    Value Function(Object? valueJson) valueFromJson,
+    Metadata Function(Object? json) metadataFromJson,
+    Value Function(Object? json) valueFromJson,
   ) => _$ResourceFromJson(json, metadataFromJson, valueFromJson);
 
   Map<String, dynamic> toJson(
@@ -33,6 +32,10 @@ class Resource<Metadata, Value> {
 extension type Id._(String _id) implements String {
   static Id fromJson(Object? json) => Id._(json! as String);
   static String toJson(Id id) => id;
+
+  static ArchiveItemName toFilename(Id id) =>
+      ArchiveItemName.create(id).unwrap();
+  static Id fromFilename(ArchiveItemName filename) => Id._(filename);
 }
 
 extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
@@ -57,37 +60,49 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
     (id, item) => MapEntry(itemIdToJson(id), itemToJson(item)),
   );
 
-  RootFolder toRootFolder(
-    ArchiveItemName name,
-    String Function(ItemId id) itemIdToJson,
+  FolderData toFolderData(
+    ArchiveItemName Function(ItemId id) itemIdToFilename,
     Object? Function(Item item) itemToJson,
   ) {
-    return RootFolder(
-      children: _collection.entries
-          .map(
-            (entry) => File.fromJson(
-              ArchiveItemName.create(
-                "${itemIdToJson(entry.key)}.json",
-              ).unwrap(),
-              itemToJson(entry.value),
-            ),
-          )
-          .toList(),
+    return FolderData(
+      children: FolderChildren(
+        _collection.map(
+          (itemId, item) => File(
+            name: itemIdToFilename(itemId),
+            data: FileData.fromJson(itemToJson(item)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Collection<ItemId, Item> fromFolderData<ItemId, Item>(
+    FolderData data,
+    ItemId Function(ArchiveItemName json) itemIdFromFilename,
+    Item Function(Object? json) itemFromJson,
+  ) {
+    return Collection._(
+      data.children.map(
+        (itemId, item) => MapEntry(
+          itemIdFromFilename(itemId),
+          itemFromJson((item as FileData).toJson()),
+        ),
+      ),
     );
   }
 }
 
-extension type ResourceCollection<Metadata, ItemId, Item>._(
+extension type CollectionResource<Metadata, ItemId, Item>._(
   Resource<Metadata, Collection<ItemId, Item>> _resourceCollection
 )
     implements Resource<Metadata, Map<ItemId, Item>> {
-  factory ResourceCollection.fromJson(
+  factory CollectionResource.fromJson(
     Map<String, dynamic> json,
     Metadata Function(Object? json) metadataFromJson,
     ItemId Function(Object? json) itemIdFromJson,
     Item Function(Object? json) itemFromJson,
   ) {
-    return ResourceCollection._(
+    return CollectionResource._(
       Resource.fromJson(
         json,
         metadataFromJson,
@@ -108,27 +123,6 @@ extension type ResourceCollection<Metadata, ItemId, Item>._(
     metadataToJson,
     (collection) => collection.toJson(itemIdToJson, itemToJson),
   );
-
-  Folder toFolder(
-    ArchiveItemName name,
-    Object? Function(Metadata metadata) metadataToJson,
-    String Function(ItemId id) itemIdToJson,
-    Object? Function(Item item) itemToJson,
-  ) {
-    return Folder(
-      name: name,
-      children: _resourceCollection.value.entries
-          .map(
-            (entry) => File.fromJson(
-              ArchiveItemName.create(
-                "${itemIdToJson(entry.key)}.json",
-              ).unwrap(),
-              itemToJson(entry.value),
-            ),
-          )
-          .toList(),
-    );
-  }
 }
 
 /* ++ Image Resources ++ */
@@ -157,13 +151,13 @@ extension type ImageResource._(Resource<Name, ImageData> _resource)
       resource.toJson();
 }
 
-extension type ImageResourceCollection._(
-  ResourceCollection<Name, Id, ImageResource> _imageCollection
+extension type ImageCollectionResource._(
+  CollectionResource<Name, Id, ImageResource> _imageCollection
 )
-    implements ResourceCollection<Name, Id, ImageResource> {
-  factory ImageResourceCollection.fromJson(Map<String, dynamic> json) {
-    return ImageResourceCollection._(
-      ResourceCollection.fromJson(
+    implements CollectionResource<Name, Id, ImageResource> {
+  factory ImageCollectionResource.fromJson(Map<String, dynamic> json) {
+    return ImageCollectionResource._(
+      CollectionResource.fromJson(
         json,
         Name.fromJson,
         Id.fromJson,
@@ -189,10 +183,10 @@ extension type Pose._(ImageResource _pose) implements ImageResource {}
 ///
 /// This way, we don't have to load all the actors at the same time.
 extension type ActorId._(Id _id) implements Id {} // TODO: Use in accessor.
-extension type Actor._(ImageResourceCollection _actor)
-    implements ImageResourceCollection {
+extension type Actor._(ImageCollectionResource _actor)
+    implements ImageCollectionResource {
   factory Actor.fromJson(Map<String, dynamic> json) =>
-      Actor._(ImageResourceCollection.fromJson(json));
+      Actor._(ImageCollectionResource.fromJson(json));
 
   static Map<String, dynamic> staticToJson(Actor actor) => actor.toJson();
 }
@@ -206,10 +200,10 @@ extension type Background._(ImageResource _background)
 ///
 /// This way, we won't have to load all the places at the same time.
 extension type PlaceId._(Id _id) implements Id {} // TODO: Use in accessor.
-extension type Place._(ImageResourceCollection _place)
-    implements ImageResourceCollection {
+extension type Place._(ImageCollectionResource _place)
+    implements ImageCollectionResource {
   factory Place.fromJson(Map<String, dynamic> json) =>
-      Place._(ImageResourceCollection.fromJson(json));
+      Place._(ImageCollectionResource.fromJson(json));
 
   static Map<String, dynamic> staticToJson(Place place) => place.toJson();
 }
@@ -231,9 +225,7 @@ enum SelectionError implements Exception {
   const SelectionError(this.message);
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => message;
 }
 
 @JsonSerializable()
@@ -296,35 +288,12 @@ extension type SelectionResource._(Resource<Name, Selection> _resource)
       selection.toJson();
 }
 
-extension type Selections._(Collection<Id, SelectionResource> _imageCollection)
-    implements Collection<Id, SelectionResource> {
-  factory Selections.fromJson(Map<String, dynamic> json) {
-    return Selections._(
-      Collection.fromJson(
-        json,
-        Id.fromJson,
-        (json) => SelectionResource.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
-
-  Map<String, dynamic> toJson() =>
-      _imageCollection.toJson(Id.toJson, SelectionResource.staticToJson);
-
-  File toFile() {
-    return File.fromJson(
-      ArchiveItemName.create("selections.json").unwrap(),
-      toJson(),
-    );
-  }
-}
-
 /* -- Save Data Resource -- */
 
 /* -- Resources -- */
 
 /// Why is this an extension type of [Resource<Id, Id>] you ask?
-/// Well, it's really just because I was lazy and I saw that they have the same shape anyways.
+/// Well, it's really just because I was lazy and I saw that they have the same struct shape anyways.
 /// And as a bonus, you can think of the [metadata] as the collection id, and the [value] inside it as the item id,
 /// And that makes sense because [metadata] is data about [value].
 extension type FullId._(Resource<Id, Id> _fullId) implements Resource<Id, Id> {
@@ -397,11 +366,11 @@ extension type SceneId._(String id) implements String {}
 /// and the names of the json files will be the [Scene]'s id.
 ///
 /// Scenes can jump to each other with frame resolvers, but that hasn't been implemented yet!
-extension type Scene._(ResourceCollection<Name, Id, OrderedScenePart> _scene)
-    implements ResourceCollection<Name, Id, OrderedScenePart> {
+extension type Scene._(CollectionResource<Name, Id, OrderedScenePart> _scene)
+    implements CollectionResource<Name, Id, OrderedScenePart> {
   factory Scene.fromJson(Map<String, dynamic> json) {
     return Scene._(
-      ResourceCollection.fromJson(
+      CollectionResource.fromJson(
         json,
         Name.fromJson,
         Id.fromJson,
@@ -416,38 +385,77 @@ extension type Scene._(ResourceCollection<Name, Id, OrderedScenePart> _scene)
   static Map<String, dynamic> staticToJson(Scene scene) => scene.toJson();
 }
 
-extension type Places._(ResourceCollection<Name, Id, Place> _places)
-    implements ResourceCollection<Name, Id, Place> {
-  Folder toFolder() {
-    return _places.toFolder(
-      ArchiveItemName.create("places").unwrap(),
-      Name.toJson,
-      Id.toJson,
-      Place.staticToJson,
+extension type Selections._(Collection<Id, SelectionResource> _imageCollection)
+    implements Collection<Id, SelectionResource> {
+  factory Selections.fromJson(Map<String, dynamic> json) {
+    return Selections._(
+      Collection.fromJson(
+        json,
+        Id.fromJson,
+        (json) => SelectionResource.fromJson(json! as Map<String, dynamic>),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() =>
+      _imageCollection.toJson(Id.toJson, SelectionResource.staticToJson);
+
+  FileData toArchiveItemData() {
+    return FileData.fromJson(toJson());
+  }
+
+  static Selections fromArchiveItemData(FileData data) {
+    return Selections.fromJson(data.toJson()! as Map<String, dynamic>);
+  }
+}
+
+extension type Places._(Collection<Id, Place> _places)
+    implements Collection<Id, Place> {
+  FolderData toArchiveItemData() {
+    return _places.toFolderData(Id.toFilename, Place.staticToJson);
+  }
+
+  static Places fromArchiveItemData(FolderData data) {
+    return Places._(
+      Collection.fromFolderData(
+        data,
+        Id.fromFilename,
+        (json) => Place.fromJson(json! as Map<String, dynamic>),
+      ),
     );
   }
 }
 
-extension type Actors._(ResourceCollection<Name, Id, Actor> _places)
-    implements ResourceCollection<Name, Id, Actor> {
-  Folder toFolder() {
-    return _places.toFolder(
-      ArchiveItemName.create("actors").unwrap(),
-      Name.toJson,
-      Id.toJson,
-      Actor.staticToJson,
+extension type Actors._(Collection<Id, Actor> _places)
+    implements Collection<Id, Actor> {
+  FolderData toArchiveItemData() {
+    return _places.toFolderData(Id.toFilename, Actor.staticToJson);
+  }
+
+  static Actors fromArchiveItemData(FolderData data) {
+    return Actors._(
+      Collection.fromFolderData(
+        data,
+        Id.fromFilename,
+        (json) => Actor.fromJson(json! as Map<String, dynamic>),
+      ),
     );
   }
 }
 
-extension type Scenes._(ResourceCollection<Name, Id, Scene> _places)
-    implements ResourceCollection<Name, Id, Scene> {
-  Folder toFolder() {
-    return _places.toFolder(
-      ArchiveItemName.create("scenes").unwrap(),
-      Name.toJson,
-      Id.toJson,
-      Scene.staticToJson,
+extension type Scenes._(Collection<Id, Scene> _places)
+    implements Collection<Id, Scene> {
+  FolderData toArchiveItemData() {
+    return _places.toFolderData(Id.toFilename, Scene.staticToJson);
+  }
+
+  static Scenes fromArchiveItemData(FolderData data) {
+    return Scenes._(
+      Collection.fromFolderData(
+        data,
+        Id.fromFilename,
+        (json) => Scene.fromJson(json! as Map<String, dynamic>),
+      ),
     );
   }
 }
@@ -465,15 +473,43 @@ class SceneGroup {
     required this.scenes,
   });
 
-  Folder toArchiveItem() {
-    return Folder(
-      name: ArchiveItemName.create("scene_group").unwrap(),
-      children: [
-        selections.toFile(),
-        places.toFolder(),
-        actors.toFolder(),
-        scenes.toFolder(),
-      ],
+  /// Why are the names defined here instead of their respective types?
+  /// Well, think about how you would deserialize them.
+  /// You would have to pass in the whole scene group folder to the child so that
+  /// it could look for its own name and deserialize itself!
+  /// That's why the file names are defined here in [SceneGroup].
+  static ArchiveItemName selectionsName = ArchiveItemName.create(
+    "selections.json",
+  ).unwrap();
+  static ArchiveItemName placesName = ArchiveItemName.create("places").unwrap();
+  static ArchiveItemName actorsName = ArchiveItemName.create("actors").unwrap();
+  static ArchiveItemName scenesName = ArchiveItemName.create("scenes").unwrap();
+
+  FolderData toArchiveItemData() {
+    return FolderData(
+      children: FolderChildren({
+        selectionsName: selections.toArchiveItemData(),
+        placesName: places.toArchiveItemData(),
+        actorsName: actors.toArchiveItemData(),
+        scenesName: scenes.toArchiveItemData(),
+      }),
+    );
+  }
+
+  static SceneGroup fromArchiveItemData(FolderData folder) {
+    return SceneGroup(
+      selections: Selections.fromArchiveItemData(
+        folder.find(selectionsName)! as FileData,
+      ),
+      places: Places.fromArchiveItemData(
+        folder.find(placesName)! as FolderData,
+      ),
+      actors: Actors.fromArchiveItemData(
+        folder.find(actorsName)! as FolderData,
+      ),
+      scenes: Scenes.fromArchiveItemData(
+        folder.find(scenesName)! as FolderData,
+      ),
     );
   }
 }

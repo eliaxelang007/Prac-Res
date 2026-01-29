@@ -1,13 +1,13 @@
-import "dart:convert";
 import "dart:typed_data";
+
+import "dart:convert";
 import "package:archive/archive.dart";
 import "package:result_type/result_type.dart";
 
 class ArchiveWriter {
   final Archive archive;
 
-  /// This would have been a [List<ArchiveItemName>] if not for the root folder feature!
-  final List<String> path;
+  final List<ArchiveItemName> path;
 
   ArchiveWriter._({required this.archive, required this.path});
 
@@ -15,17 +15,17 @@ class ArchiveWriter {
     return ArchiveWriter._(archive: archive, path: []);
   }
 
-  void writeFolder(String folderName, List<ArchiveItem> folderChildren) {
+  void writeFolder(ArchiveItemName folderName, FolderChildren children) {
     path.add(folderName);
 
-    for (final child in folderChildren) {
-      child.writeToArchive(this);
+    for (final MapEntry(:key, :value) in children.entries) {
+      value.writeToArchive(this, key);
     }
 
     path.removeLast();
   }
 
-  void writeFile(String fileName, Uint8List fileBytes) {
+  void writeFile(ArchiveItemName fileName, Uint8List fileBytes) {
     path.add(fileName);
 
     archive.add(ArchiveFile.bytes(path.join("/"), fileBytes));
@@ -34,8 +34,132 @@ class ArchiveWriter {
   }
 }
 
-abstract interface class ArchiveWritable {
-  void writeToArchive(ArchiveWriter writer);
+abstract interface class WritableArchiveData {
+  void writeToArchive(ArchiveWriter writer, ArchiveItemName name);
+
+  Archive toArchive(ArchiveItemName name) {
+    final writer = ArchiveWriter(archive: Archive());
+
+    writeToArchive(writer, name);
+
+    return writer.archive;
+  }
+}
+
+sealed class ArchiveItemData extends WritableArchiveData {}
+
+typedef ArchiveItem<Data> = MapEntry<ArchiveItemName, Data>;
+typedef AnyArchiveItem = ArchiveItem<ArchiveItemData>;
+
+enum FolderChildrenError implements Exception {
+  duplicateEntries(
+    "In [FolderData]'s [fromEntries] constructor, there were at least two different archive items with the same name!",
+  );
+
+  final String message;
+
+  const FolderChildrenError(this.message);
+
+  @override
+  String toString() => message;
+}
+
+extension type FolderChildren(Map<ArchiveItemName, ArchiveItemData> _children)
+    implements Map<ArchiveItemName, ArchiveItemData> {
+  static Result<FolderChildren, FolderChildrenError> fromEntries(
+    Iterable<AnyArchiveItem> entries,
+  ) {
+    final children = <ArchiveItemName, ArchiveItemData>{};
+
+    for (final MapEntry(:key, :value) in entries) {
+      if (children.containsKey(key)) {
+        return Failure(FolderChildrenError.duplicateEntries);
+      }
+
+      children[key] = value;
+    }
+
+    return Success(FolderChildren(children));
+  }
+
+  ArchiveItemData? find(ArchiveItemName name) {
+    return _children[name];
+  }
+
+  void add(AnyArchiveItem item) {
+    _children[item.key] = item.value;
+  }
+}
+
+class FolderData extends ArchiveItemData {
+  final FolderChildren children;
+
+  FolderData({required this.children});
+
+  ArchiveItemData? find(ArchiveItemName name) {
+    return children.find(name);
+  }
+
+  @override
+  void writeToArchive(ArchiveWriter writer, ArchiveItemName name) {
+    writer.writeFolder(name, children);
+  }
+
+  Root toRoot() {
+    return Root(children: children);
+  }
+}
+
+extension type Folder._(ArchiveItem<FolderData> _folder)
+    implements ArchiveItem<FolderData> {
+  factory Folder({
+    required ArchiveItemName name,
+    required FolderData children,
+  }) {
+    return Folder._(MapEntry(name, children));
+  }
+}
+
+class FileData extends ArchiveItemData {
+  final Uint8List bytes;
+
+  FileData({required this.bytes});
+
+  static FileData fromJson(Object? json) {
+    return FileData(bytes: utf8.encode(jsonEncode(json)));
+  }
+
+  dynamic toJson() {
+    return jsonDecode(utf8.decode(bytes));
+  }
+
+  @override
+  void writeToArchive(ArchiveWriter writer, ArchiveItemName name) {
+    writer.writeFile(name, bytes);
+  }
+}
+
+extension type File._(ArchiveItem<FileData> _file)
+    implements ArchiveItem<FileData> {
+  factory File({required ArchiveItemName name, required FileData data}) {
+    return File._(ArchiveItem<FileData>(name, data));
+  }
+}
+
+class Root {
+  final FolderChildren children;
+
+  Root({required this.children});
+
+  ArchiveItemData? find(ArchiveItemName name) {
+    return children.find(name);
+  }
+
+  void writeToArchive(ArchiveWriter writer) {
+    for (final MapEntry(:key, :value) in children.entries) {
+      value.writeToArchive(writer, key);
+    }
+  }
 
   Archive toArchive() {
     final writer = ArchiveWriter(archive: Archive());
@@ -44,57 +168,9 @@ abstract interface class ArchiveWritable {
 
     return writer.archive;
   }
-}
 
-sealed class ArchiveItem extends ArchiveWritable {}
-
-class Folder extends ArchiveItem {
-  final ArchiveItemName name;
-  final List<ArchiveItem> children;
-
-  Folder({required this.name, required this.children});
-
-  @override
-  void writeToArchive(ArchiveWriter writer) {
-    writer.writeFolder(name, children);
-  }
-
-  /// This strips the [Folder] of its name and turns it into a [RootFolder]
-  /// that can be zipped up into an archive.
-  RootFolder toRootFolder() {
-    return RootFolder(children: children);
-  }
-}
-
-class File extends ArchiveItem implements ArchiveWritable {
-  final ArchiveItemName name;
-  final Uint8List bytes;
-
-  File({required this.name, required this.bytes});
-
-  static File fromJson(ArchiveItemName name, Object? json) {
-    return File(name: name, bytes: utf8.encode(jsonEncode(json)));
-  }
-
-  @override
-  void writeToArchive(ArchiveWriter writer) {
-    writer.writeFile(name, bytes);
-  }
-}
-
-class RootFolder extends ArchiveWritable {
-  final List<ArchiveItem> children;
-
-  RootFolder({required this.children});
-
-  @override
-  void writeToArchive(ArchiveWriter writer) {
-    writer.writeFolder("", children);
-  }
-
-  /// This gives a [RootFolder] a name and turns it into a [Folder].
-  Folder toFolder(ArchiveItemName name) {
-    return Folder(name: name, children: children);
+  FolderData toFolderData() {
+    return FolderData(children: children);
   }
 }
 
@@ -102,51 +178,54 @@ class RootFolder extends ArchiveWritable {
 const int maxPath = 260;
 
 enum ArchiveItemNameError implements Exception {
-  isEmpty("A filename can't be empty!"),
-  hasExceedingLength("A filename can't be longer than $maxPath characters!"),
-  hasNonAscii("A filename has to be valid ascii!"),
-  hasForbiddenCharacters(
+  empty("A filename can't be empty!"),
+  exceedingLength("A filename can't be longer than $maxPath characters!"),
+  nonAscii("A filename has to be valid ascii!"),
+  forbiddenCharacters(
     "A filename can't contain '<', '>', ':', '\"', '/', '\\', '|', '?', or '*'!",
   ),
-  hasNonLowercase("A filename can't have any case other than lowercase!"),
-  hasBeginningOrEndingWhitespace(
+  nonLowercase("A filename can't have any case other than lowercase!"),
+  beginningOrEndingWithWhitespace(
     "A filename can't start or end with whitespace!",
   ),
-  hasEndingPeriod("A filename can't end with a period!");
+  endingPeriod("A filename can't end with a period!");
 
-  final String errorMessage;
+  final String message;
 
-  const ArchiveItemNameError(this.errorMessage);
+  const ArchiveItemNameError(this.message);
+
+  @override
+  String toString() => message;
 }
 
 extension type const ArchiveItemName._(String fullFilename) implements String {
   static Result<Null, ArchiveItemNameError> _validate(String fullFilename) {
     if (fullFilename.isEmpty) {
-      return Failure(ArchiveItemNameError.isEmpty);
+      return Failure(ArchiveItemNameError.empty);
     }
 
     if (fullFilename.length > maxPath) {
-      return Failure(ArchiveItemNameError.hasExceedingLength);
+      return Failure(ArchiveItemNameError.exceedingLength);
     }
 
     if (fullFilename.endsWith('.')) {
-      return Failure(ArchiveItemNameError.hasEndingPeriod);
+      return Failure(ArchiveItemNameError.endingPeriod);
     }
 
     if (fullFilename.codeUnits.any((c) => c < 32 || c > 126)) {
-      return Failure(ArchiveItemNameError.hasNonAscii);
+      return Failure(ArchiveItemNameError.nonAscii);
     }
 
     if (fullFilename.contains(RegExp(r'[<>:"/\\|?*]'))) {
-      return Failure(ArchiveItemNameError.hasForbiddenCharacters);
+      return Failure(ArchiveItemNameError.forbiddenCharacters);
     }
 
     if (fullFilename != fullFilename.toLowerCase()) {
-      return Failure(ArchiveItemNameError.hasNonLowercase);
+      return Failure(ArchiveItemNameError.nonLowercase);
     }
 
     if (fullFilename.trim().length != fullFilename.length) {
-      return Failure(ArchiveItemNameError.hasBeginningOrEndingWhitespace);
+      return Failure(ArchiveItemNameError.beginningOrEndingWithWhitespace);
     }
 
     return Success(null);
@@ -157,8 +236,4 @@ extension type const ArchiveItemName._(String fullFilename) implements String {
   ) {
     return _validate(fullFilename).map((_) => ArchiveItemName._(fullFilename));
   }
-
-  // factory ArchiveItemName(String fullFilename) {
-  //   return ArchiveItemName.create(fullFilename).unwrap();
-  // }
 }
