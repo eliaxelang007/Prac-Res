@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:prac_res/filesystem.dart';
+import 'package:prac_res/data/filesystem.dart';
 import 'package:result_type/result_type.dart';
 
 part 'data.freezed.dart';
@@ -30,8 +30,9 @@ extension type Id._(String _id) implements String {
   static Id fromJson(Object? json) => Id._(json! as String);
   static String toJson(Id id) => id;
 
-  static FilesystemName toFilename(Id id) => FilesystemName.create(id).unwrap();
-  static Id fromFilename(FilesystemName filename) => Id._(filename);
+  static CrossFilesystemName toFilename(Id id) =>
+      CrossFilesystemName.create(id).unwrap();
+  static Id fromFilename(CrossFilesystemName filename) => Id._(filename);
 }
 
 extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
@@ -57,7 +58,7 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
   );
 
   FolderData toFolderData(
-    FilesystemName Function(ItemId id) itemIdToFilename,
+    CrossFilesystemName Function(ItemId id) itemIdToFilename,
     Object? Function(Item item) itemToJson,
   ) {
     return FolderData(
@@ -74,7 +75,7 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
 
   static Collection<ItemId, Item> fromFolderData<ItemId, Item>(
     FolderData data,
-    ItemId Function(FilesystemName json) itemIdFromFilename,
+    ItemId Function(CrossFilesystemName json) itemIdFromFilename,
     Item Function(Object? json) itemFromJson,
   ) {
     return Collection._(
@@ -451,16 +452,16 @@ abstract class SceneGroup with _$SceneGroup {
   /// You would have to pass in the whole scene group folder to the child so that
   /// it could look for its own name and deserialize itself!
   /// That's why the file names are defined here in [SceneGroup].
-  static final FilesystemName selectionsName = FilesystemName.create(
+  static final CrossFilesystemName selectionsName = CrossFilesystemName.create(
     "selections.json",
   ).unwrap();
-  static final FilesystemName placesName = FilesystemName.create(
+  static final CrossFilesystemName placesName = CrossFilesystemName.create(
     "places",
   ).unwrap();
-  static final FilesystemName actorsName = FilesystemName.create(
+  static final CrossFilesystemName actorsName = CrossFilesystemName.create(
     "actors",
   ).unwrap();
-  static final FilesystemName scenesName = FilesystemName.create(
+  static final CrossFilesystemName scenesName = CrossFilesystemName.create(
     "scenes",
   ).unwrap();
 

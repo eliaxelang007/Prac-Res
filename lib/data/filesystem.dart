@@ -97,7 +97,7 @@ import "package:result_type/result_type.dart";
 class ArchiveWriter {
   final Archive archive;
 
-  final List<FilesystemName> path;
+  final List<CrossFilesystemName> path;
 
   ArchiveWriter._({required this.archive, required this.path});
 
@@ -105,7 +105,7 @@ class ArchiveWriter {
     return ArchiveWriter._(archive: archive, path: []);
   }
 
-  void writeFolder(FilesystemName folderName, FolderChildren children) {
+  void writeFolder(CrossFilesystemName folderName, FolderChildren children) {
     path.add(folderName);
 
     for (final MapEntry(:key, :value) in children.entries) {
@@ -115,7 +115,7 @@ class ArchiveWriter {
     path.removeLast();
   }
 
-  void writeFile(FilesystemName fileName, Uint8List fileBytes) {
+  void writeFile(CrossFilesystemName fileName, Uint8List fileBytes) {
     path.add(fileName);
 
     archive.add(ArchiveFile.bytes(path.join("/"), fileBytes));
@@ -125,9 +125,9 @@ class ArchiveWriter {
 }
 
 abstract interface class WritableArchiveData {
-  void writeToArchive(ArchiveWriter writer, FilesystemName name);
+  void writeToArchive(ArchiveWriter writer, CrossFilesystemName name);
 
-  Archive toArchive(FilesystemName name) {
+  Archive toArchive(CrossFilesystemName name) {
     final writer = ArchiveWriter(archive: Archive());
 
     writeToArchive(writer, name);
@@ -138,7 +138,7 @@ abstract interface class WritableArchiveData {
 
 sealed class ArchiveItemData extends WritableArchiveData {}
 
-typedef ArchiveItem<Data> = MapEntry<FilesystemName, Data>;
+typedef ArchiveItem<Data> = MapEntry<CrossFilesystemName, Data>;
 typedef AnyArchiveItem = ArchiveItem<ArchiveItemData>;
 
 enum FolderChildrenError implements Exception {
@@ -154,12 +154,14 @@ enum FolderChildrenError implements Exception {
   String toString() => message;
 }
 
-extension type FolderChildren(Map<FilesystemName, ArchiveItemData> _children)
-    implements Map<FilesystemName, ArchiveItemData> {
+extension type FolderChildren(
+  Map<CrossFilesystemName, ArchiveItemData> _children
+)
+    implements Map<CrossFilesystemName, ArchiveItemData> {
   static Result<FolderChildren, FolderChildrenError> fromEntries(
     Iterable<AnyArchiveItem> entries,
   ) {
-    final children = <FilesystemName, ArchiveItemData>{};
+    final children = <CrossFilesystemName, ArchiveItemData>{};
 
     for (final MapEntry(:key, :value) in entries) {
       if (children.containsKey(key)) {
@@ -172,7 +174,7 @@ extension type FolderChildren(Map<FilesystemName, ArchiveItemData> _children)
     return Success(FolderChildren(children));
   }
 
-  ArchiveItemData? find(FilesystemName name) {
+  ArchiveItemData? find(CrossFilesystemName name) {
     return _children[name];
   }
 
@@ -186,12 +188,12 @@ class FolderData extends ArchiveItemData {
 
   FolderData({required this.children});
 
-  ArchiveItemData? find(FilesystemName name) {
+  ArchiveItemData? find(CrossFilesystemName name) {
     return children.find(name);
   }
 
   @override
-  void writeToArchive(ArchiveWriter writer, FilesystemName name) {
+  void writeToArchive(ArchiveWriter writer, CrossFilesystemName name) {
     writer.writeFolder(name, children);
   }
 
@@ -202,7 +204,10 @@ class FolderData extends ArchiveItemData {
 
 extension type Folder._(ArchiveItem<FolderData> _folder)
     implements ArchiveItem<FolderData> {
-  factory Folder({required FilesystemName name, required FolderData children}) {
+  factory Folder({
+    required CrossFilesystemName name,
+    required FolderData children,
+  }) {
     return Folder._(MapEntry(name, children));
   }
 }
@@ -221,14 +226,14 @@ class FileData extends ArchiveItemData {
   }
 
   @override
-  void writeToArchive(ArchiveWriter writer, FilesystemName name) {
+  void writeToArchive(ArchiveWriter writer, CrossFilesystemName name) {
     writer.writeFile(name, bytes);
   }
 }
 
 extension type File._(ArchiveItem<FileData> _file)
     implements ArchiveItem<FileData> {
-  factory File({required FilesystemName name, required FileData data}) {
+  factory File({required CrossFilesystemName name, required FileData data}) {
     return File._(ArchiveItem<FileData>(name, data));
   }
 }
@@ -238,7 +243,7 @@ class Root {
 
   Root({required this.children});
 
-  ArchiveItemData? find(FilesystemName name) {
+  ArchiveItemData? find(CrossFilesystemName name) {
     return children.find(name);
   }
 
@@ -264,7 +269,7 @@ class Root {
 /// Windows's max path length is 260 characters.
 const int maxPath = 260;
 
-enum FilesystemNameError implements Exception {
+enum CrossFilesystemNameError implements Exception {
   empty("A filename can't be empty!"),
   exceedingLength("A filename can't be longer than $maxPath characters!"),
   nonAscii("A filename has to be valid ascii!"),
@@ -279,48 +284,51 @@ enum FilesystemNameError implements Exception {
 
   final String message;
 
-  const FilesystemNameError(this.message);
+  const CrossFilesystemNameError(this.message);
 
   @override
   String toString() => message;
 }
 
-extension type const FilesystemName._(String fullFilename) implements String {
-  static Result<Null, FilesystemNameError> _validate(String fullFilename) {
+extension type const CrossFilesystemName._(String fullFilename)
+    implements String {
+  static Result<Null, CrossFilesystemNameError> _validate(String fullFilename) {
     if (fullFilename.isEmpty) {
-      return Failure(FilesystemNameError.empty);
+      return Failure(CrossFilesystemNameError.empty);
     }
 
     if (fullFilename.length > maxPath) {
-      return Failure(FilesystemNameError.exceedingLength);
+      return Failure(CrossFilesystemNameError.exceedingLength);
     }
 
     if (fullFilename.endsWith('.')) {
-      return Failure(FilesystemNameError.endingPeriod);
+      return Failure(CrossFilesystemNameError.endingPeriod);
     }
 
     if (fullFilename.codeUnits.any((c) => c < 32 || c > 126)) {
-      return Failure(FilesystemNameError.nonAscii);
+      return Failure(CrossFilesystemNameError.nonAscii);
     }
 
     if (fullFilename.contains(RegExp(r'[<>:"/\\|?*]'))) {
-      return Failure(FilesystemNameError.forbiddenCharacters);
+      return Failure(CrossFilesystemNameError.forbiddenCharacters);
     }
 
     if (fullFilename != fullFilename.toLowerCase()) {
-      return Failure(FilesystemNameError.nonLowercase);
+      return Failure(CrossFilesystemNameError.nonLowercase);
     }
 
     if (fullFilename.trim().length != fullFilename.length) {
-      return Failure(FilesystemNameError.beginningOrEndingWithWhitespace);
+      return Failure(CrossFilesystemNameError.beginningOrEndingWithWhitespace);
     }
 
     return Success(null);
   }
 
-  static Result<FilesystemName, FilesystemNameError> create(
+  static Result<CrossFilesystemName, CrossFilesystemNameError> create(
     String fullFilename,
   ) {
-    return _validate(fullFilename).map((_) => FilesystemName._(fullFilename));
+    return _validate(
+      fullFilename,
+    ).map((_) => CrossFilesystemName._(fullFilename));
   }
 }
