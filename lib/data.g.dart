@@ -6,17 +6,17 @@ part of 'data.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Resource<Metadata, Value> _$ResourceFromJson<Metadata, Value>(
+_Resource<Metadata, Value> _$ResourceFromJson<Metadata, Value>(
   Map<String, dynamic> json,
   Metadata Function(Object? json) fromJsonMetadata,
   Value Function(Object? json) fromJsonValue,
-) => Resource<Metadata, Value>._(
+) => _Resource<Metadata, Value>(
   metadata: fromJsonMetadata(json['metadata']),
   value: fromJsonValue(json['value']),
 );
 
 Map<String, dynamic> _$ResourceToJson<Metadata, Value>(
-  Resource<Metadata, Value> instance,
+  _Resource<Metadata, Value> instance,
   Object? Function(Metadata value) toJsonMetadata,
   Object? Function(Value value) toJsonValue,
 ) => <String, dynamic>{
@@ -24,32 +24,24 @@ Map<String, dynamic> _$ResourceToJson<Metadata, Value>(
   'value': toJsonValue(instance.value),
 };
 
-Selection _$SelectionFromJson(Map<String, dynamic> json) => Selection(
+_Selection _$SelectionFromJson(Map<String, dynamic> json) => _Selection(
   options: (json['options'] as List<dynamic>).map((e) => e as Option).toSet(),
   selected: json['selected'] as Option?,
 );
 
-Map<String, dynamic> _$SelectionToJson(Selection instance) => <String, dynamic>{
-  'options': instance.options.toList(),
-  'selected': instance.selected,
-};
+Map<String, dynamic> _$SelectionToJson(_Selection instance) =>
+    <String, dynamic>{
+      'options': instance.options.toList(),
+      'selected': instance.selected,
+    };
 
-DialogueBox _$DialogueBoxFromJson(Map<String, dynamic> json) => DialogueBox._(
+_DialogueBox _$DialogueBoxFromJson(Map<String, dynamic> json) => _DialogueBox(
   name: json['name'] as String?,
   dialogue: json['dialogue'] as String,
 );
 
-Map<String, dynamic> _$DialogueBoxToJson(DialogueBox instance) =>
+Map<String, dynamic> _$DialogueBoxToJson(_DialogueBox instance) =>
     <String, dynamic>{'name': instance.name, 'dialogue': instance.dialogue};
-
-OrderedScenePart _$OrderedScenePartFromJson(Map<String, dynamic> json) =>
-    OrderedScenePart._(
-      order: (json['order'] as num).toDouble(),
-      part: ScenePart.fromJson(json['part'] as Map<String, dynamic>),
-    );
-
-Map<String, dynamic> _$OrderedScenePartToJson(OrderedScenePart instance) =>
-    <String, dynamic>{'order': instance.order, 'part': instance.part};
 
 Frame _$FrameFromJson(Map<String, dynamic> json) => Frame(
   background: FullBackgroundId.fromJson(
@@ -76,3 +68,12 @@ FrameResolver _$FrameResolverFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$FrameResolverToJson(FrameResolver instance) =>
     <String, dynamic>{'type': instance.$type};
+
+_OrderedScenePart _$OrderedScenePartFromJson(Map<String, dynamic> json) =>
+    _OrderedScenePart(
+      order: (json['order'] as num).toDouble(),
+      part: ScenePart.fromJson(json['part'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$OrderedScenePartToJson(_OrderedScenePart instance) =>
+    <String, dynamic>{'order': instance.order, 'part': instance.part};

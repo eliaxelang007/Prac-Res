@@ -2,20 +2,17 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:prac_res/archive.dart';
+import 'package:prac_res/filesystem.dart';
 import 'package:result_type/result_type.dart';
 
 part 'data.freezed.dart';
 part "data.g.dart";
 
 /* ++ Resources ++ */
-
-@JsonSerializable(genericArgumentFactories: true, constructor: "_")
-class Resource<Metadata, Value> {
-  final Metadata metadata;
-  final Value value;
-
-  Resource._({required this.metadata, required this.value});
+@Freezed(genericArgumentFactories: true)
+abstract class Resource<Metadata, Value> with _$Resource<Metadata, Value> {
+  const factory Resource({required Metadata metadata, required Value value}) =
+      _Resource<Metadata, Value>;
 
   factory Resource.fromJson(
     Map<String, dynamic> json,
@@ -23,19 +20,18 @@ class Resource<Metadata, Value> {
     Value Function(Object? json) valueFromJson,
   ) => _$ResourceFromJson(json, metadataFromJson, valueFromJson);
 
-  Map<String, dynamic> toJson(
-    Object? Function(Metadata metadata) metadataToJson,
-    Object? Function(Value value) valueToJson,
-  ) => _$ResourceToJson(this, metadataToJson, valueToJson);
+  // Map<String, dynamic> toJson(
+  //   Object? Function(Metadata metadata) metadataToJson,
+  //   Object? Function(Value value) valueToJson,
+  // ) => _$ResourceToJson(this, metadataToJson, valueToJson);
 }
 
 extension type Id._(String _id) implements String {
   static Id fromJson(Object? json) => Id._(json! as String);
   static String toJson(Id id) => id;
 
-  static ArchiveItemName toFilename(Id id) =>
-      ArchiveItemName.create(id).unwrap();
-  static Id fromFilename(ArchiveItemName filename) => Id._(filename);
+  static FilesystemName toFilename(Id id) => FilesystemName.create(id).unwrap();
+  static Id fromFilename(FilesystemName filename) => Id._(filename);
 }
 
 extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
@@ -61,7 +57,7 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
   );
 
   FolderData toFolderData(
-    ArchiveItemName Function(ItemId id) itemIdToFilename,
+    FilesystemName Function(ItemId id) itemIdToFilename,
     Object? Function(Item item) itemToJson,
   ) {
     return FolderData(
@@ -78,7 +74,7 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
 
   static Collection<ItemId, Item> fromFolderData<ItemId, Item>(
     FolderData data,
-    ItemId Function(ArchiveItemName json) itemIdFromFilename,
+    ItemId Function(FilesystemName json) itemIdFromFilename,
     Item Function(Object? json) itemFromJson,
   ) {
     return Collection._(
@@ -228,43 +224,29 @@ enum SelectionError implements Exception {
   String toString() => message;
 }
 
-@JsonSerializable()
-class Selection {
-  final Set<Option> options;
-  final Option? selected;
+@freezed
+abstract class Selection with _$Selection {
+  const Selection._();
 
-  static Result<Null, SelectionError> _validate(
-    Set<Option> options,
-    Option? selected,
-  ) {
-    return (selected == null || options.contains(selected))
-        ? Success(null)
-        : Failure(SelectionError.invalidOption);
-  }
+  @Assert(
+    'selected == null || options.contains(selected)',
+    '[selected] has to be either [null] or contained in the set of [options]!',
+  )
+  factory Selection({required Set<Option> options, required Option? selected}) =
+      _Selection;
 
   static Result<Selection, SelectionError> create({
     required Set<Option> options,
     required Option? selected,
   }) {
-    return _validate(
-      options,
-      selected,
-    ).map((_) => Selection._(options: options, selected: selected));
+    if (selected != null && !options.contains(selected)) {
+      return Failure(SelectionError.invalidOption);
+    }
+    return Success(Selection(options: options, selected: selected));
   }
-
-  factory Selection({required Set<Option> options, required Option? selected}) {
-    return create(
-      options: options,
-      selected: selected,
-    ).unwrap(); // We need this for json_serializable.dart!
-  }
-
-  Selection._({required this.options, required this.selected});
 
   factory Selection.fromJson(Map<String, dynamic> json) =>
       _$SelectionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$SelectionToJson(this);
 
   static Map<String, dynamic> staticToJson(Selection selection) =>
       selection.toJson();
@@ -313,17 +295,13 @@ extension type FullPoseId._(FullId _fullId) implements FullId {
       FullPoseId._(FullId.fromJson(json));
 }
 
-@JsonSerializable(constructor: "_")
-class DialogueBox {
-  final String? name;
-  final String dialogue;
-
-  DialogueBox._({required this.name, required this.dialogue});
+@freezed
+abstract class DialogueBox with _$DialogueBox {
+  const factory DialogueBox({required String? name, required String dialogue}) =
+      _DialogueBox;
 
   factory DialogueBox.fromJson(Map<String, dynamic> json) =>
       _$DialogueBoxFromJson(json);
-
-  Map<String, dynamic> toJson() => _$DialogueBoxToJson(this);
 }
 
 @Freezed(unionKey: 'type')
@@ -341,19 +319,15 @@ sealed class ScenePart with _$ScenePart {
       _$ScenePartFromJson(json);
 }
 
-@JsonSerializable(constructor: "_")
-class OrderedScenePart {
-  /// Scene parts are ordered like how Google Docs orders inputs from multiple users with each other.
-  /// It's similar to operational transform but simplified!
-  final double order;
-  final ScenePart part;
-
-  OrderedScenePart._({required this.order, required this.part});
+@freezed
+abstract class OrderedScenePart with _$OrderedScenePart {
+  const factory OrderedScenePart({
+    required double order,
+    required ScenePart part,
+  }) = _OrderedScenePart;
 
   factory OrderedScenePart.fromJson(Map<String, dynamic> json) =>
       _$OrderedScenePartFromJson(json);
-
-  Map<String, dynamic> toJson() => _$OrderedScenePartToJson(this);
 
   static Map<String, dynamic> staticToJson(OrderedScenePart part) =>
       part.toJson();
@@ -460,30 +434,35 @@ extension type Scenes._(Collection<Id, Scene> _places)
   }
 }
 
-class SceneGroup {
-  final Selections selections;
-  final Places places;
-  final Actors actors;
-  final Scenes scenes;
+@freezed
+abstract class SceneGroup with _$SceneGroup {
+  // We need a private constructor so we can define custom methods inside a Freezed class
+  const SceneGroup._();
 
-  SceneGroup({
-    required this.selections,
-    required this.places,
-    required this.actors,
-    required this.scenes,
-  });
+  const factory SceneGroup({
+    required Selections selections,
+    required Places places,
+    required Actors actors,
+    required Scenes scenes,
+  }) = _SceneGroup;
 
   /// Why are the names defined here instead of their respective types?
   /// Well, think about how you would deserialize them.
   /// You would have to pass in the whole scene group folder to the child so that
   /// it could look for its own name and deserialize itself!
   /// That's why the file names are defined here in [SceneGroup].
-  static ArchiveItemName selectionsName = ArchiveItemName.create(
+  static final FilesystemName selectionsName = FilesystemName.create(
     "selections.json",
   ).unwrap();
-  static ArchiveItemName placesName = ArchiveItemName.create("places").unwrap();
-  static ArchiveItemName actorsName = ArchiveItemName.create("actors").unwrap();
-  static ArchiveItemName scenesName = ArchiveItemName.create("scenes").unwrap();
+  static final FilesystemName placesName = FilesystemName.create(
+    "places",
+  ).unwrap();
+  static final FilesystemName actorsName = FilesystemName.create(
+    "actors",
+  ).unwrap();
+  static final FilesystemName scenesName = FilesystemName.create(
+    "scenes",
+  ).unwrap();
 
   FolderData toArchiveItemData() {
     return FolderData(
