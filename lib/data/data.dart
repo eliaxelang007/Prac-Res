@@ -19,11 +19,6 @@ abstract class Resource<Metadata, Value> with _$Resource<Metadata, Value> {
     Metadata Function(Object? json) metadataFromJson,
     Value Function(Object? json) valueFromJson,
   ) => _$ResourceFromJson(json, metadataFromJson, valueFromJson);
-
-  // Map<String, dynamic> toJson(
-  //   Object? Function(Metadata metadata) metadataToJson,
-  //   Object? Function(Value value) valueToJson,
-  // ) => _$ResourceToJson(this, metadataToJson, valueToJson);
 }
 
 extension type Id._(String _id) implements String {
@@ -168,8 +163,6 @@ extension type ImageCollectionResource._(
     Id.toJson,
     ImageResource.staticToJson,
   );
-
-  // static Map<String, dynamic> staticToJson(ImageResourceCollection imageCollection) => imageCollection.toJson();
 }
 
 extension type PoseId._(Id _id) implements Id {} // TODO: Use in accessor.
@@ -379,9 +372,9 @@ extension type Selections._(Collection<Id, SelectionResource> _imageCollection)
     return FileData.fromJson(toJson());
   }
 
-  static Selections fromArchiveItemData(FileData data) {
-    return Selections.fromJson(data.toJson()! as Map<String, dynamic>);
-  }
+  // static Selections fromArchiveItemData(FileData data) {
+  //   return Selections.fromJson(data.toJson()! as Map<String, dynamic>);
+  // }
 }
 
 extension type Places._(Collection<Id, Place> _places)
@@ -390,54 +383,54 @@ extension type Places._(Collection<Id, Place> _places)
     return _places.toFolderData(Id.toFilename, Place.staticToJson);
   }
 
-  static Places fromArchiveItemData(FolderData data) {
-    return Places._(
-      Collection.fromFolderData(
-        data,
-        Id.fromFilename,
-        (json) => Place.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
+  // static Places fromArchiveItemData(FolderData data) {
+  //   return Places._(
+  //     Collection.fromFolderData(
+  //       data,
+  //       Id.fromFilename,
+  //       (json) => Place.fromJson(json! as Map<String, dynamic>),
+  //     ),
+  //   );
+  // }
 }
 
-extension type Actors._(Collection<Id, Actor> _places)
+extension type Actors._(Collection<Id, Actor> _actors)
     implements Collection<Id, Actor> {
   FolderData toArchiveItemData() {
-    return _places.toFolderData(Id.toFilename, Actor.staticToJson);
+    return _actors.toFolderData(Id.toFilename, Actor.staticToJson);
   }
 
-  static Actors fromArchiveItemData(FolderData data) {
-    return Actors._(
-      Collection.fromFolderData(
-        data,
-        Id.fromFilename,
-        (json) => Actor.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
+  // static Actors fromArchiveItemData(FolderData data) {
+  //   return Actors._(
+  //     Collection.fromFolderData(
+  //       data,
+  //       Id.fromFilename,
+  //       (json) => Actor.fromJson(json! as Map<String, dynamic>),
+  //     ),
+  //   );
+  // }
 }
 
-extension type Scenes._(Collection<Id, Scene> _places)
+extension type Scenes._(Collection<Id, Scene> _scenes)
     implements Collection<Id, Scene> {
   FolderData toArchiveItemData() {
-    return _places.toFolderData(Id.toFilename, Scene.staticToJson);
+    return _scenes.toFolderData(Id.toFilename, Scene.staticToJson);
   }
 
-  static Scenes fromArchiveItemData(FolderData data) {
-    return Scenes._(
-      Collection.fromFolderData(
-        data,
-        Id.fromFilename,
-        (json) => Scene.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
+  // static Scenes fromArchiveItemData(FolderData data) {
+  //   return Scenes._(
+  //     Collection.fromFolderData(
+  //       data,
+  //       Id.fromFilename,
+  //       (json) => Scene.fromJson(json! as Map<String, dynamic>),
+  //     ),
+  //   );
+  // }
 }
 
 @freezed
 abstract class SceneGroup with _$SceneGroup {
-  // We need a private constructor so we can define custom methods inside a Freezed class
+  /// We need a private constructor so we can define custom methods inside a class annotated with [freezed].
   const SceneGroup._();
 
   const factory SceneGroup({
@@ -476,20 +469,20 @@ abstract class SceneGroup with _$SceneGroup {
     );
   }
 
-  static SceneGroup fromArchiveItemData(FolderData folder) {
-    return SceneGroup(
-      selections: Selections.fromArchiveItemData(
-        folder.find(selectionsName)! as FileData,
-      ),
-      places: Places.fromArchiveItemData(
-        folder.find(placesName)! as FolderData,
-      ),
-      actors: Actors.fromArchiveItemData(
-        folder.find(actorsName)! as FolderData,
-      ),
-      scenes: Scenes.fromArchiveItemData(
-        folder.find(scenesName)! as FolderData,
-      ),
-    );
-  }
+  // static SceneGroup fromArchiveItemData(FolderData folder) {
+  //   return SceneGroup(
+  //     selections: Selections.fromArchiveItemData(
+  //       folder.find(selectionsName)! as FileData,
+  //     ),
+  //     places: Places.fromArchiveItemData(
+  //       folder.find(placesName)! as FolderData,
+  //     ),
+  //     actors: Actors.fromArchiveItemData(
+  //       folder.find(actorsName)! as FolderData,
+  //     ),
+  //     scenes: Scenes.fromArchiveItemData(
+  //       folder.find(scenesName)! as FolderData,
+  //     ),
+  //   );
+  // }
 }
