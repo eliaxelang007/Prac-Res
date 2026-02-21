@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prac_res/game_view.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -8,7 +9,7 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: SizedBox(),
+      home: Frame(),
     );
   }
 }
