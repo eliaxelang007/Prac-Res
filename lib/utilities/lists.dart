@@ -1,6 +1,5 @@
+/* Crediting Google Gemini 3 for help with this code! */
 import 'dart:collection';
-
-/* Crediting Google Gemini for help with this code! */
 
 sealed class ListDifference<T> {
   final int at;
@@ -97,6 +96,9 @@ List<List<int>> lcsCache<T>(List<T> source, List<T> target) {
 
 /// Whenever you calculate the differences between two lists, you also always get their LCS!
 /// Instead of hiding that extra work, this function chooses to return that too.
+///
+/// IMPORTANT: Make sure you use this function with types that can be compared with [==]!
+/// If you're trying to compare a type that can't be compared with [==], just wrap it in an extension type or something.
 (Iterable<ListDifference<T>>, List<T>) differencesAndLCS<T>(
   List<T> source,
   List<T> target,
