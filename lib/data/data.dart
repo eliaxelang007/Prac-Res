@@ -428,7 +428,10 @@ extension type Scenes._(Collection<Id, Scene> _scenes)
   // }
 }
 
-@freezed
+// extension type InMemory<ItemId, Item, FolderCollection extends Collection<ItemId, Item>>(FolderCollection _folderCollection) implements Collection<ItemId, Item> {
+//   operator
+// }
+
 abstract class SceneGroup with _$SceneGroup {
   /// We need a private constructor so we can define custom methods inside a class annotated with [freezed].
   const SceneGroup._();
