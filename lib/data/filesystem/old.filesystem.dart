@@ -138,7 +138,7 @@ abstract interface class WritableArchiveData {
 
 sealed class ArchiveItemData extends WritableArchiveData {}
 
-typedef ArchiveItem<Data> = MapEntry<CrossFilesystemName, Data>;
+// ArchiveItem<Data extends ArchiveItemData> = MapEntry<CrossFilesystemName, Data>;
 typedef AnyArchiveItem = ArchiveItem<ArchiveItemData>;
 
 enum FolderChildrenError implements Exception {

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:prac_res/data/filesystem.dart';
+import 'package:prac_res/data/filesystem/filesystem.dart';
 import 'package:result_type/result_type.dart';
 
 part 'data.freezed.dart';
@@ -52,16 +52,16 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
     (id, item) => MapEntry(itemIdToJson(id), itemToJson(item)),
   );
 
-  FolderData toFolderData(
+  CrossFolderData toFolderData(
     CrossFilesystemName Function(ItemId id) itemIdToFilename,
     Object? Function(Item item) itemToJson,
   ) {
-    return FolderData(
-      children: FolderChildren(
+    return CrossFolderData(
+      children: CrossFolderChildren(
         _collection.map(
-          (itemId, item) => File(
+          (itemId, item) => CrossFile(
             name: itemIdToFilename(itemId),
-            data: FileData.fromJson(itemToJson(item)),
+            data: CrossFileData.fromJson(itemToJson(item)),
           ),
         ),
       ),
@@ -69,7 +69,7 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
   }
 
   static Collection<ItemId, Item> fromFolderData<ItemId, Item>(
-    FolderData data,
+    CrossFolderData data,
     ItemId Function(CrossFilesystemName json) itemIdFromFilename,
     Item Function(Object? json) itemFromJson,
   ) {
@@ -77,7 +77,7 @@ extension type Collection<ItemId, Item>._(Map<ItemId, Item> _collection)
       data.children.map(
         (itemId, item) => MapEntry(
           itemIdFromFilename(itemId),
-          itemFromJson((item as FileData).toJson()),
+          itemFromJson((item as CrossFileData).toJson()),
         ),
       ),
     );
@@ -368,8 +368,8 @@ extension type Selections._(Collection<Id, SelectionResource> _imageCollection)
   Map<String, dynamic> toJson() =>
       _imageCollection.toJson(Id.toJson, SelectionResource.staticToJson);
 
-  FileData toArchiveItemData() {
-    return FileData.fromJson(toJson());
+  CrossFileData toArchiveItemData() {
+    return CrossFileData.fromJson(toJson());
   }
 
   // static Selections fromArchiveItemData(FileData data) {
@@ -379,7 +379,7 @@ extension type Selections._(Collection<Id, SelectionResource> _imageCollection)
 
 extension type Places._(Collection<Id, Place> _places)
     implements Collection<Id, Place> {
-  FolderData toArchiveItemData() {
+  CrossFolderData toArchiveItemData() {
     return _places.toFolderData(Id.toFilename, Place.staticToJson);
   }
 
@@ -396,7 +396,7 @@ extension type Places._(Collection<Id, Place> _places)
 
 extension type Actors._(Collection<Id, Actor> _actors)
     implements Collection<Id, Actor> {
-  FolderData toArchiveItemData() {
+  CrossFolderData toArchiveItemData() {
     return _actors.toFolderData(Id.toFilename, Actor.staticToJson);
   }
 
@@ -413,7 +413,7 @@ extension type Actors._(Collection<Id, Actor> _actors)
 
 extension type Scenes._(Collection<Id, Scene> _scenes)
     implements Collection<Id, Scene> {
-  FolderData toArchiveItemData() {
+  CrossFolderData toArchiveItemData() {
     return _scenes.toFolderData(Id.toFilename, Scene.staticToJson);
   }
 
@@ -461,9 +461,9 @@ abstract class SceneGroup with _$SceneGroup {
     "scenes",
   ).unwrap();
 
-  FolderData toArchiveItemData() {
-    return FolderData(
-      children: FolderChildren({
+  CrossFolderData toArchiveItemData() {
+    return CrossFolderData(
+      children: CrossFolderChildren({
         selectionsName: selections.toArchiveItemData(),
         placesName: places.toArchiveItemData(),
         actorsName: actors.toArchiveItemData(),

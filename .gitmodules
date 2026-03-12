@@ -1,0 +1,3 @@
+[submodule "packages/Junction"]
+	path = packages/Junction
+	url = https://github.com/eliaxelang007/Junction.git
