@@ -1,0 +1,25 @@
+{
+    "metadata": "Opening Scene",
+    "value": {
+        "33333333-4444-4555-a666-777777777777": {
+            "order": 1.0,
+            "part": {
+                "type": "frame",
+                "background": {
+                    "metadata": "880e8400-e29b-41d4-a716-446655440222",
+                    "value": "22222222-3333-4444-a555-666666666666"
+                },
+                "poses": [
+                    {
+                        "metadata": "770e8400-e29b-41d4-a716-446655440111",
+                        "value": "11111111-2222-4333-a444-555555555555"
+                    }
+                ],
+                "dialogueBox": {
+                    "name": "Protagonist",
+                    "dialogue": "Wow, what a beautiful morning in the cafeteria!"
+                }
+            }
+        }
+    }
+}

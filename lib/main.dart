@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:prac_res/game_view.dart';
+import 'package:prac_res/pages/design_values.dart';
+import 'package:prac_res/pages/open.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -7,9 +8,11 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: Frame(),
+      title: 'Sociolingo Editor',
+      theme: ThemeData(
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      ).copyWith(extensions: const <ThemeExtension<dynamic>>[DesignValues()]),
+      home: NovelOpenPage(),
     );
   }
 }

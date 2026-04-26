@@ -11,44 +11,41 @@ part of 'data.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
-
 /// @nodoc
-mixin _$Resource<Metadata,Value> {
+mixin _$SceneGroup {
 
- Metadata get metadata; Value get value;
-/// Create a copy of Resource
+ Selections get selections; Scenes get scenes; Places get places; Actors get actors;
+/// Create a copy of SceneGroup
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$ResourceCopyWith<Metadata, Value, Resource<Metadata, Value>> get copyWith => _$ResourceCopyWithImpl<Metadata, Value, Resource<Metadata, Value>>(this as Resource<Metadata, Value>, _$identity);
+$SceneGroupCopyWith<SceneGroup> get copyWith => _$SceneGroupCopyWithImpl<SceneGroup>(this as SceneGroup, _$identity);
 
-  /// Serializes this Resource to a JSON map.
-  Map<String, dynamic> toJson(Object? Function(Metadata) toJsonMetadata,Object? Function(Value) toJsonValue);
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Resource<Metadata, Value>&&const DeepCollectionEquality().equals(other.metadata, metadata)&&const DeepCollectionEquality().equals(other.value, value));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SceneGroup&&(identical(other.selections, selections) || other.selections == selections)&&(identical(other.scenes, scenes) || other.scenes == scenes)&&(identical(other.places, places) || other.places == places)&&(identical(other.actors, actors) || other.actors == actors));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(metadata),const DeepCollectionEquality().hash(value));
+int get hashCode => Object.hash(runtimeType,selections,scenes,places,actors);
 
 @override
 String toString() {
-  return 'Resource<$Metadata, $Value>(metadata: $metadata, value: $value)';
+  return 'SceneGroup(selections: $selections, scenes: $scenes, places: $places, actors: $actors)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $ResourceCopyWith<Metadata,Value,$Res>  {
-  factory $ResourceCopyWith(Resource<Metadata, Value> value, $Res Function(Resource<Metadata, Value>) _then) = _$ResourceCopyWithImpl;
+abstract mixin class $SceneGroupCopyWith<$Res>  {
+  factory $SceneGroupCopyWith(SceneGroup value, $Res Function(SceneGroup) _then) = _$SceneGroupCopyWithImpl;
 @useResult
 $Res call({
- Metadata metadata, Value value
+ Selections selections, Scenes scenes, Places places, Actors actors
 });
 
 
@@ -56,28 +53,30 @@ $Res call({
 
 }
 /// @nodoc
-class _$ResourceCopyWithImpl<Metadata,Value,$Res>
-    implements $ResourceCopyWith<Metadata, Value, $Res> {
-  _$ResourceCopyWithImpl(this._self, this._then);
+class _$SceneGroupCopyWithImpl<$Res>
+    implements $SceneGroupCopyWith<$Res> {
+  _$SceneGroupCopyWithImpl(this._self, this._then);
 
-  final Resource<Metadata, Value> _self;
-  final $Res Function(Resource<Metadata, Value>) _then;
+  final SceneGroup _self;
+  final $Res Function(SceneGroup) _then;
 
-/// Create a copy of Resource
+/// Create a copy of SceneGroup
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? metadata = freezed,Object? value = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? selections = null,Object? scenes = null,Object? places = null,Object? actors = null,}) {
   return _then(_self.copyWith(
-metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as Metadata,value: freezed == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
-as Value,
+selections: null == selections ? _self.selections : selections // ignore: cast_nullable_to_non_nullable
+as Selections,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
+as Scenes,places: null == places ? _self.places : places // ignore: cast_nullable_to_non_nullable
+as Places,actors: null == actors ? _self.actors : actors // ignore: cast_nullable_to_non_nullable
+as Actors,
   ));
 }
 
 }
 
 
-/// Adds pattern-matching-related methods to [Resource].
-extension ResourcePatterns<Metadata,Value> on Resource<Metadata, Value> {
+/// Adds pattern-matching-related methods to [SceneGroup].
+extension SceneGroupPatterns on SceneGroup {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -90,10 +89,10 @@ extension ResourcePatterns<Metadata,Value> on Resource<Metadata, Value> {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Resource<Metadata, Value> value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SceneGroup value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _Resource() when $default != null:
+case _SceneGroup() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -112,10 +111,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Resource<Metadata, Value> value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SceneGroup value)  $default,){
 final _that = this;
 switch (_that) {
-case _Resource():
+case _SceneGroup():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -133,10 +132,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Resource<Metadata, Value> value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SceneGroup value)?  $default,){
 final _that = this;
 switch (_that) {
-case _Resource() when $default != null:
+case _SceneGroup() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -154,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Metadata metadata,  Value value)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Selections selections,  Scenes scenes,  Places places,  Actors actors)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _Resource() when $default != null:
-return $default(_that.metadata,_that.value);case _:
+case _SceneGroup() when $default != null:
+return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
   return orElse();
 
 }
@@ -175,10 +174,10 @@ return $default(_that.metadata,_that.value);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Metadata metadata,  Value value)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Selections selections,  Scenes scenes,  Places places,  Actors actors)  $default,) {final _that = this;
 switch (_that) {
-case _Resource():
-return $default(_that.metadata,_that.value);case _:
+case _SceneGroup():
+return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +194,10 @@ return $default(_that.metadata,_that.value);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Metadata metadata,  Value value)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Selections selections,  Scenes scenes,  Places places,  Actors actors)?  $default,) {final _that = this;
 switch (_that) {
-case _Resource() when $default != null:
-return $default(_that.metadata,_that.value);case _:
+case _SceneGroup() when $default != null:
+return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
   return null;
 
 }
@@ -207,49 +206,48 @@ return $default(_that.metadata,_that.value);case _:
 }
 
 /// @nodoc
-@JsonSerializable(genericArgumentFactories: true)
 
-class _Resource<Metadata,Value> implements Resource<Metadata, Value> {
-  const _Resource({required this.metadata, required this.value});
-  factory _Resource.fromJson(Map<String, dynamic> json,Metadata Function(Object?) fromJsonMetadata,Value Function(Object?) fromJsonValue) => _$ResourceFromJson(json,fromJsonMetadata,fromJsonValue);
 
-@override final  Metadata metadata;
-@override final  Value value;
+class _SceneGroup extends SceneGroup {
+  const _SceneGroup({required this.selections, required this.scenes, required this.places, required this.actors}): super._();
+  
 
-/// Create a copy of Resource
+@override final  Selections selections;
+@override final  Scenes scenes;
+@override final  Places places;
+@override final  Actors actors;
+
+/// Create a copy of SceneGroup
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$ResourceCopyWith<Metadata, Value, _Resource<Metadata, Value>> get copyWith => __$ResourceCopyWithImpl<Metadata, Value, _Resource<Metadata, Value>>(this, _$identity);
+_$SceneGroupCopyWith<_SceneGroup> get copyWith => __$SceneGroupCopyWithImpl<_SceneGroup>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson(Object? Function(Metadata) toJsonMetadata,Object? Function(Value) toJsonValue) {
-  return _$ResourceToJson<Metadata, Value>(this, toJsonMetadata,toJsonValue);
-}
+
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Resource<Metadata, Value>&&const DeepCollectionEquality().equals(other.metadata, metadata)&&const DeepCollectionEquality().equals(other.value, value));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SceneGroup&&(identical(other.selections, selections) || other.selections == selections)&&(identical(other.scenes, scenes) || other.scenes == scenes)&&(identical(other.places, places) || other.places == places)&&(identical(other.actors, actors) || other.actors == actors));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(metadata),const DeepCollectionEquality().hash(value));
+int get hashCode => Object.hash(runtimeType,selections,scenes,places,actors);
 
 @override
 String toString() {
-  return 'Resource<$Metadata, $Value>(metadata: $metadata, value: $value)';
+  return 'SceneGroup(selections: $selections, scenes: $scenes, places: $places, actors: $actors)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$ResourceCopyWith<Metadata,Value,$Res> implements $ResourceCopyWith<Metadata, Value, $Res> {
-  factory _$ResourceCopyWith(_Resource<Metadata, Value> value, $Res Function(_Resource<Metadata, Value>) _then) = __$ResourceCopyWithImpl;
+abstract mixin class _$SceneGroupCopyWith<$Res> implements $SceneGroupCopyWith<$Res> {
+  factory _$SceneGroupCopyWith(_SceneGroup value, $Res Function(_SceneGroup) _then) = __$SceneGroupCopyWithImpl;
 @override @useResult
 $Res call({
- Metadata metadata, Value value
+ Selections selections, Scenes scenes, Places places, Actors actors
 });
 
 
@@ -257,20 +255,22 @@ $Res call({
 
 }
 /// @nodoc
-class __$ResourceCopyWithImpl<Metadata,Value,$Res>
-    implements _$ResourceCopyWith<Metadata, Value, $Res> {
-  __$ResourceCopyWithImpl(this._self, this._then);
+class __$SceneGroupCopyWithImpl<$Res>
+    implements _$SceneGroupCopyWith<$Res> {
+  __$SceneGroupCopyWithImpl(this._self, this._then);
 
-  final _Resource<Metadata, Value> _self;
-  final $Res Function(_Resource<Metadata, Value>) _then;
+  final _SceneGroup _self;
+  final $Res Function(_SceneGroup) _then;
 
-/// Create a copy of Resource
+/// Create a copy of SceneGroup
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? metadata = freezed,Object? value = freezed,}) {
-  return _then(_Resource<Metadata, Value>(
-metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as Metadata,value: freezed == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
-as Value,
+@override @pragma('vm:prefer-inline') $Res call({Object? selections = null,Object? scenes = null,Object? places = null,Object? actors = null,}) {
+  return _then(_SceneGroup(
+selections: null == selections ? _self.selections : selections // ignore: cast_nullable_to_non_nullable
+as Selections,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
+as Scenes,places: null == places ? _self.places : places // ignore: cast_nullable_to_non_nullable
+as Places,actors: null == actors ? _self.actors : actors // ignore: cast_nullable_to_non_nullable
+as Actors,
   ));
 }
 
@@ -281,7 +281,7 @@ as Value,
 /// @nodoc
 mixin _$Selection {
 
- Set<Option> get options; Option? get selected;
+ ISet<Option> get options; Option? get selected;
 /// Create a copy of Selection
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -314,7 +314,7 @@ abstract mixin class $SelectionCopyWith<$Res>  {
   factory $SelectionCopyWith(Selection value, $Res Function(Selection) _then) = _$SelectionCopyWithImpl;
 @useResult
 $Res call({
- Set<Option> options, Option? selected
+ ISet<Option> options, Option? selected
 });
 
 
@@ -334,7 +334,7 @@ class _$SelectionCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') @override $Res call({Object? options = null,Object? selected = freezed,}) {
   return _then(_self.copyWith(
 options: null == options ? _self.options : options // ignore: cast_nullable_to_non_nullable
-as Set<Option>,selected: freezed == selected ? _self.selected : selected // ignore: cast_nullable_to_non_nullable
+as ISet<Option>,selected: freezed == selected ? _self.selected : selected // ignore: cast_nullable_to_non_nullable
 as Option?,
   ));
 }
@@ -420,7 +420,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Set<Option> options,  Option? selected)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ISet<Option> options,  Option? selected)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Selection() when $default != null:
 return $default(_that.options,_that.selected);case _:
@@ -441,7 +441,7 @@ return $default(_that.options,_that.selected);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Set<Option> options,  Option? selected)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ISet<Option> options,  Option? selected)  $default,) {final _that = this;
 switch (_that) {
 case _Selection():
 return $default(_that.options,_that.selected);case _:
@@ -461,7 +461,7 @@ return $default(_that.options,_that.selected);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Set<Option> options,  Option? selected)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ISet<Option> options,  Option? selected)?  $default,) {final _that = this;
 switch (_that) {
 case _Selection() when $default != null:
 return $default(_that.options,_that.selected);case _:
@@ -476,16 +476,10 @@ return $default(_that.options,_that.selected);case _:
 @JsonSerializable()
 
 class _Selection extends Selection {
-   _Selection({required final  Set<Option> options, required this.selected}): assert(selected == null || options.contains(selected), '[selected] has to be either [null] or contained in the set of [options]!'),_options = options,super._();
+   _Selection({required this.options, required this.selected}): assert(selected == null || options.contains(selected), '[selected] has to be either [null] or contained in the set of [options]!'),super._();
   factory _Selection.fromJson(Map<String, dynamic> json) => _$SelectionFromJson(json);
 
- final  Set<Option> _options;
-@override Set<Option> get options {
-  if (_options is EqualUnmodifiableSetView) return _options;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableSetView(_options);
-}
-
+@override final  ISet<Option> options;
 @override final  Option? selected;
 
 /// Create a copy of Selection
@@ -501,12 +495,12 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Selection&&const DeepCollectionEquality().equals(other._options, _options)&&(identical(other.selected, selected) || other.selected == selected));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Selection&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.selected, selected) || other.selected == selected));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_options),selected);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(options),selected);
 
 @override
 String toString() {
@@ -521,7 +515,7 @@ abstract mixin class _$SelectionCopyWith<$Res> implements $SelectionCopyWith<$Re
   factory _$SelectionCopyWith(_Selection value, $Res Function(_Selection) _then) = __$SelectionCopyWithImpl;
 @override @useResult
 $Res call({
- Set<Option> options, Option? selected
+ ISet<Option> options, Option? selected
 });
 
 
@@ -540,14 +534,328 @@ class __$SelectionCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? options = null,Object? selected = freezed,}) {
   return _then(_Selection(
-options: null == options ? _self._options : options // ignore: cast_nullable_to_non_nullable
-as Set<Option>,selected: freezed == selected ? _self.selected : selected // ignore: cast_nullable_to_non_nullable
+options: null == options ? _self.options : options // ignore: cast_nullable_to_non_nullable
+as ISet<Option>,selected: freezed == selected ? _self.selected : selected // ignore: cast_nullable_to_non_nullable
 as Option?,
   ));
 }
 
 
 }
+
+ScenePart _$ScenePartFromJson(
+  Map<String, dynamic> json
+) {
+        switch (json['type']) {
+                  case 'frame':
+          return Frame.fromJson(
+            json
+          );
+                case 'frameResolver':
+          return FrameResolver.fromJson(
+            json
+          );
+        
+          default:
+            throw CheckedFromJsonException(
+  json,
+  'type',
+  'ScenePart',
+  'Invalid union type "${json['type']}"!'
+);
+        }
+      
+}
+
+/// @nodoc
+mixin _$ScenePart {
+
+
+
+  /// Serializes this ScenePart to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScenePart);
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'ScenePart()';
+}
+
+
+}
+
+/// @nodoc
+class $ScenePartCopyWith<$Res>  {
+$ScenePartCopyWith(ScenePart _, $Res Function(ScenePart) __);
+}
+
+
+/// Adds pattern-matching-related methods to [ScenePart].
+extension ScenePartPatterns on ScenePart {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Frame value)?  frame,TResult Function( FrameResolver value)?  frameResolver,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case Frame() when frame != null:
+return frame(_that);case FrameResolver() when frameResolver != null:
+return frameResolver(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Frame value)  frame,required TResult Function( FrameResolver value)  frameResolver,}){
+final _that = this;
+switch (_that) {
+case Frame():
+return frame(_that);case FrameResolver():
+return frameResolver(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Frame value)?  frame,TResult? Function( FrameResolver value)?  frameResolver,}){
+final _that = this;
+switch (_that) {
+case Frame() when frame != null:
+return frame(_that);case FrameResolver() when frameResolver != null:
+return frameResolver(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FullBackgroundId background,  IList<FullPoseId> poses,  DialogueBox? dialogueBox)?  frame,TResult Function()?  frameResolver,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case Frame() when frame != null:
+return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
+return frameResolver();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FullBackgroundId background,  IList<FullPoseId> poses,  DialogueBox? dialogueBox)  frame,required TResult Function()  frameResolver,}) {final _that = this;
+switch (_that) {
+case Frame():
+return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver():
+return frameResolver();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FullBackgroundId background,  IList<FullPoseId> poses,  DialogueBox? dialogueBox)?  frame,TResult? Function()?  frameResolver,}) {final _that = this;
+switch (_that) {
+case Frame() when frame != null:
+return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
+return frameResolver();case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class Frame implements ScenePart {
+  const Frame({required this.background, required this.poses, required this.dialogueBox, final  String? $type}): $type = $type ?? 'frame';
+  factory Frame.fromJson(Map<String, dynamic> json) => _$FrameFromJson(json);
+
+ final  FullBackgroundId background;
+ final  IList<FullPoseId> poses;
+ final  DialogueBox? dialogueBox;
+
+@JsonKey(name: 'type')
+final String $type;
+
+
+/// Create a copy of ScenePart
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$FrameCopyWith<Frame> get copyWith => _$FrameCopyWithImpl<Frame>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$FrameToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Frame&&(identical(other.background, background) || other.background == background)&&const DeepCollectionEquality().equals(other.poses, poses)&&(identical(other.dialogueBox, dialogueBox) || other.dialogueBox == dialogueBox));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,background,const DeepCollectionEquality().hash(poses),dialogueBox);
+
+@override
+String toString() {
+  return 'ScenePart.frame(background: $background, poses: $poses, dialogueBox: $dialogueBox)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $FrameCopyWith<$Res> implements $ScenePartCopyWith<$Res> {
+  factory $FrameCopyWith(Frame value, $Res Function(Frame) _then) = _$FrameCopyWithImpl;
+@useResult
+$Res call({
+ FullBackgroundId background, IList<FullPoseId> poses, DialogueBox? dialogueBox
+});
+
+
+$DialogueBoxCopyWith<$Res>? get dialogueBox;
+
+}
+/// @nodoc
+class _$FrameCopyWithImpl<$Res>
+    implements $FrameCopyWith<$Res> {
+  _$FrameCopyWithImpl(this._self, this._then);
+
+  final Frame _self;
+  final $Res Function(Frame) _then;
+
+/// Create a copy of ScenePart
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? background = null,Object? poses = null,Object? dialogueBox = freezed,}) {
+  return _then(Frame(
+background: null == background ? _self.background : background // ignore: cast_nullable_to_non_nullable
+as FullBackgroundId,poses: null == poses ? _self.poses : poses // ignore: cast_nullable_to_non_nullable
+as IList<FullPoseId>,dialogueBox: freezed == dialogueBox ? _self.dialogueBox : dialogueBox // ignore: cast_nullable_to_non_nullable
+as DialogueBox?,
+  ));
+}
+
+/// Create a copy of ScenePart
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DialogueBoxCopyWith<$Res>? get dialogueBox {
+    if (_self.dialogueBox == null) {
+    return null;
+  }
+
+  return $DialogueBoxCopyWith<$Res>(_self.dialogueBox!, (value) {
+    return _then(_self.copyWith(dialogueBox: value));
+  });
+}
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class FrameResolver implements ScenePart {
+  const FrameResolver({final  String? $type}): $type = $type ?? 'frameResolver';
+  factory FrameResolver.fromJson(Map<String, dynamic> json) => _$FrameResolverFromJson(json);
+
+
+
+@JsonKey(name: 'type')
+final String $type;
+
+
+
+@override
+Map<String, dynamic> toJson() {
+  return _$FrameResolverToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FrameResolver);
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'ScenePart.frameResolver()';
+}
+
+
+}
+
+
+
 
 
 /// @nodoc
@@ -814,326 +1122,6 @@ as String,
 
 
 }
-
-ScenePart _$ScenePartFromJson(
-  Map<String, dynamic> json
-) {
-        switch (json['type']) {
-                  case 'frame':
-          return Frame.fromJson(
-            json
-          );
-                case 'frameResolver':
-          return FrameResolver.fromJson(
-            json
-          );
-        
-          default:
-            throw CheckedFromJsonException(
-  json,
-  'type',
-  'ScenePart',
-  'Invalid union type "${json['type']}"!'
-);
-        }
-      
-}
-
-/// @nodoc
-mixin _$ScenePart {
-
-
-
-  /// Serializes this ScenePart to a JSON map.
-  Map<String, dynamic> toJson();
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScenePart);
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'ScenePart()';
-}
-
-
-}
-
-/// @nodoc
-class $ScenePartCopyWith<$Res>  {
-$ScenePartCopyWith(ScenePart _, $Res Function(ScenePart) __);
-}
-
-
-/// Adds pattern-matching-related methods to [ScenePart].
-extension ScenePartPatterns on ScenePart {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( Frame value)?  frame,TResult Function( FrameResolver value)?  frameResolver,required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case Frame() when frame != null:
-return frame(_that);case FrameResolver() when frameResolver != null:
-return frameResolver(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( Frame value)  frame,required TResult Function( FrameResolver value)  frameResolver,}){
-final _that = this;
-switch (_that) {
-case Frame():
-return frame(_that);case FrameResolver():
-return frameResolver(_that);}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( Frame value)?  frame,TResult? Function( FrameResolver value)?  frameResolver,}){
-final _that = this;
-switch (_that) {
-case Frame() when frame != null:
-return frame(_that);case FrameResolver() when frameResolver != null:
-return frameResolver(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FullBackgroundId background,  List<FullPoseId> poses,  DialogueBox? dialogueBox)?  frame,TResult Function()?  frameResolver,required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case Frame() when frame != null:
-return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
-return frameResolver();case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FullBackgroundId background,  List<FullPoseId> poses,  DialogueBox? dialogueBox)  frame,required TResult Function()  frameResolver,}) {final _that = this;
-switch (_that) {
-case Frame():
-return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver():
-return frameResolver();}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FullBackgroundId background,  List<FullPoseId> poses,  DialogueBox? dialogueBox)?  frame,TResult? Function()?  frameResolver,}) {final _that = this;
-switch (_that) {
-case Frame() when frame != null:
-return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
-return frameResolver();case _:
-  return null;
-
-}
-}
-
-}
-
-/// @nodoc
-@JsonSerializable()
-
-class Frame implements ScenePart {
-  const Frame({required this.background, required final  List<FullPoseId> poses, required this.dialogueBox, final  String? $type}): _poses = poses,$type = $type ?? 'frame';
-  factory Frame.fromJson(Map<String, dynamic> json) => _$FrameFromJson(json);
-
- final  FullBackgroundId background;
- final  List<FullPoseId> _poses;
- List<FullPoseId> get poses {
-  if (_poses is EqualUnmodifiableListView) return _poses;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_poses);
-}
-
- final  DialogueBox? dialogueBox;
-
-@JsonKey(name: 'type')
-final String $type;
-
-
-/// Create a copy of ScenePart
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$FrameCopyWith<Frame> get copyWith => _$FrameCopyWithImpl<Frame>(this, _$identity);
-
-@override
-Map<String, dynamic> toJson() {
-  return _$FrameToJson(this, );
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Frame&&(identical(other.background, background) || other.background == background)&&const DeepCollectionEquality().equals(other._poses, _poses)&&(identical(other.dialogueBox, dialogueBox) || other.dialogueBox == dialogueBox));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,background,const DeepCollectionEquality().hash(_poses),dialogueBox);
-
-@override
-String toString() {
-  return 'ScenePart.frame(background: $background, poses: $poses, dialogueBox: $dialogueBox)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $FrameCopyWith<$Res> implements $ScenePartCopyWith<$Res> {
-  factory $FrameCopyWith(Frame value, $Res Function(Frame) _then) = _$FrameCopyWithImpl;
-@useResult
-$Res call({
- FullBackgroundId background, List<FullPoseId> poses, DialogueBox? dialogueBox
-});
-
-
-$DialogueBoxCopyWith<$Res>? get dialogueBox;
-
-}
-/// @nodoc
-class _$FrameCopyWithImpl<$Res>
-    implements $FrameCopyWith<$Res> {
-  _$FrameCopyWithImpl(this._self, this._then);
-
-  final Frame _self;
-  final $Res Function(Frame) _then;
-
-/// Create a copy of ScenePart
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? background = null,Object? poses = null,Object? dialogueBox = freezed,}) {
-  return _then(Frame(
-background: null == background ? _self.background : background // ignore: cast_nullable_to_non_nullable
-as FullBackgroundId,poses: null == poses ? _self._poses : poses // ignore: cast_nullable_to_non_nullable
-as List<FullPoseId>,dialogueBox: freezed == dialogueBox ? _self.dialogueBox : dialogueBox // ignore: cast_nullable_to_non_nullable
-as DialogueBox?,
-  ));
-}
-
-/// Create a copy of ScenePart
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$DialogueBoxCopyWith<$Res>? get dialogueBox {
-    if (_self.dialogueBox == null) {
-    return null;
-  }
-
-  return $DialogueBoxCopyWith<$Res>(_self.dialogueBox!, (value) {
-    return _then(_self.copyWith(dialogueBox: value));
-  });
-}
-}
-
-/// @nodoc
-@JsonSerializable()
-
-class FrameResolver implements ScenePart {
-  const FrameResolver({final  String? $type}): $type = $type ?? 'frameResolver';
-  factory FrameResolver.fromJson(Map<String, dynamic> json) => _$FrameResolverFromJson(json);
-
-
-
-@JsonKey(name: 'type')
-final String $type;
-
-
-
-@override
-Map<String, dynamic> toJson() {
-  return _$FrameResolverToJson(this, );
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FrameResolver);
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'ScenePart.frameResolver()';
-}
-
-
-}
-
-
-
 
 
 /// @nodoc
@@ -1419,41 +1407,44 @@ $ScenePartCopyWith<$Res> get part {
 }
 }
 
-/// @nodoc
-mixin _$SceneGroup {
 
- Selections get selections; Places get places; Actors get actors; Scenes get scenes;
-/// Create a copy of SceneGroup
+/// @nodoc
+mixin _$Resource<Metadata,Value> {
+
+ Metadata get metadata; Value get value;
+/// Create a copy of Resource
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$SceneGroupCopyWith<SceneGroup> get copyWith => _$SceneGroupCopyWithImpl<SceneGroup>(this as SceneGroup, _$identity);
+$ResourceCopyWith<Metadata, Value, Resource<Metadata, Value>> get copyWith => _$ResourceCopyWithImpl<Metadata, Value, Resource<Metadata, Value>>(this as Resource<Metadata, Value>, _$identity);
 
+  /// Serializes this Resource to a JSON map.
+  Map<String, dynamic> toJson(Object? Function(Metadata) toJsonMetadata,Object? Function(Value) toJsonValue);
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SceneGroup&&const DeepCollectionEquality().equals(other.selections, selections)&&const DeepCollectionEquality().equals(other.places, places)&&const DeepCollectionEquality().equals(other.actors, actors)&&const DeepCollectionEquality().equals(other.scenes, scenes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Resource<Metadata, Value>&&const DeepCollectionEquality().equals(other.metadata, metadata)&&const DeepCollectionEquality().equals(other.value, value));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(selections),const DeepCollectionEquality().hash(places),const DeepCollectionEquality().hash(actors),const DeepCollectionEquality().hash(scenes));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(metadata),const DeepCollectionEquality().hash(value));
 
 @override
 String toString() {
-  return 'SceneGroup(selections: $selections, places: $places, actors: $actors, scenes: $scenes)';
+  return 'Resource<$Metadata, $Value>(metadata: $metadata, value: $value)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $SceneGroupCopyWith<$Res>  {
-  factory $SceneGroupCopyWith(SceneGroup value, $Res Function(SceneGroup) _then) = _$SceneGroupCopyWithImpl;
+abstract mixin class $ResourceCopyWith<Metadata,Value,$Res>  {
+  factory $ResourceCopyWith(Resource<Metadata, Value> value, $Res Function(Resource<Metadata, Value>) _then) = _$ResourceCopyWithImpl;
 @useResult
 $Res call({
- Selections selections, Places places, Actors actors, Scenes scenes
+ Metadata metadata, Value value
 });
 
 
@@ -1461,30 +1452,28 @@ $Res call({
 
 }
 /// @nodoc
-class _$SceneGroupCopyWithImpl<$Res>
-    implements $SceneGroupCopyWith<$Res> {
-  _$SceneGroupCopyWithImpl(this._self, this._then);
+class _$ResourceCopyWithImpl<Metadata,Value,$Res>
+    implements $ResourceCopyWith<Metadata, Value, $Res> {
+  _$ResourceCopyWithImpl(this._self, this._then);
 
-  final SceneGroup _self;
-  final $Res Function(SceneGroup) _then;
+  final Resource<Metadata, Value> _self;
+  final $Res Function(Resource<Metadata, Value>) _then;
 
-/// Create a copy of SceneGroup
+/// Create a copy of Resource
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? selections = null,Object? places = null,Object? actors = null,Object? scenes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? metadata = freezed,Object? value = freezed,}) {
   return _then(_self.copyWith(
-selections: null == selections ? _self.selections : selections // ignore: cast_nullable_to_non_nullable
-as Selections,places: null == places ? _self.places : places // ignore: cast_nullable_to_non_nullable
-as Places,actors: null == actors ? _self.actors : actors // ignore: cast_nullable_to_non_nullable
-as Actors,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
-as Scenes,
+metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as Metadata,value: freezed == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
+as Value,
   ));
 }
 
 }
 
 
-/// Adds pattern-matching-related methods to [SceneGroup].
-extension SceneGroupPatterns on SceneGroup {
+/// Adds pattern-matching-related methods to [Resource].
+extension ResourcePatterns<Metadata,Value> on Resource<Metadata, Value> {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -1497,10 +1486,10 @@ extension SceneGroupPatterns on SceneGroup {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SceneGroup value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Resource<Metadata, Value> value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _SceneGroup() when $default != null:
+case _Resource() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -1519,10 +1508,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SceneGroup value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Resource<Metadata, Value> value)  $default,){
 final _that = this;
 switch (_that) {
-case _SceneGroup():
+case _Resource():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -1540,10 +1529,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SceneGroup value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Resource<Metadata, Value> value)?  $default,){
 final _that = this;
 switch (_that) {
-case _SceneGroup() when $default != null:
+case _Resource() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -1561,10 +1550,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Selections selections,  Places places,  Actors actors,  Scenes scenes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Metadata metadata,  Value value)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _SceneGroup() when $default != null:
-return $default(_that.selections,_that.places,_that.actors,_that.scenes);case _:
+case _Resource() when $default != null:
+return $default(_that.metadata,_that.value);case _:
   return orElse();
 
 }
@@ -1582,10 +1571,10 @@ return $default(_that.selections,_that.places,_that.actors,_that.scenes);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Selections selections,  Places places,  Actors actors,  Scenes scenes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Metadata metadata,  Value value)  $default,) {final _that = this;
 switch (_that) {
-case _SceneGroup():
-return $default(_that.selections,_that.places,_that.actors,_that.scenes);case _:
+case _Resource():
+return $default(_that.metadata,_that.value);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1602,10 +1591,10 @@ return $default(_that.selections,_that.places,_that.actors,_that.scenes);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Selections selections,  Places places,  Actors actors,  Scenes scenes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Metadata metadata,  Value value)?  $default,) {final _that = this;
 switch (_that) {
-case _SceneGroup() when $default != null:
-return $default(_that.selections,_that.places,_that.actors,_that.scenes);case _:
+case _Resource() when $default != null:
+return $default(_that.metadata,_that.value);case _:
   return null;
 
 }
@@ -1614,48 +1603,49 @@ return $default(_that.selections,_that.places,_that.actors,_that.scenes);case _:
 }
 
 /// @nodoc
+@JsonSerializable(genericArgumentFactories: true)
 
+class _Resource<Metadata,Value> implements Resource<Metadata, Value> {
+  const _Resource({required this.metadata, required this.value});
+  factory _Resource.fromJson(Map<String, dynamic> json,Metadata Function(Object?) fromJsonMetadata,Value Function(Object?) fromJsonValue) => _$ResourceFromJson(json,fromJsonMetadata,fromJsonValue);
 
-class _SceneGroup extends SceneGroup {
-  const _SceneGroup({required this.selections, required this.places, required this.actors, required this.scenes}): super._();
-  
+@override final  Metadata metadata;
+@override final  Value value;
 
-@override final  Selections selections;
-@override final  Places places;
-@override final  Actors actors;
-@override final  Scenes scenes;
-
-/// Create a copy of SceneGroup
+/// Create a copy of Resource
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$SceneGroupCopyWith<_SceneGroup> get copyWith => __$SceneGroupCopyWithImpl<_SceneGroup>(this, _$identity);
+_$ResourceCopyWith<Metadata, Value, _Resource<Metadata, Value>> get copyWith => __$ResourceCopyWithImpl<Metadata, Value, _Resource<Metadata, Value>>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson(Object? Function(Metadata) toJsonMetadata,Object? Function(Value) toJsonValue) {
+  return _$ResourceToJson<Metadata, Value>(this, toJsonMetadata,toJsonValue);
+}
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SceneGroup&&const DeepCollectionEquality().equals(other.selections, selections)&&const DeepCollectionEquality().equals(other.places, places)&&const DeepCollectionEquality().equals(other.actors, actors)&&const DeepCollectionEquality().equals(other.scenes, scenes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Resource<Metadata, Value>&&const DeepCollectionEquality().equals(other.metadata, metadata)&&const DeepCollectionEquality().equals(other.value, value));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(selections),const DeepCollectionEquality().hash(places),const DeepCollectionEquality().hash(actors),const DeepCollectionEquality().hash(scenes));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(metadata),const DeepCollectionEquality().hash(value));
 
 @override
 String toString() {
-  return 'SceneGroup(selections: $selections, places: $places, actors: $actors, scenes: $scenes)';
+  return 'Resource<$Metadata, $Value>(metadata: $metadata, value: $value)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$SceneGroupCopyWith<$Res> implements $SceneGroupCopyWith<$Res> {
-  factory _$SceneGroupCopyWith(_SceneGroup value, $Res Function(_SceneGroup) _then) = __$SceneGroupCopyWithImpl;
+abstract mixin class _$ResourceCopyWith<Metadata,Value,$Res> implements $ResourceCopyWith<Metadata, Value, $Res> {
+  factory _$ResourceCopyWith(_Resource<Metadata, Value> value, $Res Function(_Resource<Metadata, Value>) _then) = __$ResourceCopyWithImpl;
 @override @useResult
 $Res call({
- Selections selections, Places places, Actors actors, Scenes scenes
+ Metadata metadata, Value value
 });
 
 
@@ -1663,22 +1653,20 @@ $Res call({
 
 }
 /// @nodoc
-class __$SceneGroupCopyWithImpl<$Res>
-    implements _$SceneGroupCopyWith<$Res> {
-  __$SceneGroupCopyWithImpl(this._self, this._then);
+class __$ResourceCopyWithImpl<Metadata,Value,$Res>
+    implements _$ResourceCopyWith<Metadata, Value, $Res> {
+  __$ResourceCopyWithImpl(this._self, this._then);
 
-  final _SceneGroup _self;
-  final $Res Function(_SceneGroup) _then;
+  final _Resource<Metadata, Value> _self;
+  final $Res Function(_Resource<Metadata, Value>) _then;
 
-/// Create a copy of SceneGroup
+/// Create a copy of Resource
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? selections = null,Object? places = null,Object? actors = null,Object? scenes = null,}) {
-  return _then(_SceneGroup(
-selections: null == selections ? _self.selections : selections // ignore: cast_nullable_to_non_nullable
-as Selections,places: null == places ? _self.places : places // ignore: cast_nullable_to_non_nullable
-as Places,actors: null == actors ? _self.actors : actors // ignore: cast_nullable_to_non_nullable
-as Actors,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
-as Scenes,
+@override @pragma('vm:prefer-inline') $Res call({Object? metadata = freezed,Object? value = freezed,}) {
+  return _then(_Resource<Metadata, Value>(
+metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as Metadata,value: freezed == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
+as Value,
   ));
 }
 
