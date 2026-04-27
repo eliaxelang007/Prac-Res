@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -472,6 +471,10 @@ extension type Collection<ItemId extends Id, Item>(
     return _collection[id];
   }
 
+  // Collection<ItemId, Item> add(ItemId id, Item item) {
+  //   return Collection(_collection.add(id, item));
+  // }
+
   factory Collection.fromJson(
     Map<String, dynamic> json,
     ItemId Function(Object? json) itemIdFromJson,
@@ -540,6 +543,14 @@ extension type CollectionResource<Metadata, ItemId extends Id, Item>(
     return _resourceCollection.value[id];
   }
 
+  // CollectionResource<Metadata, ItemId, Item> add(ItemId id, Item item) {
+  //   return CollectionResource(
+  //     _resourceCollection.copyWith(
+  //       value: _resourceCollection.value.add(id, item),
+  //     ),
+  //   );
+  // }
+
   factory CollectionResource.fromJson(
     Map<String, dynamic> json,
     Metadata Function(Object? json) metadataFromJson,
@@ -586,16 +597,6 @@ class ImageData {
   String toString() {
     return "[Image]";
   }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ImageData &&
-          runtimeType == other.runtimeType &&
-          const ListEquality().equals(image, other.image);
-
-  @override
-  int get hashCode => const ListEquality().hash(image);
 }
 
 extension type ImageResource(Resource<Name, ImageData> _resource)
