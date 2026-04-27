@@ -1,74 +1,62 @@
 import 'package:device_frame/device_frame.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:junction/junction.dart';
+
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/pages/design_values.dart';
+import 'package:prac_res/pages/editor_state.dart';
 import 'package:prac_res/pages/frame.dart';
 
-class NovelEditorPage extends StatelessWidget {
-  final SceneGroup sceneGroup;
-
-  const NovelEditorPage({required this.sceneGroup, super.key});
+class NovelEditorPage extends ConsumerWidget {
+  const NovelEditorPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
     return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 45,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: designValues.small),
+            child: const Divider(height: 1.0),
+          ),
+        ),
+      ),
       body: Padding(
         padding: EdgeInsets.all(designValues.small),
-        child: HookBuilder(
-          builder: (context) {
-            final selectedScene = useState<SceneId?>(null);
-            final selectedScenePart = useState<ScenePartId?>(null);
-
-            final selectedScenePartValue = selectedScene.value;
-
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: NovelResourceSelector(
-                    sceneGroup: sceneGroup,
-                    selectedScene: selectedScene,
-                  ),
-                ),
-                VerticalDivider(),
-                Expanded(
-                  flex: 9,
-                  child: NovelFrameViewer(
-                    sceneGroup: sceneGroup,
-                    selectedScene: selectedScenePartValue,
-                    selectedScenePart: selectedScenePart,
-                  ),
-                ),
-                VerticalDivider(),
-                Expanded(flex: 3, child: NovelInspector()),
-              ],
-            );
-          },
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 3, child: NovelResourceSelector()),
+            VerticalDivider(),
+            Expanded(flex: 9, child: NovelFrameViewer()),
+            VerticalDivider(),
+            Expanded(flex: 3, child: NovelInspector()),
+          ],
         ),
       ),
     );
   }
 }
 
-class NovelResourceSelector extends StatelessWidget {
-  final SceneGroup sceneGroup;
-  final ValueNotifier<SceneId?> selectedScene;
-
-  const NovelResourceSelector({
-    required this.sceneGroup,
-    required this.selectedScene,
-    super.key,
-  });
+class NovelResourceSelector extends ConsumerWidget {
+  const NovelResourceSelector({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final designValues = theme.extension<DesignValues>()!;
+
+    final scenes = ref.watch(
+      selectedSceneGroupProvider.select((group) => group?.scenes),
+    );
+    final selectedScene = ref.watch(selectedSceneProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,20 +67,25 @@ class NovelResourceSelector extends StatelessWidget {
             padding: EdgeInsets.all(designValues.small),
             child: RadioGroup<SceneId>(
               onChanged: (selection) {
-                selectedScene.value = selection;
+                ref.read(selectedSceneProvider.notifier).select(selection);
               },
-              groupValue: selectedScene.value,
+              groupValue: selectedScene,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("Scenes", style: textTheme.bodyLarge),
-                  for (final MapEntry(key: id, value: scene)
-                      in sceneGroup.scenes.entries)
-                    RadioListTile(
-                      value: id,
-                      title: Text(scene.metadata, style: textTheme.bodyMedium),
-                      toggleable: true,
-                    ),
+                  const Divider(),
+                  if (scenes != null)
+                    for (final MapEntry(key: id, value: scene)
+                        in scenes.entries)
+                      RadioListTile(
+                        value: id,
+                        title: Text(
+                          scene.metadata,
+                          style: textTheme.bodyMedium,
+                        ),
+                        toggleable: true,
+                      ),
                   IconButton(
                     onPressed: () {},
                     icon: const Icon(Icons.add_rounded),
@@ -102,15 +95,64 @@ class NovelResourceSelector extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class NovelFrameViewer extends ConsumerWidget {
+  const NovelFrameViewer({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final designValues = Theme.of(context).extension<DesignValues>()!;
+
+    final selectedScene = ref.watch(selectedSceneProvider);
+
+    final scene = ref.watch(
+      selectedSceneGroupProvider.select((group) {
+        return group?.scenes.find(selectedScene);
+      }),
+    );
+
+    final selectedScenePart = ref.watch(selectedScenePartProvider);
+
+    final scenePart = scene?.find(selectedScenePart)?.part;
+    final sceneParts = scene?.value.entries;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 5,
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(designValues.veryLarge),
+              child: (scenePart != null && scenePart is Frame)
+                  ? DeviceFrame(
+                      device: Devices.android.bigPhone,
+                      orientation: Orientation.landscape,
+                      screen: NovelFrame(frame: scenePart),
+                    )
+                  : const SizedBox(),
+            ),
+          ),
+        ),
         const Divider(),
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(designValues.small),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              spacing: designValues.medium,
               children: [
-                Text("Poses", style: textTheme.bodyLarge),
-                Text("Backgrounds", style: textTheme.bodyLarge),
+                if (sceneParts != null) ...[
+                  for (final orderedPart in sceneParts)
+                    NovelScenePartPreview(orderedPart: orderedPart),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.add_rounded),
+                  ),
+                ],
               ],
             ),
           ),
@@ -120,114 +162,543 @@ class NovelResourceSelector extends StatelessWidget {
   }
 }
 
-class NovelFrameViewer extends StatelessWidget {
-  final SceneGroup sceneGroup;
-  final SceneId? selectedScene;
-  final ValueNotifier<ScenePartId?> selectedScenePart;
-
-  const NovelFrameViewer({
-    required this.sceneGroup,
-    required this.selectedScene,
-    required this.selectedScenePart,
-    super.key,
-  });
+class NovelInspector extends ConsumerWidget {
+  const NovelInspector({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final designValues = Theme.of(context).extension<DesignValues>()!;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final designValues = theme.extension<DesignValues>()!;
 
-    final scene = sceneGroup.scenes.find(selectedScene);
+    final sceneGroup = ref.watch(selectedSceneGroupProvider);
+    final selectedScene = ref.watch(selectedSceneProvider);
+    final selectedScenePart = ref.watch(selectedScenePartProvider);
 
-    final sceneParts = scene?.value.entries.toList()
-      ?..sort((a, b) => a.value.order.compareTo(b.value.order));
+    final scene = sceneGroup?.scenes.find(selectedScene);
+    final scenePart = scene?.find(selectedScenePart)?.part;
 
-    final scenePart = scene?.find(selectedScenePart.value)?.part;
-
-    return HookBuilder(
-      builder: (context) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              flex: 5,
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(designValues.veryLarge),
-                  child: (scenePart != null && scenePart is Frame)
-                      ? DeviceFrame(
-                          device: Devices.android.bigPhone,
-                          orientation: Orientation.landscape,
-                          screen: NovelFrame(
-                            sceneGroup: sceneGroup,
-                            frame: scenePart,
-                          ),
-                        )
-                      : Placeholder(),
-                ),
-              ),
+    return Padding(
+      padding: EdgeInsets.all(designValues.small),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Edit Properties", style: textTheme.bodyLarge),
+          const Divider(),
+          if (scenePart is Frame) ...[
+            Text("Background", style: textTheme.bodyMedium),
+            SizedBox(height: designValues.small),
+            NovelBackgroundInspector(
+              currentBackgroundId: scenePart.background,
+              onChanged: (newBackgroundId) {
+                // TODO: Update your provider here!
+                // ref.read(selectedSceneGroupProvider.notifier).updateGroup(...)
+                print("Selected new background: ${newBackgroundId.toJson()}");
+              },
             ),
-            const Divider(),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(designValues.small),
-                child: ScenePartSelectorGroup(
-                  groupValue: selectedScenePart.value,
-                  onChanged: (scenePartId) {
-                    selectedScenePart.value = scenePartId;
-                  },
-                  child: Row(
-                    spacing: designValues.medium,
-                    children: [
-                      if (sceneParts != null) ...[
-                        for (final orderedPart in sceneParts)
-                          ScenePartPreview(
-                            sceneGroup: sceneGroup,
-                            orderedPart: orderedPart,
-                          ),
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.add_rounded),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          ] else ...[
+            Text("Select a Frame to inspect.", style: textTheme.bodyMedium),
           ],
-        );
-      },
+        ],
+      ),
     );
   }
 }
 
-class NovelInspector extends StatelessWidget {
-  const NovelInspector({super.key});
+class NovelBackgroundInspector extends HookConsumerWidget {
+  final FullBackgroundId currentBackgroundId;
+  final ValueChanged<FullBackgroundId> onChanged;
+
+  const NovelBackgroundInspector({
+    super.key,
+    required this.currentBackgroundId,
+    required this.onChanged,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return const SizedBox(child: ColoredBox(color: Colors.blue));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final designValues = Theme.of(context).extension<DesignValues>()!;
+
+    final currentBytes = ref.watch(
+      selectedSceneGroupProvider.select((group) {
+        final currentPlace = group?.places.find(currentBackgroundId.parentId);
+        final currentBackground = currentPlace?.find(
+          currentBackgroundId.childId,
+        );
+        return currentBackground?.value.image;
+      }),
+    );
+
+    return InkWell(
+      onTap: () => showDialog(
+        context: context,
+        builder: (context) => Consumer(
+          builder: (context, ref, child) {
+            final places = ref.watch(
+              selectedSceneGroupProvider.select((group) => group?.places),
+            );
+
+            return NovelCollectionEditor<
+              PlaceId,
+              BackgroundId,
+              Background,
+              FullBackgroundId
+            >(
+              title: "Select Background",
+              addParentLabel: "Add Place",
+              emptySelectionLabel: "Select a Place",
+              collection: places,
+              currentImageId: currentBackgroundId,
+              onChanged: onChanged,
+              idFactory: (placeId, bgId) => FullBackgroundId.fromJson({
+                'metadata': Id.toJson(placeId),
+                'value': Id.toJson(bgId),
+              }),
+
+              // --- NEW: Add Place Implementation ---
+              onAddParent: () async {
+                final placeName = await showDialog<String>(
+                  context: context,
+                  builder: (context) =>
+                      const _NewNameDialog(title: "New Place"),
+                );
+
+                if (placeName != null && placeName.isNotEmpty) {
+                  ref
+                      .read(selectedSceneGroupProvider.notifier)
+                      .addPlace(placeName);
+                }
+              },
+
+              onAddChild: (placeId) async {
+                final readHandles = await WebReadHandle.showOpenFileDialog(
+                  multiple: false,
+                  accept: [
+                    XTypeGroup(extensions: ['png', 'jpg', 'jpeg', 'webp']),
+                  ],
+                );
+
+                if (readHandles.isEmpty) return;
+
+                final fileItem = await readHandles.first.read();
+                final filename = fileItem.key;
+                final fileBytes = fileItem.value;
+
+                // Strip the extension for a cleaner default name
+                final defaultName = filename.contains('.')
+                    ? filename.substring(0, filename.lastIndexOf('.'))
+                    : filename;
+
+                // Prompt the user for a meaningful name
+                final customName = await showDialog<String>(
+                  context: context,
+                  builder: (context) => _NewNameDialog(
+                    title: "Name this Image",
+                    initialText: defaultName,
+                  ),
+                );
+
+                // Bail out if they cancelled or left it blank
+                if (customName == null || customName.trim().isEmpty) return;
+
+                ref
+                    .read(selectedSceneGroupProvider.notifier)
+                    .addBackground(placeId, customName.trim(), fileBytes.bytes);
+              },
+
+              // --- NEW: Deletion Callbacks ---
+              onDeleteParent: (placeId) {
+                ref
+                    .read(selectedSceneGroupProvider.notifier)
+                    .deletePlace(placeId);
+              },
+              onDeleteChild: (placeId, bgId) {
+                ref
+                    .read(selectedSceneGroupProvider.notifier)
+                    .deleteBackground(placeId, bgId);
+              },
+            );
+          },
+        ),
+      ),
+      borderRadius: BorderRadius.circular(designValues.small),
+      child: Container(
+        height: 120,
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(designValues.small),
+        ),
+        child: currentBytes != null
+            ? Image.memory(currentBytes, fit: BoxFit.cover)
+            : const Center(child: Text("No Image")),
+      ),
+    );
   }
 }
 
-class ScenePartPreview extends StatelessWidget {
-  final SceneGroup sceneGroup;
-  final MapEntry<ScenePartId, OrderedScenePart> orderedPart;
+class _NewNameDialog extends HookWidget {
+  final String title;
+  final String? initialText;
 
-  const ScenePartPreview({
+  const _NewNameDialog({required this.title, this.initialText});
+
+  @override
+  Widget build(BuildContext context) {
+    // Pass the initial text to the hook
+    final controller = useTextEditingController(text: initialText);
+
+    return AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: const InputDecoration(hintText: "Enter name..."),
+        onSubmitted: (value) => Navigator.of(context).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(controller.text),
+          child: const Text("Confirm"),
+        ),
+      ],
+    );
+  }
+}
+
+class NovelCollectionEditor<
+  ParentId extends Id,
+  ChildId extends Id,
+  ImageItem extends ImageResource,
+  FullImageId extends FullId<ParentId, ChildId, ImageItem>
+>
+    extends HookWidget {
+  final String title;
+  final String addParentLabel;
+  final String emptySelectionLabel;
+  final Collection<ParentId, ImageCollectionResource<ChildId, ImageItem>>?
+  collection;
+  final FullImageId currentImageId;
+  final ValueChanged<FullImageId> onChanged;
+  final FullImageId Function(ParentId parentId, ChildId childId) idFactory;
+  final VoidCallback? onAddParent;
+  final ValueChanged<ParentId>? onAddChild;
+
+  final ValueChanged<ParentId>? onDeleteParent;
+  final void Function(ParentId parentId, ChildId childId)? onDeleteChild;
+
+  // 1. Added callback for updating the name
+  final void Function(ParentId parentId, ChildId childId, String newName)?
+  onUpdateChildName;
+
+  const NovelCollectionEditor({
     super.key,
-    required this.sceneGroup,
-    required this.orderedPart,
+    required this.title,
+    this.addParentLabel = "Add Collection",
+    this.emptySelectionLabel = "Select a Collection",
+    required this.collection,
+    required this.currentImageId,
+    required this.onChanged,
+    required this.idFactory,
+    this.onAddParent,
+    this.onAddChild,
+    this.onDeleteParent,
+    this.onDeleteChild,
+    this.onUpdateChildName, // Make sure to add it here
   });
 
   @override
   Widget build(BuildContext context) {
-    final scope = ScenePartSelectorScope.maybeOf(context)!;
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
-    final scenePartId = orderedPart.key;
-    final isSelected = scope.groupValue == scenePartId;
+    return AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: 800,
+        height: 500,
+        child: (collection != null)
+            ? HookBuilder(
+                builder: (context) {
+                  // We can use the parentId getter from FullId!
+                  final selectedParentId = useState<ParentId?>(
+                    currentImageId.parentId,
+                  );
 
+                  final parentList = collection!.entries.toList();
+                  final viewedParent = collection!.find(selectedParentId.value);
+                  final childList = viewedParent?.value.entries.toList() ?? [];
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // --- LEFT SIDE: PARENT LIST ---
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: parentList.length,
+                                itemBuilder: (context, index) {
+                                  final parentEntry = parentList[index];
+                                  final parentId = parentEntry.key;
+                                  final parent = parentEntry.value;
+                                  final isSelected =
+                                      parentId == selectedParentId.value;
+
+                                  return ListTile(
+                                    selected: isSelected,
+                                    selectedTileColor: Theme.of(
+                                      context,
+                                    ).primaryColor.withOpacity(0.1),
+                                    title: Text(parent.metadata.toString()),
+                                    onTap: () =>
+                                        selectedParentId.value = parentId,
+                                    trailing: onDeleteParent != null
+                                        ? IconButton(
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              size: 20,
+                                            ),
+                                            onPressed: () {
+                                              // Optional: Show a confirmation dialog here first!
+                                              onDeleteParent!(parentId);
+                                              // Reset selection if we deleted the viewed item
+                                              if (isSelected) {
+                                                selectedParentId.value = null;
+                                              }
+                                            },
+                                          )
+                                        : null,
+                                  );
+                                },
+                              ),
+                            ),
+                            const Divider(height: 1),
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.all(designValues.medium),
+                                shape: const RoundedRectangleBorder(),
+                              ),
+                              onPressed: onAddParent,
+                              icon: const Icon(Icons.add),
+                              label: Text(addParentLabel),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const VerticalDivider(width: 1),
+
+                      // --- RIGHT SIDE: IMAGES GRID ---
+                      Expanded(
+                        flex: 3,
+                        child: selectedParentId.value == null
+                            ? Center(child: Text(emptySelectionLabel))
+                            : Column(
+                                children: [
+                                  Expanded(
+                                    child: GridView.builder(
+                                      padding: EdgeInsets.all(
+                                        designValues.small,
+                                      ),
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 3,
+                                            crossAxisSpacing:
+                                                designValues.small,
+                                            mainAxisSpacing: designValues.small,
+                                            childAspectRatio: 0.85,
+                                          ),
+                                      itemCount: childList.length + 1,
+                                      itemBuilder: (context, index) {
+                                        if (index == childList.length) {
+                                          return InkWell(
+                                            onTap: () => onAddChild?.call(
+                                              selectedParentId.value!,
+                                            ),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).dividerColor,
+                                                  style: BorderStyle.solid,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      designValues.small,
+                                                    ),
+                                              ),
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.add_photo_alternate,
+                                                  size: 32,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+
+                                        final childEntry = childList[index];
+                                        final childId = childEntry.key;
+                                        final imageBytes =
+                                            childEntry.value.value.image;
+
+                                        final isCurrentlyApplied =
+                                            currentImageId.parentId ==
+                                                selectedParentId.value &&
+                                            currentImageId.childId == childId;
+
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Expanded(
+                                              child: Stack(
+                                                fit: StackFit.expand,
+                                                children: [
+                                                  // Image Container
+                                                  InkWell(
+                                                    onTap: () {
+                                                      final fullId = idFactory(
+                                                        selectedParentId.value!,
+                                                        childId,
+                                                      );
+                                                      onChanged(fullId);
+                                                      Navigator.of(
+                                                        context,
+                                                      ).pop();
+                                                    },
+                                                    child: Container(
+                                                      clipBehavior:
+                                                          Clip.antiAlias,
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              designValues
+                                                                  .small,
+                                                            ),
+                                                        border: Border.all(
+                                                          color:
+                                                              isCurrentlyApplied
+                                                              ? Theme.of(
+                                                                  context,
+                                                                ).primaryColor
+                                                              : Colors
+                                                                    .transparent,
+                                                          width: 3,
+                                                        ),
+                                                      ),
+                                                      child: Image.memory(
+                                                        imageBytes,
+                                                        // 4. Change to contain to fit portrait actors
+                                                        fit: BoxFit.contain,
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  // 5. Child Delete Button
+                                                  if (onDeleteChild != null)
+                                                    Positioned(
+                                                      top: 0,
+                                                      right: 0,
+                                                      child: IconButton(
+                                                        icon: const Icon(
+                                                          Icons.cancel,
+                                                          color:
+                                                              Colors.redAccent,
+                                                        ),
+                                                        onPressed: () =>
+                                                            onDeleteChild!(
+                                                              selectedParentId
+                                                                  .value!,
+                                                              childId,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              height: designValues.verySmall,
+                                            ),
+
+                                            // 6. Meaningful Name Label (Now Editable)
+                                            TextFormField(
+                                              // Use a key so the field resets if the underlying data completely changes
+                                              key: ValueKey(childId),
+                                              initialValue: childEntry
+                                                  .value
+                                                  .metadata
+                                                  .toString(),
+                                              textAlign: TextAlign.center,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall,
+                                              decoration: const InputDecoration(
+                                                isDense: true,
+                                                contentPadding: EdgeInsets.zero,
+                                                border: InputBorder
+                                                    .none, // Hide the underline for a cleaner look
+                                              ),
+                                              onFieldSubmitted: (newValue) {
+                                                if (onUpdateChildName != null &&
+                                                    newValue !=
+                                                        childEntry
+                                                            .value
+                                                            .metadata
+                                                            .toString()) {
+                                                  onUpdateChildName!(
+                                                    selectedParentId.value!,
+                                                    childId,
+                                                    newValue,
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ],
+                  );
+                },
+              )
+            : const Placeholder(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("Cancel"),
+        ),
+      ],
+    );
+  }
+}
+
+class NovelScenePartPreview extends ConsumerWidget {
+  final MapEntry<ScenePartId, OrderedScenePart> orderedPart;
+
+  const NovelScenePartPreview({super.key, required this.orderedPart});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final designValues = Theme.of(context).extension<DesignValues>()!;
+    final sceneGroup = ref.watch(selectedSceneGroupProvider);
+    final selectedPartId = ref.watch(selectedScenePartProvider);
+
+    final scenePartId = orderedPart.key;
+    final isSelected = selectedPartId == scenePartId;
     final scenePart = orderedPart.value.part;
 
     final preview = Padding(
@@ -236,10 +707,10 @@ class ScenePartPreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(designValues.small),
         child: Stack(
           children: [
-            (scenePart is Frame)
+            (sceneGroup != null && scenePart is Frame)
                 ? AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: NovelFrame(sceneGroup: sceneGroup, frame: scenePart),
+                    child: NovelFrame(frame: scenePart),
                   )
                 : const Icon(Icons.alt_route_rounded),
             Positioned.fill(
@@ -247,9 +718,10 @@ class ScenePartPreview extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    if (!isSelected) {
-                      scope.onChanged(scenePartId);
-                    }
+                    // Toggle selection directly through the provider
+                    ref
+                        .read(selectedScenePartProvider.notifier)
+                        .select(isSelected ? null : scenePartId);
                   },
                 ),
               ),
@@ -273,48 +745,5 @@ class ScenePartPreview extends StatelessWidget {
             child: preview,
           )
         : preview;
-  }
-}
-
-class ScenePartSelectorScope extends InheritedWidget {
-  final ScenePartId? groupValue;
-  final ValueChanged<ScenePartId?> onChanged;
-
-  const ScenePartSelectorScope({
-    super.key,
-    required this.groupValue,
-    required this.onChanged,
-    required super.child,
-  });
-
-  static ScenePartSelectorScope? maybeOf(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<ScenePartSelectorScope>();
-  }
-
-  @override
-  bool updateShouldNotify(ScenePartSelectorScope oldWidget) {
-    return groupValue != oldWidget.groupValue;
-  }
-}
-
-class ScenePartSelectorGroup extends StatelessWidget {
-  final ScenePartId? groupValue;
-  final ValueChanged<ScenePartId?> onChanged;
-  final Widget child;
-
-  const ScenePartSelectorGroup({
-    super.key,
-    required this.groupValue,
-    required this.onChanged,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ScenePartSelectorScope(
-      groupValue: groupValue,
-      onChanged: onChanged,
-      child: child,
-    );
   }
 }

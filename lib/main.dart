@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prac_res/pages/design_values.dart';
 import 'package:prac_res/pages/open.dart';
 
@@ -18,5 +19,5 @@ class App extends StatelessWidget {
 }
 
 void main() {
-  runApp(const App());
+  runApp(const ProviderScope(child: App()));
 }

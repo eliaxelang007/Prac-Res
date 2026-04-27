@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -6,6 +7,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import "package:junction/junction.dart";
 import 'package:prac_res/data/archive.dart';
+import 'package:uuid/uuid.dart';
 
 part 'data.freezed.dart';
 part "data.g.dart";
@@ -22,11 +24,11 @@ abstract class SceneGroup with _$SceneGroup {
     required Actors actors,
   }) = _SceneGroup;
 
-  static final SceneGroup empty = SceneGroup(
-    selections: Selections._(Collection._(IMap())),
-    scenes: Scenes._(Collection._(IMap())),
-    places: Places._(Collection._(IMap())),
-    actors: Actors._(Collection._(IMap())),
+  static final empty = SceneGroup(
+    selections: Selections(Collection(IMap())),
+    scenes: Scenes(Collection(IMap())),
+    places: Places(Collection(IMap())),
+    actors: Actors(Collection(IMap())),
   );
 
   /// Why are the names defined here instead of their respective types?
@@ -34,12 +36,10 @@ abstract class SceneGroup with _$SceneGroup {
   /// You would have to pass in the whole scene group folder to the child so that
   /// it could look for its own name and deserialize itself!
   /// That's why the file names are defined here in [SceneGroup].
-  static final CrossFilesystemName selectionsName = CrossFilesystemName(
-    "selections.json",
-  );
-  static final CrossFilesystemName scenesName = CrossFilesystemName("scenes");
-  static final CrossFilesystemName placesName = CrossFilesystemName("places");
-  static final CrossFilesystemName actorsName = CrossFilesystemName("actors");
+  static final selectionsName = CrossFilesystemName("selections.json");
+  static final scenesName = CrossFilesystemName("scenes");
+  static final placesName = CrossFilesystemName("places");
+  static final actorsName = CrossFilesystemName("actors");
 
   CrossFolderData toFilesystemData() {
     return CrossFolderData(
@@ -84,12 +84,12 @@ abstract class SceneGroup with _$SceneGroup {
 
 /* ++ Resource Collections ++ */
 
-extension type Selections._(
+extension type Selections(
   Collection<SelectionId, SelectionResource> _selectionCollection
 )
     implements Collection<SelectionId, SelectionResource> {
   factory Selections.fromJson(Map<String, dynamic> json) {
-    return Selections._(
+    return Selections(
       Collection.fromJson(
         json,
         SelectionId.fromJson,
@@ -110,14 +110,14 @@ extension type Selections._(
   }
 }
 
-extension type Scenes._(Collection<SceneId, Scene> _scenes)
+extension type Scenes(Collection<SceneId, Scene> _scenes)
     implements Collection<SceneId, Scene> {
   CrossFolderData toFilesystemData() {
     return _scenes.toFolderData(Id.toFilename, Scene.staticToJson);
   }
 
   static Scenes fromFilesystemData(CrossFolderData data) {
-    return Scenes._(
+    return Scenes(
       Collection.fromFolderData(
         data,
         SceneId.fromFilename,
@@ -127,14 +127,14 @@ extension type Scenes._(Collection<SceneId, Scene> _scenes)
   }
 }
 
-extension type Places._(Collection<PlaceId, Place> _places)
+extension type Places(Collection<PlaceId, Place> _places)
     implements Collection<PlaceId, Place> {
   CrossFolderData toFilesystemData() {
     return _places.toFolderData(Id.toFilename, Place.staticToJson);
   }
 
   static Places fromFilesystemData(CrossFolderData data) {
-    return Places._(
+    return Places(
       Collection.fromFolderData(
         data,
         PlaceId.fromFilename,
@@ -144,14 +144,14 @@ extension type Places._(Collection<PlaceId, Place> _places)
   }
 }
 
-extension type Actors._(Collection<ActorId, Actor> _actors)
+extension type Actors(Collection<ActorId, Actor> _actors)
     implements Collection<ActorId, Actor> {
   CrossFolderData toFilesystemData() {
     return _actors.toFolderData(Id.toFilename, Actor.staticToJson);
   }
 
   static Actors fromFilesystemData(CrossFolderData data) {
-    return Actors._(
+    return Actors(
       Collection.fromFolderData(
         data,
         ActorId.fromFilename,
@@ -165,10 +165,10 @@ extension type Actors._(Collection<ActorId, Actor> _actors)
 
 /* ++ Collection Resources ++ */
 
-extension type SelectionResource._(Resource<Name, Selection> _resource)
+extension type SelectionResource(Resource<Name, Selection> _resource)
     implements Resource<Name, Selection> {
   factory SelectionResource.fromJson(Map<String, dynamic> json) =>
-      SelectionResource._(
+      SelectionResource(
         Resource.fromJson(
           json,
           Name.fromJson,
@@ -183,12 +183,12 @@ extension type SelectionResource._(Resource<Name, Selection> _resource)
       selection.toJson();
 }
 
-extension type Scene._(
+extension type Scene(
   CollectionResource<Name, ScenePartId, OrderedScenePart> _scene
 )
     implements CollectionResource<Name, ScenePartId, OrderedScenePart> {
   factory Scene.fromJson(Map<String, dynamic> json) {
-    return Scene._(
+    return Scene(
       CollectionResource.fromJson(
         json,
         Name.fromJson,
@@ -204,9 +204,9 @@ extension type Scene._(
   static Map<String, dynamic> staticToJson(Scene scene) => scene.toJson();
 }
 
-extension type Place._(ImageCollectionResource<BackgroundId, Background> _place)
+extension type Place(ImageCollectionResource<BackgroundId, Background> _place)
     implements ImageCollectionResource<BackgroundId, Background> {
-  factory Place.fromJson(Map<String, dynamic> json) => Place._(
+  factory Place.fromJson(Map<String, dynamic> json) => Place(
     ImageCollectionResource.fromJson(
       json,
       BackgroundId.fromJson,
@@ -217,9 +217,9 @@ extension type Place._(ImageCollectionResource<BackgroundId, Background> _place)
   static Map<String, dynamic> staticToJson(Place place) => place.toJson();
 }
 
-extension type Actor._(ImageCollectionResource<PoseId, Pose> _actor)
+extension type Actor(ImageCollectionResource<PoseId, Pose> _actor)
     implements ImageCollectionResource<PoseId, Pose> {
-  factory Actor.fromJson(Map<String, dynamic> json) => Actor._(
+  factory Actor.fromJson(Map<String, dynamic> json) => Actor(
     ImageCollectionResource.fromJson(json, PoseId.fromJson, Pose.fromJson),
   );
 
@@ -232,6 +232,7 @@ extension type Actor._(ImageCollectionResource<PoseId, Pose> _actor)
 
 @freezed
 abstract class Selection with _$Selection {
+  /// We need a private constructor so we can define custom methods inside a class annotated with [freezed].
   const Selection._();
 
   @Assert(
@@ -265,22 +266,21 @@ sealed class ScenePart with _$ScenePart {
       _$ScenePartFromJson(json);
 }
 
-extension type Background._(ImageResource _background)
-    implements ImageResource {
+extension type Background(ImageResource _background) implements ImageResource {
   static Background fromJson(Object? json) =>
-      Background._(ImageResource.fromJson(json as Map<String, dynamic>));
+      Background(ImageResource.fromJson(json as Map<String, dynamic>));
 }
 
-extension type Pose._(ImageResource _pose) implements ImageResource {
+extension type Pose(ImageResource _pose) implements ImageResource {
   static Pose fromJson(Object? json) =>
-      Pose._(ImageResource.fromJson(json as Map<String, dynamic>));
+      Pose(ImageResource.fromJson(json as Map<String, dynamic>));
 }
 
 /* -- Single Resources -- */
 
 /* ++ Selection Parts ++ */
 
-extension type Option._(String _option) implements String {}
+extension type Option(String _option) implements String {}
 
 enum SelectionError implements Exception {
   invalidOption(
@@ -328,13 +328,19 @@ abstract class OrderedScenePart with _$OrderedScenePart {
 
 /* ++ Ids ++ */
 
-extension type Name._(String _name) implements String {
-  static Name fromJson(Object? json) => Name._(json! as String);
+extension type Name(String _name) implements String {
+  static Name fromJson(Object? json) => Name(json! as String);
   static String toJson(Name name) => name._name;
 }
 
-extension type Id._(String _id) implements String {
-  static Id fromJson(Object? json) => Id._(json! as String);
+extension type Id(String _id) implements String {
+  static final uuid = Uuid();
+
+  static Id create() {
+    return Id(uuid.v4());
+  }
+
+  static Id fromJson(Object? json) => Id(json! as String);
   static String toJson(Id id) => id;
 
   static const String jsonExtension = ".json";
@@ -348,46 +354,45 @@ extension type Id._(String _id) implements String {
       );
     }
 
-    return Id._(filename.substring(0, filename.length - jsonExtension.length));
+    return Id(filename.substring(0, filename.length - jsonExtension.length));
   }
 }
 
-extension type SelectionId._(Id _id) implements Id {
-  static SelectionId fromJson(Object? json) => SelectionId._(Id.fromJson(json));
+extension type SelectionId(Id _id) implements Id {
+  static SelectionId fromJson(Object? json) => SelectionId(Id.fromJson(json));
 }
 
-extension type SceneId._(Id _id) implements Id {
-  static SceneId fromJson(Object? json) => SceneId._(Id.fromJson(json));
+extension type SceneId(Id _id) implements Id {
+  static SceneId fromJson(Object? json) => SceneId(Id.fromJson(json));
 
   static SceneId fromFilename(CrossFilesystemName filename) =>
-      SceneId._(Id.fromFilename(filename));
+      SceneId(Id.fromFilename(filename));
 }
 
-extension type PlaceId._(Id _id) implements Id {
-  static PlaceId fromJson(Object? json) => PlaceId._(Id.fromJson(json));
+extension type PlaceId(Id _id) implements Id {
+  static PlaceId fromJson(Object? json) => PlaceId(Id.fromJson(json));
 
   static PlaceId fromFilename(CrossFilesystemName filename) =>
-      PlaceId._(Id.fromFilename(filename));
+      PlaceId(Id.fromFilename(filename));
 }
 
-extension type ActorId._(Id _id) implements Id {
-  static ActorId fromJson(Object? json) => ActorId._(Id.fromJson(json));
+extension type ActorId(Id _id) implements Id {
+  static ActorId fromJson(Object? json) => ActorId(Id.fromJson(json));
 
   static ActorId fromFilename(CrossFilesystemName filename) =>
-      ActorId._(Id.fromFilename(filename));
+      ActorId(Id.fromFilename(filename));
 }
 
-extension type ScenePartId._(Id _id) implements Id {
-  static ScenePartId fromJson(Object? json) => ScenePartId._(Id.fromJson(json));
+extension type ScenePartId(Id _id) implements Id {
+  static ScenePartId fromJson(Object? json) => ScenePartId(Id.fromJson(json));
 }
 
-extension type BackgroundId._(Id _id) implements Id {
-  static BackgroundId fromJson(Object? json) =>
-      BackgroundId._(Id.fromJson(json));
+extension type BackgroundId(Id _id) implements Id {
+  static BackgroundId fromJson(Object? json) => BackgroundId(Id.fromJson(json));
 }
 
-extension type PoseId._(Id _id) implements Id {
-  static PoseId fromJson(Object? json) => PoseId._(Id.fromJson(json));
+extension type PoseId(Id _id) implements Id {
+  static PoseId fromJson(Object? json) => PoseId(Id.fromJson(json));
 }
 
 // Collection<SceneId, CollectionResource<Name, ScenePartId, OrderedScenePart>>
@@ -396,15 +401,18 @@ extension type PoseId._(Id _id) implements Id {
 /// Well, it's really just because I was lazy and I saw that they have the same struct shape anyways.
 /// And as a bonus, you can think of the [metadata] as the collection id, and the [value] inside it as the item id,
 /// And that makes sense because [metadata] is data about [value].
-extension type FullId<ParentId extends Id, ChildId extends Id, Child>._(
+extension type FullId<ParentId extends Id, ChildId extends Id, Child>(
   Resource<ParentId, ChildId> _fullId
 )
     implements Resource<ParentId, ChildId> {
+  ParentId get parentId => metadata;
+  ChildId get childId => value;
+
   factory FullId.fromJson(
     Map<String, dynamic> json,
     ParentId Function(Object? json) parentIdFromJson,
     ChildId Function(Object? json) childIdFromJson,
-  ) => FullId._(Resource.fromJson(json, parentIdFromJson, childIdFromJson));
+  ) => FullId(Resource.fromJson(json, parentIdFromJson, childIdFromJson));
 
   Map<String, dynamic> toJson() => _fullId.toJson(Id.toJson, Id.toJson);
 
@@ -412,34 +420,32 @@ extension type FullId<ParentId extends Id, ChildId extends Id, Child>._(
     Collection<ParentId, CollectionResource<Name, ChildId, Child>>
     resourceCollection,
   ) {
-    return resourceCollection.find(metadata)?.find(value);
+    return resourceCollection.find(parentId)?.find(childId);
   }
 }
 
-extension type FullScenePartId._(
-  FullId<SceneId, ScenePartId, ScenePart> _fullId
-)
+extension type FullScenePartId(FullId<SceneId, ScenePartId, ScenePart> _fullId)
     implements FullId<SceneId, ScenePartId, ScenePart> {
   factory FullScenePartId.fromJson(Map<String, dynamic> json) =>
-      FullScenePartId._(
+      FullScenePartId(
         FullId.fromJson(json, SceneId.fromJson, ScenePartId.fromJson),
       );
 }
 
-extension type FullBackgroundId._(
+extension type FullBackgroundId(
   FullId<PlaceId, BackgroundId, Background> _fullId
 )
     implements FullId<PlaceId, BackgroundId, Background> {
   factory FullBackgroundId.fromJson(Map<String, dynamic> json) =>
-      FullBackgroundId._(
+      FullBackgroundId(
         FullId.fromJson(json, PlaceId.fromJson, BackgroundId.fromJson),
       );
 }
 
-extension type FullPoseId._(FullId<ActorId, PoseId, Pose> _fullId)
+extension type FullPoseId(FullId<ActorId, PoseId, Pose> _fullId)
     implements FullId<ActorId, PoseId, Pose> {
   factory FullPoseId.fromJson(Map<String, dynamic> json) =>
-      FullPoseId._(FullId.fromJson(json, ActorId.fromJson, PoseId.fromJson));
+      FullPoseId(FullId.fromJson(json, ActorId.fromJson, PoseId.fromJson));
 }
 
 /* -- Ids -- */
@@ -456,7 +462,7 @@ abstract class Resource<Metadata, Value> with _$Resource<Metadata, Value> {
   ) => _$ResourceFromJson(json, metadataFromJson, valueFromJson);
 }
 
-extension type Collection<ItemId extends Id, Item>._(
+extension type Collection<ItemId extends Id, Item>(
   IMap<ItemId, Item> _collection
 )
     implements IMap<ItemId, Item> {
@@ -471,7 +477,7 @@ extension type Collection<ItemId extends Id, Item>._(
     ItemId Function(Object? json) itemIdFromJson,
     Item Function(Object? json) itemFromJson,
   ) {
-    return Collection._(
+    return Collection(
       json
           .map(
             (idJson, itemJson) =>
@@ -509,7 +515,7 @@ extension type Collection<ItemId extends Id, Item>._(
     ItemId Function(CrossFilesystemName json) itemIdFromFilename,
     Item Function(Object? json) itemFromJson,
   ) {
-    return Collection._(
+    return Collection(
       data.children
           .map(
             (itemId, item) => MapEntry(
@@ -522,7 +528,7 @@ extension type Collection<ItemId extends Id, Item>._(
   }
 }
 
-extension type CollectionResource<Metadata, ItemId extends Id, Item>._(
+extension type CollectionResource<Metadata, ItemId extends Id, Item>(
   Resource<Metadata, Collection<ItemId, Item>> _resourceCollection
 )
     implements Resource<Metadata, IMap<ItemId, Item>> {
@@ -540,7 +546,7 @@ extension type CollectionResource<Metadata, ItemId extends Id, Item>._(
     ItemId Function(Object? json) itemIdFromJson,
     Item Function(Object? json) itemFromJson,
   ) {
-    return CollectionResource._(
+    return CollectionResource(
       Resource.fromJson(
         json,
         metadataFromJson,
@@ -570,23 +576,32 @@ extension type CollectionResource<Metadata, ItemId extends Id, Item>._(
 class ImageData {
   final Uint8List image;
 
-  ImageData._({required this.image});
+  ImageData({required this.image});
 
   static ImageData fromJson(Object? json) =>
-      ImageData._(image: base64Decode(json! as String));
+      ImageData(image: base64Decode(json! as String));
   static String toJson(ImageData image) => base64Encode(image.image);
 
   @override
   String toString() {
     return "[Image]";
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImageData &&
+          runtimeType == other.runtimeType &&
+          const ListEquality().equals(image, other.image);
+
+  @override
+  int get hashCode => const ListEquality().hash(image);
 }
 
-extension type ImageResource._(Resource<Name, ImageData> _resource)
+extension type ImageResource(Resource<Name, ImageData> _resource)
     implements Resource<Name, ImageData> {
-  factory ImageResource.fromJson(Map<String, dynamic> json) => ImageResource._(
-    Resource.fromJson(json, Name.fromJson, ImageData.fromJson),
-  );
+  factory ImageResource.fromJson(Map<String, dynamic> json) =>
+      ImageResource(Resource.fromJson(json, Name.fromJson, ImageData.fromJson));
 
   Map<String, dynamic> toJson() =>
       _resource.toJson(Name.toJson, ImageData.toJson);
@@ -598,14 +613,14 @@ extension type ImageResource._(Resource<Name, ImageData> _resource)
 extension type ImageCollectionResource<
   ImageId extends Id,
   ImageItem extends ImageResource
->._(CollectionResource<Name, ImageId, ImageItem> _imageCollection)
+>(CollectionResource<Name, ImageId, ImageItem> _imageCollection)
     implements CollectionResource<Name, ImageId, ImageItem> {
   factory ImageCollectionResource.fromJson(
     Map<String, dynamic> json,
     ImageId Function(Object? json) idFromJson,
     ImageItem Function(Object? json) itemFromJson,
   ) {
-    return ImageCollectionResource._(
+    return ImageCollectionResource(
       CollectionResource.fromJson(
         json,
         Name.fromJson,

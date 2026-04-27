@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/pages/design_values.dart';
+import 'package:prac_res/pages/editor_state.dart';
 
-class NovelFrame extends StatelessWidget {
-  const NovelFrame({super.key, required this.sceneGroup, required this.frame});
+class NovelFrame extends ConsumerWidget {
+  const NovelFrame({super.key, required this.frame});
 
-  final SceneGroup sceneGroup;
   final Frame frame;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
     final commonPhoneResolution = const Size(800, 360);
+
+    final (actors, places) = ref.watch(
+      selectedSceneGroupProvider.select((group) {
+        if (group == null) return (null, null);
+
+        return (group.actors, group.places);
+      }),
+    );
 
     return Stack(
       children: [
         Positioned.fill(
           child: Image.memory(
-            frame.background.findIn(sceneGroup.places)!.value.image,
+            frame.background.findIn(places!)!.value.image,
             fit: BoxFit.cover,
           ),
         ),
@@ -42,7 +51,7 @@ class NovelFrame extends StatelessWidget {
                             Padding(
                               padding: EdgeInsets.only(top: designValues.large),
                               child: Image.memory(
-                                pose.findIn(sceneGroup.actors)!.value.image,
+                                pose.findIn(actors!)!.value.image,
                               ),
                             ),
                         ],

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'package:junction/junction.dart';
 import 'package:archive/archive.dart';
@@ -9,13 +10,14 @@ import 'package:archive/archive.dart';
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/pages/design_values.dart';
 import 'package:prac_res/pages/editor.dart';
+import 'package:prac_res/pages/editor_state.dart';
 import 'package:prac_res/pages/loading.dart';
 
-class NovelOpenPage extends StatelessWidget {
+class NovelOpenPage extends ConsumerWidget {
   const NovelOpenPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     final designValues = theme.extension<DesignValues>()!;
@@ -31,11 +33,11 @@ class NovelOpenPage extends StatelessWidget {
               children: [
                 SizedBox(
                   width: designValues.veryLarge * 2,
-                  child: newScene(context),
+                  child: newScene(context, ref),
                 ),
                 SizedBox(
                   width: designValues.veryLarge * 2,
-                  child: openScene(context),
+                  child: openScene(context, ref),
                 ),
               ],
             ),
@@ -45,7 +47,7 @@ class NovelOpenPage extends StatelessWidget {
     );
   }
 
-  NovelIconButton openScene(BuildContext context) {
+  NovelIconButton openScene(BuildContext context, WidgetRef ref) {
     return NovelIconButton(
       onPressed: () async {
         final selected = await WebReadHandle.showOpenFileDialog(
@@ -69,12 +71,12 @@ class NovelOpenPage extends StatelessWidget {
             );
           }, selected);
 
+          ref.read(selectedSceneGroupProvider.notifier).select(sceneGroup);
+
           // SAFETY: It should be safe to use context here because
           // [NovelLoadingPage] will not unmount until this async function completes.
           await Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => NovelEditorPage(sceneGroup: sceneGroup),
-            ),
+            MaterialPageRoute(builder: (context) => NovelEditorPage()),
           );
         });
       },
@@ -82,17 +84,19 @@ class NovelOpenPage extends StatelessWidget {
     );
   }
 
-  NovelIconButton newScene(BuildContext context) {
+  NovelIconButton newScene(BuildContext context, WidgetRef ref) {
     return NovelIconButton(
       onPressed: () {
         NovelLoadingPage.load(context, (context) async {
           // SAFETY: It should be safe to use context here because
           // [NovelLoadingPage] will not unmount until this async function completes.
+
+          ref
+              .read(selectedSceneGroupProvider.notifier)
+              .select(SceneGroup.empty);
+
           await Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) =>
-                  NovelEditorPage(sceneGroup: SceneGroup.empty),
-            ),
+            MaterialPageRoute(builder: (context) => NovelEditorPage()),
           );
         });
       },

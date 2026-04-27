@@ -23,13 +23,17 @@ class NovelLoadingPage<T> extends StatelessWidget {
     final sideLength = designValues.large * (1 + designValues.semiLargePercent);
 
     return Scaffold(
-      body: Loading<T>(loader: loader, sideLength: sideLength),
+      body: NovelLoading<T>(loader: loader, sideLength: sideLength),
     );
   }
 }
 
-class Loading<T> extends StatelessWidget {
-  const Loading({super.key, required this.loader, required this.sideLength});
+class NovelLoading<T> extends StatelessWidget {
+  const NovelLoading({
+    super.key,
+    required this.loader,
+    required this.sideLength,
+  });
 
   final Future<T> Function(BuildContext context) loader;
   final double sideLength;
