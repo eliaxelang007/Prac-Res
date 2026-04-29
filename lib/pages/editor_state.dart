@@ -6,41 +6,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part "editor_state.g.dart";
 
-class Editor<Edited, InnerProperty> {
-  final InnerProperty property;
-
-  final Edited Function(InnerProperty) editor;
-
-  static Editor<T, T> from<T>(T value) {
-    return Editor._(value, (newValue) => value);
-  }
-
-  Editor._(this.property, this.editor);
-
-  Editor<Edited, InnerInnerProperty> select<InnerInnerProperty>(
-    InnerInnerProperty Function(InnerProperty) getInnerInner,
-
-    InnerProperty Function(InnerProperty, InnerInnerProperty) updateInner,
-  ) {
-    return Editor._(getInnerInner(property), (newInnerInner) {
-      return editor(updateInner(property, newInnerInner));
-    });
-  }
-
-  Editor<Edited, InnerInnerProperty> compose<InnerInnerProperty>(
-    Editor<InnerProperty, InnerInnerProperty> toComposeWith,
-  ) {
-    return Editor._(toComposeWith.property, (newInnerInner) {
-      return editor(toComposeWith.set(newInnerInner));
-    });
-  }
-
-  Edited set(InnerProperty newInner) => editor(newInner);
-
-  Edited update(InnerProperty Function(InnerProperty) updater) =>
-      editor(updater(property));
-}
-
 @Riverpod(keepAlive: true)
 class SelectedSceneGroup extends _$SelectedSceneGroup {
   @override
@@ -50,8 +15,6 @@ class SelectedSceneGroup extends _$SelectedSceneGroup {
     state = sceneGroup;
     ref.read(selectedSceneProvider.notifier).select(null);
   }
-
-  // --- 1. PLACES ---
 
   void addPlace(String name) {
     _placesEditor?.update(

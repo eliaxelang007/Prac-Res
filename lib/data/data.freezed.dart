@@ -1605,8 +1605,8 @@ return $default(_that.metadata,_that.value);case _:
 /// @nodoc
 @JsonSerializable(genericArgumentFactories: true)
 
-class _Resource<Metadata,Value> implements Resource<Metadata, Value> {
-  const _Resource({required this.metadata, required this.value});
+class _Resource<Metadata,Value> extends Resource<Metadata, Value> {
+  const _Resource({required this.metadata, required this.value}): super._();
   factory _Resource.fromJson(Map<String, dynamic> json,Metadata Function(Object?) fromJsonMetadata,Value Function(Object?) fromJsonValue) => _$ResourceFromJson(json,fromJsonMetadata,fromJsonValue);
 
 @override final  Metadata metadata;

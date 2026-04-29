@@ -42,7 +42,7 @@ final class SelectedSceneGroupProvider
 }
 
 String _$selectedSceneGroupHash() =>
-    r'd1608701adcad28fea9747c986006e3b55098c66';
+    r'bca756d74f1d62111b6afefe1233d2b82acb9d61';
 
 abstract class _$SelectedSceneGroup extends $Notifier<SceneGroup?> {
   SceneGroup? build();
