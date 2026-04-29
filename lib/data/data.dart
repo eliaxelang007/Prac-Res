@@ -11,6 +11,58 @@ import 'package:uuid/uuid.dart';
 part 'data.freezed.dart';
 part "data.g.dart";
 
+class Lens<Selected, InnerProperty> {
+  final InnerProperty Function(Selected) get;
+  final Selected Function(Selected, InnerProperty) set;
+
+  Lens(this.get, this.set);
+
+  Lens<Selected, InnerInnerProperty> compose<InnerInnerProperty>(
+    Lens<InnerProperty, InnerInnerProperty> toComposeWith,
+  ) {
+    return Lens(
+      (selected) => toComposeWith.get(get(selected)),
+      (selected, innerInnerProperty) =>
+          set(selected, toComposeWith.set(get(selected), innerInnerProperty)),
+    );
+  }
+}
+
+// class Editor<Edited, InnerProperty> {
+//   final InnerProperty property;
+
+//   final Edited Function(InnerProperty) editor;
+
+//   static Editor<T, T> from<T>(T value) {
+//     return Editor._(value, (newValue) => newValue);
+//   }
+
+//   Editor._(this.property, this.editor);
+
+//   Editor<Edited, InnerInnerProperty> select<InnerInnerProperty>(
+//     InnerInnerProperty Function(InnerProperty) getInnerInner,
+
+//     InnerProperty Function(InnerProperty, InnerInnerProperty) updateInner,
+//   ) {
+//     return Editor._(getInnerInner(property), (newInnerInner) {
+//       return editor(updateInner(property, newInnerInner));
+//     });
+//   }
+
+//   Editor<Edited, InnerInnerProperty> compose<InnerInnerProperty>(
+//     Editor<InnerProperty, InnerInnerProperty> toComposeWith,
+//   ) {
+//     return Editor._(toComposeWith.property, (newInnerInner) {
+//       return editor(toComposeWith.set(newInnerInner));
+//     });
+//   }
+
+//   Edited set(InnerProperty newInner) => editor(newInner);
+
+//   Edited update(InnerProperty Function(InnerProperty) updater) =>
+//       editor(updater(property));
+// }
+
 @freezed
 abstract class SceneGroup with _$SceneGroup {
   /// We need a private constructor so we can define custom methods inside a class annotated with [freezed].
@@ -394,8 +446,6 @@ extension type PoseId(Id _id) implements Id {
   static PoseId fromJson(Object? json) => PoseId(Id.fromJson(json));
 }
 
-// Collection<SceneId, CollectionResource<Name, ScenePartId, OrderedScenePart>>
-
 /// Why is this an extension type of [Resource<Id, Id>] you ask?
 /// Well, it's really just because I was lazy and I saw that they have the same struct shape anyways.
 /// And as a bonus, you can think of the [metadata] as the collection id, and the [value] inside it as the item id,
@@ -471,10 +521,6 @@ extension type Collection<ItemId extends Id, Item>(
     return _collection[id];
   }
 
-  // Collection<ItemId, Item> add(ItemId id, Item item) {
-  //   return Collection(_collection.add(id, item));
-  // }
-
   factory Collection.fromJson(
     Map<String, dynamic> json,
     ItemId Function(Object? json) itemIdFromJson,
@@ -542,14 +588,6 @@ extension type CollectionResource<Metadata, ItemId extends Id, Item>(
 
     return _resourceCollection.value[id];
   }
-
-  // CollectionResource<Metadata, ItemId, Item> add(ItemId id, Item item) {
-  //   return CollectionResource(
-  //     _resourceCollection.copyWith(
-  //       value: _resourceCollection.value.add(id, item),
-  //     ),
-  //   );
-  // }
 
   factory CollectionResource.fromJson(
     Map<String, dynamic> json,

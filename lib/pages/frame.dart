@@ -23,14 +23,17 @@ class NovelFrame extends ConsumerWidget {
       }),
     );
 
+    final background = frame.background;
+
     return Stack(
       children: [
-        Positioned.fill(
-          child: Image.memory(
-            frame.background.findIn(places!)!.value.image,
-            fit: BoxFit.cover,
+        if (background != null)
+          Positioned.fill(
+            child: Image.memory(
+              background.findIn(places!)!.resource.resource.value.image,
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
 
         Positioned.fill(
           child: FittedBox(

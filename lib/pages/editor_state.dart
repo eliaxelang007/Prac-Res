@@ -8,6 +8,7 @@ part "editor_state.g.dart";
 
 class Editor<Edited, InnerProperty> {
   final InnerProperty property;
+
   final Edited Function(InnerProperty) editor;
 
   static Editor<T, T> from<T>(T value) {
@@ -18,16 +19,23 @@ class Editor<Edited, InnerProperty> {
 
   Editor<Edited, InnerInnerProperty> select<InnerInnerProperty>(
     InnerInnerProperty Function(InnerProperty) getInnerInner,
+
     InnerProperty Function(InnerProperty, InnerInnerProperty) updateInner,
   ) {
-    return Editor._(getInnerInner(property), (
-      InnerInnerProperty newInnerInner,
-    ) {
+    return Editor._(getInnerInner(property), (newInnerInner) {
       return editor(updateInner(property, newInnerInner));
     });
   }
 
-  Edited apply(InnerProperty newInner) => editor(newInner);
+  Editor<Edited, InnerInnerProperty> compose<InnerInnerProperty>(
+    Editor<InnerProperty, InnerInnerProperty> toComposeWith,
+  ) {
+    return Editor._(toComposeWith.property, (newInnerInner) {
+      return editor(toComposeWith.set(newInnerInner));
+    });
+  }
+
+  Edited set(InnerProperty newInner) => editor(newInner);
 
   Edited update(InnerProperty Function(InnerProperty) updater) =>
       editor(updater(property));
@@ -43,157 +51,269 @@ class SelectedSceneGroup extends _$SelectedSceneGroup {
     ref.read(selectedSceneProvider.notifier).select(null);
   }
 
-  Editor<SceneGroup, Places>? get _placesEditor {
-    if (state == null) return null;
-    return Editor.from(
-      state!,
-    ).select((s) => s.places, (s, p) => s.copyWith(places: p));
-  }
+  // --- 1. PLACES ---
 
-  Editor<SceneGroup, Place?>? _placeEditor(PlaceId id) {
-    return _placesEditor?.select(
-      (places) => places.find(id),
-      (places, newPlace) => newPlace != null
-          ? Places(Collection(places.add(id, newPlace)))
-          : places,
-    );
-  }
-
-  Editor<SceneGroup, Collection<BackgroundId, Background>?>? _backgroundsEditor(
-    PlaceId placeId,
-  ) {
-    return _placeEditor(placeId)?.select(
-      (place) => place?.value,
-      (place, newBackgrounds) => place != null && newBackgrounds != null
-          ? Place(
+  void addPlace(String name) {
+    _placesEditor?.update(
+      (p) => Places(
+        Collection(
+          p.add(
+            PlaceId(Id.create()),
+            Place(
               ImageCollectionResource(
                 CollectionResource(
-                  Resource(metadata: place.metadata, value: newBackgrounds),
-                ),
-              ),
-            )
-          : place,
-    );
-  }
-
-  Editor<SceneGroup, Actors>? get _actorsEditor {
-    if (state == null) return null;
-    return Editor.from(
-      state!,
-    ).select((s) => s.actors, (s, a) => s.copyWith(actors: a));
-  }
-
-  // --- 2. State Modifiers ---
-  // Using the editors above, the actual updates become trivial one-liners.
-
-  void updatePlaces(PlaceId id, Places Function(Places) updater) {
-    final editor = _placesEditor;
-    if (editor != null) state = editor.update(updater);
-  }
-
-  void editPlace(PlaceId id, Place place) {
-    final editor = _placesEditor;
-    if (editor != null) {
-      state = editor.update(
-        (places) => Places(Collection(places.add(id, place))),
-      );
-    }
-  }
-
-  void deletePlace(PlaceId placeId) {
-    final editor = _placesEditor;
-    if (editor != null) {
-      state = editor.update(
-        (places) => Places(Collection(places.remove(placeId))),
-      );
-    }
-  }
-
-  void editBackground(FullBackgroundId backgroundId, Background background) {
-    final editor = _backgroundsEditor(backgroundId.parentId);
-    if (editor != null) {
-      state = editor.update(
-        (backgrounds) => backgrounds != null
-            ? Collection(backgrounds.add(backgroundId.childId, background))
-            : backgrounds,
-      );
-    }
-  }
-
-  void deleteBackground(FullBackgroundId background) {
-    final editor = _backgroundsEditor(background.parentId);
-    if (editor != null) {
-      state = editor.update(
-        (backgrounds) => backgrounds != null
-            ? Collection(backgrounds.remove(background.childId))
-            : backgrounds,
-      );
-    }
-  }
-
-  void deleteBackgroundById(PlaceId placeId, BackgroundId bgId) {
-    final editor = _backgroundsEditor(placeId);
-    if (editor != null) {
-      state = editor.update(
-        (backgrounds) => backgrounds != null
-            ? Collection(backgrounds.remove(bgId))
-            : backgrounds,
-      );
-    }
-  }
-
-  void addBackground(PlaceId placeId, String filename, Uint8List bytes) {
-    final editor = _backgroundsEditor(placeId);
-    if (editor != null) {
-      final newBackgroundId = BackgroundId(Id.create());
-      final newBackground = Background(
-        ImageResource(
-          Resource(
-            metadata: Name(filename),
-            value: ImageData(image: bytes),
-          ),
-        ),
-      );
-
-      state = editor.update(
-        (backgrounds) => backgrounds != null
-            ? Collection(backgrounds.add(newBackgroundId, newBackground))
-            : backgrounds,
-      );
-    }
-  }
-
-  void addActor(String name) {
-    final editor = _actorsEditor;
-    if (editor != null) {
-      state = editor.update(
-        (actors) => Actors(
-          Collection(
-            actors.add(
-              ActorId(Id.create()),
-              Actor(
-                ImageCollectionResource(
-                  CollectionResource(
-                    Resource<Name, Collection<PoseId, Pose>>(
-                      metadata: Name(name),
-                      value: Collection<PoseId, Pose>(IMap()),
-                    ),
-                  ),
+                  Resource(metadata: Name(name), value: Collection(IMap())),
                 ),
               ),
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
   }
+
+  void removePlace(PlaceId id) {
+    _placesEditor?.update((p) => Places(Collection(p.remove(id))));
+  }
+
+  void editPlaceName(PlaceId id, String newName) {
+    _placeEditor(id)?.update((p) => Place(p.copyWith(metadata: Name(newName))));
+  }
+
+  // --- 2. BACKGROUNDS ---
+
+  void addBackground(PlaceId placeId, String name, Uint8List bytes) {
+    _backgroundsEditor(placeId)?.update(
+      (bgs) => bgs.add(
+        BackgroundId(Id.create()),
+        Background(
+          ImageResource(
+            Resource(
+              metadata: Name(name),
+              value: ImageData(image: bytes),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void removeBackground(PlaceId placeId, BackgroundId bgId) {
+    _backgroundsEditor(placeId)?.update((bgs) => bgs.remove(bgId));
+  }
+
+  void editBackgroundMetadata(
+    PlaceId placeId,
+    BackgroundId backgroundId, {
+    String? name,
+    Uint8List? image,
+  }) {
+    _backgroundEditor(placeId, backgroundId)?.update((bg) {
+      var resource = bg.metadata; // Background is an ImageResource
+      var value = bg.value;
+
+      return Background(
+        ImageResource(
+          Resource(
+            metadata: name != null ? Name(name) : resource,
+            value: image != null ? ImageData(image: image) : value,
+          ),
+        ),
+      );
+    });
+  }
+
+  // --- 3. ACTORS & POSES ---
+
+  void addActor(String name) {
+    _actorsEditor?.update(
+      (a) => a.add(
+        ActorId(Id.create()),
+        Actor(
+          ImageCollectionResource(
+            CollectionResource(
+              Resource(metadata: Name(name), value: Collection(IMap())),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void removeActor(ActorId id) {
+    _actorsEditor?.update((a) => a.remove(id));
+  }
+
+  void editActorName(ActorId id, String name) {
+    _actorEditor(id)?.update((a) => a.copyWith(metadata: Name(name)));
+  }
+
+  void addPose(ActorId actorId, String name, Uint8List bytes) {
+    _posesEditor(actorId)?.update(
+      (ps) => ps.add(
+        PoseId(Id.create()),
+        Pose(
+          ImageResource(
+            Resource(
+              metadata: Name(name),
+              value: ImageData(image: bytes),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- 4. SCENES & SCENEPARTS ---
+
+  void addScene(String name) {
+    _scenesEditor?.update(
+      (s) => s.add(
+        SceneId(Id.create()),
+        Scene(
+          CollectionResource(
+            Resource(metadata: Name(name), value: Collection(IMap())),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void editSceneName(SceneId id, String name) {
+    _sceneEditor(id)?.update((s) => s.copyWith(metadata: Name(name)));
+  }
+
+  void addFrame(SceneId sceneId) {
+    _scenePartsEditor(sceneId)?.update((items) {
+      final partId = ScenePartId(Id.create());
+      final order = items.isEmpty
+          ? 0.0
+          : (items.values.map((e) => e.order).reduce((a, b) => a > b ? a : b) +
+                1.0);
+
+      return items.add(
+        partId,
+        OrderedScenePart(
+          order: order,
+          part: ScenePart.frame(
+            background: null,
+            poses: IList(),
+            dialogueBox: const DialogueBox(name: "Speaker", dialogue: "..."),
+          ),
+        ),
+      );
+    });
+  }
+
+  void editFrame(
+    SceneId sId,
+    ScenePartId pId, {
+    FullBackgroundId? bg,
+    IList<FullPoseId>? poses,
+    DialogueBox? dialogue,
+  }) {
+    _scenePartEditor(sId, pId)?.update((ordered) {
+      final part = ordered.part;
+      if (part is Frame) {
+        return ordered.copyWith(
+          part: part.copyWith(
+            background: bg ?? part.background,
+            poses: poses ?? part.poses,
+            dialogueBox: dialogue ?? part.dialogueBox,
+          ),
+        );
+      }
+      return ordered;
+    });
+  }
+
+  // --- 5. SELECTIONS ---
+
+  void updateSelection(
+    SelectionId id, {
+    String? name,
+    ISet<Option>? options,
+    Option? selected,
+  }) {
+    _selectionEditor(id)?.update((current) {
+      return current.copyWith(
+        metadata: name != null ? Name(name) : current.metadata,
+        value: current.value.copyWith(
+          options: options ?? current.value.options,
+          selected: selected ?? current.value.selected,
+        ),
+      );
+    });
+  }
+
+  // --- PRIVATE EDITOR HELPERS ---
+  // This is where the magic "drilling" happens.
+
+  Editor<SceneGroup, Places>? get _placesEditor => state == null
+      ? null
+      : Editor.from(
+          state!,
+        ).select((s) => s.places, (s, v) => s.copyWith(places: v));
+
+  Editor<SceneGroup, Place>? _placeEditor(PlaceId id) =>
+      _placesEditor?.select((ps) => ps.find(id)!, (ps, p) => ps.add(id, p));
+
+  Editor<SceneGroup, Collection<BackgroundId, Background>>? _backgroundsEditor(
+    PlaceId id,
+  ) => _placeEditor(id)?.select((p) => p.value, (p, v) => p.copyWith(value: v));
+
+  Editor<SceneGroup, Background>? _backgroundEditor(
+    PlaceId pId,
+    BackgroundId bId,
+  ) => _backgroundsEditor(
+    pId,
+  )?.select((bgs) => bgs.find(bId)!, (bgs, b) => bgs.add(bId, b));
+
+  Editor<SceneGroup, Actors>? get _actorsEditor => state == null
+      ? null
+      : Editor.from(
+          state!,
+        ).select((s) => s.actors, (s, v) => s.copyWith(actors: v));
+
+  Editor<SceneGroup, Actor>? _actorEditor(ActorId id) =>
+      _actorsEditor?.select((as) => as.find(id)!, (as, a) => as.add(id, a));
+
+  Editor<SceneGroup, Collection<PoseId, Pose>>? _posesEditor(ActorId id) =>
+      _actorEditor(id)?.select((a) => a.value, (a, v) => a.copyWith(value: v));
+
+  Editor<SceneGroup, Scenes>? get _scenesEditor => state == null
+      ? null
+      : Editor.from(
+          state!,
+        ).select((s) => s.scenes, (s, v) => s.copyWith(scenes: v));
+
+  Editor<SceneGroup, Scene>? _sceneEditor(SceneId id) =>
+      _scenesEditor?.select((ss) => ss.find(id)!, (ss, s) => ss.add(id, s));
+
+  Editor<SceneGroup, Collection<ScenePartId, OrderedScenePart>>?
+  _scenePartsEditor(SceneId id) =>
+      _sceneEditor(id)?.select((s) => s.value, (s, v) => s.copyWith(value: v));
+
+  Editor<SceneGroup, OrderedScenePart>? _scenePartEditor(
+    SceneId sId,
+    ScenePartId pId,
+  ) => _scenePartsEditor(
+    sId,
+  )?.select((ps) => ps.find(pId)!, (ps, p) => ps.add(pId, p));
+
+  Editor<SceneGroup, SelectionResource>? _selectionEditor(SelectionId id) =>
+      state == null
+      ? null
+      : Editor.from(state!).select(
+          (s) => s.selections.find(id)!,
+          (s, v) => s.copyWith(selections: s.selections.add(id, v)),
+        );
 }
 
 @Riverpod(keepAlive: true)
 class SelectedScene extends _$SelectedScene {
   @override
   SceneId? build() => null;
-
   void select(SceneId? id) {
     state = id;
     ref.read(selectedScenePartProvider.notifier).select(null);
@@ -204,6 +324,5 @@ class SelectedScene extends _$SelectedScene {
 class SelectedScenePart extends _$SelectedScenePart {
   @override
   ScenePartId? build() => null;
-
   void select(ScenePartId? id) => state = id;
 }
