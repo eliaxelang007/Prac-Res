@@ -1,8 +1,6 @@
 import 'package:device_frame/device_frame.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:junction/junction.dart';
 
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/pages/design_values.dart';
@@ -66,7 +64,7 @@ class NovelResourceSelector extends ConsumerWidget {
           flex: 2,
           child: Padding(
             padding: EdgeInsets.all(designValues.small),
-            child: RadioGroup<SceneId>(
+            child: RadioGroup<Id<Scene>>(
               onChanged: (selection) {
                 ref.read(selectedSceneProvider.notifier).select(selection);
               },
@@ -78,11 +76,11 @@ class NovelResourceSelector extends ConsumerWidget {
                   const Divider(),
                   if (scenes != null)
                     for (final MapEntry(key: id, value: scene)
-                        in scenes.items.items.entries)
+                        in scenes.entries)
                       RadioListTile(
                         value: id,
                         title: Text(
-                          scene.resource.resource.metadata,
+                          scene.metadata,
                           style: textTheme.bodyMedium,
                         ),
                         toggleable: true,
@@ -112,14 +110,14 @@ class NovelFrameViewer extends ConsumerWidget {
 
     final scene = ref.watch(
       selectedSceneGroupProvider.select((group) {
-        return group?.scenes.items.find(selectedScene);
+        return group?.scenes.find(selectedScene);
       }),
     );
 
     final selectedScenePart = ref.watch(selectedScenePartProvider);
 
-    final scenePart = scene?.resource.find(selectedScenePart)?.part;
-    final sceneParts = scene?.resource.resource.value.items.entries;
+    final scenePart = scene?.find(selectedScenePart?.childId)?.part;
+    final sceneParts = scene?.value.entries;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -164,7 +162,7 @@ class NovelFrameViewer extends ConsumerWidget {
 }
 
 class NovelScenePartPreview extends ConsumerWidget {
-  final MapEntry<ScenePartId, OrderedScenePart> orderedPart;
+  final MapEntry<Id<OrderedScenePart>, OrderedScenePart> orderedPart;
 
   const NovelScenePartPreview({super.key, required this.orderedPart});
 

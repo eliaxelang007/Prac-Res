@@ -6,24 +6,23 @@ part of 'data.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_Selection _$SelectionFromJson(Map<String, dynamic> json) => _Selection(
+_Choice _$ChoiceFromJson(Map<String, dynamic> json) => _Choice(
   options: ISet<Option>.fromJson(json['options'], (value) => value as Option),
   selected: json['selected'] as Option?,
 );
 
-Map<String, dynamic> _$SelectionToJson(_Selection instance) =>
-    <String, dynamic>{
-      'options': instance.options.toJson((value) => value),
-      'selected': instance.selected,
-    };
+Map<String, dynamic> _$ChoiceToJson(_Choice instance) => <String, dynamic>{
+  'options': instance.options.toJson((value) => value),
+  'selected': instance.selected,
+};
 
 Frame _$FrameFromJson(Map<String, dynamic> json) => Frame(
-  background: FullBackgroundId.fromJson(
+  background: FullId<Place, Background>.fromJson(
     json['background'] as Map<String, dynamic>,
   ),
-  poses: IList<FullPoseId>.fromJson(
+  poses: IList<FullId<Actor, Pose>>.fromJson(
     json['poses'],
-    (value) => FullPoseId.fromJson(value as Map<String, dynamic>),
+    (value) => FullId<Actor, Pose>.fromJson(value as Map<String, dynamic>),
   ),
   dialogueBox: json['dialogueBox'] == null
       ? null

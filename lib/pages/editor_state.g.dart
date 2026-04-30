@@ -42,7 +42,7 @@ final class SelectedSceneGroupProvider
 }
 
 String _$selectedSceneGroupHash() =>
-    r'bca756d74f1d62111b6afefe1233d2b82acb9d61';
+    r'8adece2da1c7780e840a503ad511b3d2c14c246c';
 
 abstract class _$SelectedSceneGroup extends $Notifier<SceneGroup?> {
   SceneGroup? build();
@@ -66,7 +66,7 @@ abstract class _$SelectedSceneGroup extends $Notifier<SceneGroup?> {
 final selectedSceneProvider = SelectedSceneProvider._();
 
 final class SelectedSceneProvider
-    extends $NotifierProvider<SelectedScene, SceneId?> {
+    extends $NotifierProvider<SelectedScene, Id<Scene>?> {
   SelectedSceneProvider._()
     : super(
         from: null,
@@ -86,27 +86,27 @@ final class SelectedSceneProvider
   SelectedScene create() => SelectedScene();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SceneId? value) {
+  Override overrideWithValue(Id<Scene>? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<SceneId?>(value),
+      providerOverride: $SyncValueProvider<Id<Scene>?>(value),
     );
   }
 }
 
-String _$selectedSceneHash() => r'6c0282f44b462bc3f820731ff9549a3d6df761e3';
+String _$selectedSceneHash() => r'820bfde5d2761131c14d25dd499600cbf572d285';
 
-abstract class _$SelectedScene extends $Notifier<SceneId?> {
-  SceneId? build();
+abstract class _$SelectedScene extends $Notifier<Id<Scene>?> {
+  Id<Scene>? build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<SceneId?, SceneId?>;
+    final ref = this.ref as $Ref<Id<Scene>?, Id<Scene>?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<SceneId?, SceneId?>,
-              SceneId?,
+              AnyNotifier<Id<Scene>?, Id<Scene>?>,
+              Id<Scene>?,
               Object?,
               Object?
             >;
@@ -118,7 +118,8 @@ abstract class _$SelectedScene extends $Notifier<SceneId?> {
 final selectedScenePartProvider = SelectedScenePartProvider._();
 
 final class SelectedScenePartProvider
-    extends $NotifierProvider<SelectedScenePart, ScenePartId?> {
+    extends
+        $NotifierProvider<SelectedScenePart, FullId<Scene, OrderedScenePart>?> {
   SelectedScenePartProvider._()
     : super(
         from: null,
@@ -138,27 +139,38 @@ final class SelectedScenePartProvider
   SelectedScenePart create() => SelectedScenePart();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ScenePartId? value) {
+  Override overrideWithValue(FullId<Scene, OrderedScenePart>? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ScenePartId?>(value),
+      providerOverride: $SyncValueProvider<FullId<Scene, OrderedScenePart>?>(
+        value,
+      ),
     );
   }
 }
 
-String _$selectedScenePartHash() => r'099e6038558dfbbe3c02f1552719eb35d967d731';
+String _$selectedScenePartHash() => r'a3310bed19c9d7b97192eb47fbd9fb454efdf1c5';
 
-abstract class _$SelectedScenePart extends $Notifier<ScenePartId?> {
-  ScenePartId? build();
+abstract class _$SelectedScenePart
+    extends $Notifier<FullId<Scene, OrderedScenePart>?> {
+  FullId<Scene, OrderedScenePart>? build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<ScenePartId?, ScenePartId?>;
+    final ref =
+        this.ref
+            as $Ref<
+              FullId<Scene, OrderedScenePart>?,
+              FullId<Scene, OrderedScenePart>?
+            >;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<ScenePartId?, ScenePartId?>,
-              ScenePartId?,
+              AnyNotifier<
+                FullId<Scene, OrderedScenePart>?,
+                FullId<Scene, OrderedScenePart>?
+              >,
+              FullId<Scene, OrderedScenePart>?,
               Object?,
               Object?
             >;

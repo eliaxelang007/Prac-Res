@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SceneGroup {
 
- Selections get selections; Scenes get scenes; Places get places; Actors get actors;
+ Choices get choices; Scenes get scenes; Places get places; Actors get actors;
 /// Create a copy of SceneGroup
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $SceneGroupCopyWith<SceneGroup> get copyWith => _$SceneGroupCopyWithImpl<SceneGr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SceneGroup&&(identical(other.selections, selections) || other.selections == selections)&&(identical(other.scenes, scenes) || other.scenes == scenes)&&(identical(other.places, places) || other.places == places)&&(identical(other.actors, actors) || other.actors == actors));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SceneGroup&&(identical(other.choices, choices) || other.choices == choices)&&(identical(other.scenes, scenes) || other.scenes == scenes)&&(identical(other.places, places) || other.places == places)&&(identical(other.actors, actors) || other.actors == actors));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,selections,scenes,places,actors);
+int get hashCode => Object.hash(runtimeType,choices,scenes,places,actors);
 
 @override
 String toString() {
-  return 'SceneGroup(selections: $selections, scenes: $scenes, places: $places, actors: $actors)';
+  return 'SceneGroup(choices: $choices, scenes: $scenes, places: $places, actors: $actors)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $SceneGroupCopyWith<$Res>  {
   factory $SceneGroupCopyWith(SceneGroup value, $Res Function(SceneGroup) _then) = _$SceneGroupCopyWithImpl;
 @useResult
 $Res call({
- Selections selections, Scenes scenes, Places places, Actors actors
+ Choices choices, Scenes scenes, Places places, Actors actors
 });
 
 
@@ -62,10 +62,10 @@ class _$SceneGroupCopyWithImpl<$Res>
 
 /// Create a copy of SceneGroup
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? selections = null,Object? scenes = null,Object? places = null,Object? actors = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? choices = null,Object? scenes = null,Object? places = null,Object? actors = null,}) {
   return _then(_self.copyWith(
-selections: null == selections ? _self.selections : selections // ignore: cast_nullable_to_non_nullable
-as Selections,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
+choices: null == choices ? _self.choices : choices // ignore: cast_nullable_to_non_nullable
+as Choices,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
 as Scenes,places: null == places ? _self.places : places // ignore: cast_nullable_to_non_nullable
 as Places,actors: null == actors ? _self.actors : actors // ignore: cast_nullable_to_non_nullable
 as Actors,
@@ -153,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Selections selections,  Scenes scenes,  Places places,  Actors actors)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Choices choices,  Scenes scenes,  Places places,  Actors actors)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SceneGroup() when $default != null:
-return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
+return $default(_that.choices,_that.scenes,_that.places,_that.actors);case _:
   return orElse();
 
 }
@@ -174,10 +174,10 @@ return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Selections selections,  Scenes scenes,  Places places,  Actors actors)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Choices choices,  Scenes scenes,  Places places,  Actors actors)  $default,) {final _that = this;
 switch (_that) {
 case _SceneGroup():
-return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
+return $default(_that.choices,_that.scenes,_that.places,_that.actors);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +194,10 @@ return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Selections selections,  Scenes scenes,  Places places,  Actors actors)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Choices choices,  Scenes scenes,  Places places,  Actors actors)?  $default,) {final _that = this;
 switch (_that) {
 case _SceneGroup() when $default != null:
-return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
+return $default(_that.choices,_that.scenes,_that.places,_that.actors);case _:
   return null;
 
 }
@@ -209,10 +209,10 @@ return $default(_that.selections,_that.scenes,_that.places,_that.actors);case _:
 
 
 class _SceneGroup extends SceneGroup {
-  const _SceneGroup({required this.selections, required this.scenes, required this.places, required this.actors}): super._();
+  const _SceneGroup({required this.choices, required this.scenes, required this.places, required this.actors}): super._();
   
 
-@override final  Selections selections;
+@override final  Choices choices;
 @override final  Scenes scenes;
 @override final  Places places;
 @override final  Actors actors;
@@ -227,16 +227,16 @@ _$SceneGroupCopyWith<_SceneGroup> get copyWith => __$SceneGroupCopyWithImpl<_Sce
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SceneGroup&&(identical(other.selections, selections) || other.selections == selections)&&(identical(other.scenes, scenes) || other.scenes == scenes)&&(identical(other.places, places) || other.places == places)&&(identical(other.actors, actors) || other.actors == actors));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SceneGroup&&(identical(other.choices, choices) || other.choices == choices)&&(identical(other.scenes, scenes) || other.scenes == scenes)&&(identical(other.places, places) || other.places == places)&&(identical(other.actors, actors) || other.actors == actors));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,selections,scenes,places,actors);
+int get hashCode => Object.hash(runtimeType,choices,scenes,places,actors);
 
 @override
 String toString() {
-  return 'SceneGroup(selections: $selections, scenes: $scenes, places: $places, actors: $actors)';
+  return 'SceneGroup(choices: $choices, scenes: $scenes, places: $places, actors: $actors)';
 }
 
 
@@ -247,7 +247,7 @@ abstract mixin class _$SceneGroupCopyWith<$Res> implements $SceneGroupCopyWith<$
   factory _$SceneGroupCopyWith(_SceneGroup value, $Res Function(_SceneGroup) _then) = __$SceneGroupCopyWithImpl;
 @override @useResult
 $Res call({
- Selections selections, Scenes scenes, Places places, Actors actors
+ Choices choices, Scenes scenes, Places places, Actors actors
 });
 
 
@@ -264,10 +264,10 @@ class __$SceneGroupCopyWithImpl<$Res>
 
 /// Create a copy of SceneGroup
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? selections = null,Object? scenes = null,Object? places = null,Object? actors = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? choices = null,Object? scenes = null,Object? places = null,Object? actors = null,}) {
   return _then(_SceneGroup(
-selections: null == selections ? _self.selections : selections // ignore: cast_nullable_to_non_nullable
-as Selections,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
+choices: null == choices ? _self.choices : choices // ignore: cast_nullable_to_non_nullable
+as Choices,scenes: null == scenes ? _self.scenes : scenes // ignore: cast_nullable_to_non_nullable
 as Scenes,places: null == places ? _self.places : places // ignore: cast_nullable_to_non_nullable
 as Places,actors: null == actors ? _self.actors : actors // ignore: cast_nullable_to_non_nullable
 as Actors,
@@ -279,22 +279,22 @@ as Actors,
 
 
 /// @nodoc
-mixin _$Selection {
+mixin _$Choice {
 
  ISet<Option> get options; Option? get selected;
-/// Create a copy of Selection
+/// Create a copy of Choice
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$SelectionCopyWith<Selection> get copyWith => _$SelectionCopyWithImpl<Selection>(this as Selection, _$identity);
+$ChoiceCopyWith<Choice> get copyWith => _$ChoiceCopyWithImpl<Choice>(this as Choice, _$identity);
 
-  /// Serializes this Selection to a JSON map.
+  /// Serializes this Choice to a JSON map.
   Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Selection&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.selected, selected) || other.selected == selected));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Choice&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.selected, selected) || other.selected == selected));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -303,15 +303,15 @@ int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(
 
 @override
 String toString() {
-  return 'Selection(options: $options, selected: $selected)';
+  return 'Choice(options: $options, selected: $selected)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $SelectionCopyWith<$Res>  {
-  factory $SelectionCopyWith(Selection value, $Res Function(Selection) _then) = _$SelectionCopyWithImpl;
+abstract mixin class $ChoiceCopyWith<$Res>  {
+  factory $ChoiceCopyWith(Choice value, $Res Function(Choice) _then) = _$ChoiceCopyWithImpl;
 @useResult
 $Res call({
  ISet<Option> options, Option? selected
@@ -322,14 +322,14 @@ $Res call({
 
 }
 /// @nodoc
-class _$SelectionCopyWithImpl<$Res>
-    implements $SelectionCopyWith<$Res> {
-  _$SelectionCopyWithImpl(this._self, this._then);
+class _$ChoiceCopyWithImpl<$Res>
+    implements $ChoiceCopyWith<$Res> {
+  _$ChoiceCopyWithImpl(this._self, this._then);
 
-  final Selection _self;
-  final $Res Function(Selection) _then;
+  final Choice _self;
+  final $Res Function(Choice) _then;
 
-/// Create a copy of Selection
+/// Create a copy of Choice
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? options = null,Object? selected = freezed,}) {
   return _then(_self.copyWith(
@@ -342,8 +342,8 @@ as Option?,
 }
 
 
-/// Adds pattern-matching-related methods to [Selection].
-extension SelectionPatterns on Selection {
+/// Adds pattern-matching-related methods to [Choice].
+extension ChoicePatterns on Choice {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -356,10 +356,10 @@ extension SelectionPatterns on Selection {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Selection value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Choice value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _Selection() when $default != null:
+case _Choice() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -378,10 +378,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Selection value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Choice value)  $default,){
 final _that = this;
 switch (_that) {
-case _Selection():
+case _Choice():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -399,10 +399,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Selection value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Choice value)?  $default,){
 final _that = this;
 switch (_that) {
-case _Selection() when $default != null:
+case _Choice() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -422,7 +422,7 @@ return $default(_that);case _:
 
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ISet<Option> options,  Option? selected)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _Selection() when $default != null:
+case _Choice() when $default != null:
 return $default(_that.options,_that.selected);case _:
   return orElse();
 
@@ -443,7 +443,7 @@ return $default(_that.options,_that.selected);case _:
 
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ISet<Option> options,  Option? selected)  $default,) {final _that = this;
 switch (_that) {
-case _Selection():
+case _Choice():
 return $default(_that.options,_that.selected);case _:
   throw StateError('Unexpected subclass');
 
@@ -463,7 +463,7 @@ return $default(_that.options,_that.selected);case _:
 
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ISet<Option> options,  Option? selected)?  $default,) {final _that = this;
 switch (_that) {
-case _Selection() when $default != null:
+case _Choice() when $default != null:
 return $default(_that.options,_that.selected);case _:
   return null;
 
@@ -475,27 +475,27 @@ return $default(_that.options,_that.selected);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _Selection extends Selection {
-   _Selection({required this.options, required this.selected}): assert(selected == null || options.contains(selected), '[selected] has to be either [null] or contained in the set of [options]!'),super._();
-  factory _Selection.fromJson(Map<String, dynamic> json) => _$SelectionFromJson(json);
+class _Choice extends Choice {
+   _Choice({required this.options, required this.selected}): assert(selected == null || options.contains(selected), '[selected] has to be either [null] or contained in the set of [options]!'),super._();
+  factory _Choice.fromJson(Map<String, dynamic> json) => _$ChoiceFromJson(json);
 
 @override final  ISet<Option> options;
 @override final  Option? selected;
 
-/// Create a copy of Selection
+/// Create a copy of Choice
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$SelectionCopyWith<_Selection> get copyWith => __$SelectionCopyWithImpl<_Selection>(this, _$identity);
+_$ChoiceCopyWith<_Choice> get copyWith => __$ChoiceCopyWithImpl<_Choice>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$SelectionToJson(this, );
+  return _$ChoiceToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Selection&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.selected, selected) || other.selected == selected));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Choice&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.selected, selected) || other.selected == selected));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -504,15 +504,15 @@ int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(
 
 @override
 String toString() {
-  return 'Selection(options: $options, selected: $selected)';
+  return 'Choice(options: $options, selected: $selected)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$SelectionCopyWith<$Res> implements $SelectionCopyWith<$Res> {
-  factory _$SelectionCopyWith(_Selection value, $Res Function(_Selection) _then) = __$SelectionCopyWithImpl;
+abstract mixin class _$ChoiceCopyWith<$Res> implements $ChoiceCopyWith<$Res> {
+  factory _$ChoiceCopyWith(_Choice value, $Res Function(_Choice) _then) = __$ChoiceCopyWithImpl;
 @override @useResult
 $Res call({
  ISet<Option> options, Option? selected
@@ -523,17 +523,17 @@ $Res call({
 
 }
 /// @nodoc
-class __$SelectionCopyWithImpl<$Res>
-    implements _$SelectionCopyWith<$Res> {
-  __$SelectionCopyWithImpl(this._self, this._then);
+class __$ChoiceCopyWithImpl<$Res>
+    implements _$ChoiceCopyWith<$Res> {
+  __$ChoiceCopyWithImpl(this._self, this._then);
 
-  final _Selection _self;
-  final $Res Function(_Selection) _then;
+  final _Choice _self;
+  final $Res Function(_Choice) _then;
 
-/// Create a copy of Selection
+/// Create a copy of Choice
 /// with the given fields replaced by the non-null parameter values.
 @override @pragma('vm:prefer-inline') $Res call({Object? options = null,Object? selected = freezed,}) {
-  return _then(_Selection(
+  return _then(_Choice(
 options: null == options ? _self.options : options // ignore: cast_nullable_to_non_nullable
 as ISet<Option>,selected: freezed == selected ? _self.selected : selected // ignore: cast_nullable_to_non_nullable
 as Option?,
@@ -677,7 +677,7 @@ return frameResolver(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FullBackgroundId background,  IList<FullPoseId> poses,  DialogueBox? dialogueBox)?  frame,TResult Function()?  frameResolver,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FullId<Place, Background> background,  IList<FullId<Actor, Pose>> poses,  DialogueBox? dialogueBox)?  frame,TResult Function()?  frameResolver,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Frame() when frame != null:
 return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
@@ -699,7 +699,7 @@ return frameResolver();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FullBackgroundId background,  IList<FullPoseId> poses,  DialogueBox? dialogueBox)  frame,required TResult Function()  frameResolver,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FullId<Place, Background> background,  IList<FullId<Actor, Pose>> poses,  DialogueBox? dialogueBox)  frame,required TResult Function()  frameResolver,}) {final _that = this;
 switch (_that) {
 case Frame():
 return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver():
@@ -717,7 +717,7 @@ return frameResolver();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FullBackgroundId background,  IList<FullPoseId> poses,  DialogueBox? dialogueBox)?  frame,TResult? Function()?  frameResolver,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FullId<Place, Background> background,  IList<FullId<Actor, Pose>> poses,  DialogueBox? dialogueBox)?  frame,TResult? Function()?  frameResolver,}) {final _that = this;
 switch (_that) {
 case Frame() when frame != null:
 return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
@@ -736,8 +736,8 @@ class Frame implements ScenePart {
   const Frame({required this.background, required this.poses, required this.dialogueBox, final  String? $type}): $type = $type ?? 'frame';
   factory Frame.fromJson(Map<String, dynamic> json) => _$FrameFromJson(json);
 
- final  FullBackgroundId background;
- final  IList<FullPoseId> poses;
+ final  FullId<Place, Background> background;
+ final  IList<FullId<Actor, Pose>> poses;
  final  DialogueBox? dialogueBox;
 
 @JsonKey(name: 'type')
@@ -777,7 +777,7 @@ abstract mixin class $FrameCopyWith<$Res> implements $ScenePartCopyWith<$Res> {
   factory $FrameCopyWith(Frame value, $Res Function(Frame) _then) = _$FrameCopyWithImpl;
 @useResult
 $Res call({
- FullBackgroundId background, IList<FullPoseId> poses, DialogueBox? dialogueBox
+ FullId<Place, Background> background, IList<FullId<Actor, Pose>> poses, DialogueBox? dialogueBox
 });
 
 
@@ -797,8 +797,8 @@ class _$FrameCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? background = null,Object? poses = null,Object? dialogueBox = freezed,}) {
   return _then(Frame(
 background: null == background ? _self.background : background // ignore: cast_nullable_to_non_nullable
-as FullBackgroundId,poses: null == poses ? _self.poses : poses // ignore: cast_nullable_to_non_nullable
-as IList<FullPoseId>,dialogueBox: freezed == dialogueBox ? _self.dialogueBox : dialogueBox // ignore: cast_nullable_to_non_nullable
+as FullId<Place, Background>,poses: null == poses ? _self.poses : poses // ignore: cast_nullable_to_non_nullable
+as IList<FullId<Actor, Pose>>,dialogueBox: freezed == dialogueBox ? _self.dialogueBox : dialogueBox // ignore: cast_nullable_to_non_nullable
 as DialogueBox?,
   ));
 }
@@ -1055,8 +1055,8 @@ return $default(_that.name,_that.dialogue);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _DialogueBox implements DialogueBox {
-  const _DialogueBox({required this.name, required this.dialogue});
+class _DialogueBox extends DialogueBox {
+  const _DialogueBox({required this.name, required this.dialogue}): super._();
   factory _DialogueBox.fromJson(Map<String, dynamic> json) => _$DialogueBoxFromJson(json);
 
 @override final  String? name;
@@ -1330,8 +1330,8 @@ return $default(_that.order,_that.part);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _OrderedScenePart implements OrderedScenePart {
-  const _OrderedScenePart({required this.order, required this.part});
+class _OrderedScenePart extends OrderedScenePart {
+  const _OrderedScenePart({required this.order, required this.part}): super._();
   factory _OrderedScenePart.fromJson(Map<String, dynamic> json) => _$OrderedScenePartFromJson(json);
 
 @override final  double order;
