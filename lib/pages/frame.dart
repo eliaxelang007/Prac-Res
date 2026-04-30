@@ -27,10 +27,12 @@ class NovelFrame extends ConsumerWidget {
 
     return Stack(
       children: [
+        Positioned.fill(child: const Placeholder()),
+
         if (background != null)
           Positioned.fill(
             child: Image.memory(
-              background.findIn(places!)!.resource.resource.value.image,
+              background.findIn(places!)!.value.image,
               fit: BoxFit.cover,
             ),
           ),

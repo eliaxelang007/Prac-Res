@@ -17,12 +17,12 @@ Map<String, dynamic> _$ChoiceToJson(_Choice instance) => <String, dynamic>{
 };
 
 Frame _$FrameFromJson(Map<String, dynamic> json) => Frame(
-  background: FullId<Place, Background>.fromJson(
-    json['background'] as Map<String, dynamic>,
-  ),
-  poses: IList<FullId<Actor, Pose>>.fromJson(
+  background: json['background'] == null
+      ? null
+      : FullId<Background>.fromJson(json['background'] as Map<String, dynamic>),
+  poses: IList<FullId<Pose>>.fromJson(
     json['poses'],
-    (value) => FullId<Actor, Pose>.fromJson(value as Map<String, dynamic>),
+    (value) => FullId<Pose>.fromJson(value as Map<String, dynamic>),
   ),
   dialogueBox: json['dialogueBox'] == null
       ? null

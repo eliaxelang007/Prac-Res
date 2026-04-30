@@ -5,51 +5,50 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part "editor_state.g.dart";
 
 extension SceneGroupPaths on SceneGroup {
-  // -- Places & Backgrounds --
-  Selector<SceneGroup, Place?> placePath(Id<Place> id) {
-    final childSelector = Collection.childSelector<Place>(id);
-    return SceneGroup.placesSelector.select<Place?>(
-      (places) => childSelector.get(places),
-      (places, place) => Places.from(childSelector.set(places, place)),
-    );
-  }
+  //   // -- Places & Backgrounds --
+  //   Selector<SceneGroup, Place?> placePath(Id<Place> id) {
+  //     final childSelector = Collection.childSelector<Place>(id);
+  //     return SceneGroup.placesSelector.select<Place?>(
+  //       (places) => childSelector.get(places),
+  //       (places, place) => Places.from(childSelector.set(places, place)),
+  //     );
+  //   }
 
-  Selector<SceneGroup, Background?> backgroundPath(
-    FullId<Place, Background> id,
-  ) => SceneGroup.placesSelector.compose(
-    id.childSelector() as Selector<Places, Background?>,
-  );
+  Selector<SceneGroup, Background?> backgroundPath(FullId<Background> id) =>
+      SceneGroup.placesSelector.compose(
+        id.childSelector() as Selector<Places, Background?>,
+      );
 
-  // -- Actors & Poses --
-  Selector<SceneGroup, Actor?> actorPath(Id<Actor> id) {
-    final childSelector = Collection.childSelector<Actor>(id);
-    return SceneGroup.actorsSelector.select<Actor?>(
-      (actors) => childSelector.get(actors),
-      (actors, actor) => Actors.from(childSelector.set(actors, actor)),
-    );
-  }
+  //   // -- Actors & Poses --
+  //   Selector<SceneGroup, Actor?> actorPath(Id<Actor> id) {
+  //     final childSelector = Collection.childSelector<Actor>(id);
+  //     return SceneGroup.actorsSelector.select<Actor?>(
+  //       (actors) => childSelector.get(actors),
+  //       (actors, actor) => Actors.from(childSelector.set(actors, actor)),
+  //     );
+  //   }
 
-  Selector<SceneGroup, Pose?> posePath(FullId<Actor, Pose> id) => SceneGroup
-      .actorsSelector
-      .compose(id.childSelector() as Selector<Actors, Pose?>);
+  //   Selector<SceneGroup, Pose?> posePath(FullId<Pose> id) => SceneGroup
+  //       .actorsSelector
+  //       .compose(id.childSelector() as Selector<Actors, Pose?>);
 
-  // -- Scenes & Scene Parts --
-  Selector<SceneGroup, Scene?> scenePath(Id<Scene> id) {
-    final childSelector = Collection.childSelector<Scene>(id);
-    return SceneGroup.scenesSelector.select<Scene?>(
-      (scenes) => childSelector.get(scenes),
-      (scenes, scene) => Scenes.from(childSelector.set(scenes, scene)),
-    );
-  }
+  //   // -- Scenes & Scene Parts --
+  //   Selector<SceneGroup, Scene?> scenePath(Id<Scene> id) {
+  //     final childSelector = Collection.childSelector<Scene>(id);
+  //     return SceneGroup.scenesSelector.select<Scene?>(
+  //       (scenes) => childSelector.get(scenes),
+  //       (scenes, scene) => Scenes.from(childSelector.set(scenes, scene)),
+  //     );
+  //   }
 
   Selector<SceneGroup, OrderedScenePart?> scenePartPath(
-    FullId<Scene, OrderedScenePart> id,
+    FullId<OrderedScenePart> id,
   ) => SceneGroup.scenesSelector.compose(
     id.childSelector() as Selector<Scenes, OrderedScenePart?>,
   );
 
   // -- Frames --
-  Selector<SceneGroup, Frame?> framePath(FullId<Scene, OrderedScenePart> id) =>
+  Selector<SceneGroup, Frame?> framePath(FullId<OrderedScenePart> id) =>
       scenePartPath(id).select<Frame?>(
         (ordered) {
           final part = ordered?.part;
@@ -60,14 +59,14 @@ extension SceneGroupPaths on SceneGroup {
             : ordered,
       );
 
-  // -- Dialogue Box --
-  Selector<SceneGroup, DialogueBox?> dialogueBoxPath(
-    FullId<Scene, OrderedScenePart> id,
-  ) => framePath(id).select<DialogueBox?>(
-    (frame) => frame?.dialogueBox,
-    (frame, newBox) =>
-        frame != null ? frame.copyWith(dialogueBox: newBox) : frame,
-  );
+  //   // -- Dialogue Box --
+  //   Selector<SceneGroup, DialogueBox?> dialogueBoxPath(
+  //     FullId<OrderedScenePart> id,
+  //   ) => framePath(id).select<DialogueBox?>(
+  //     (frame) => frame?.dialogueBox,
+  //     (frame, newBox) =>
+  //         frame != null ? frame.copyWith(dialogueBox: newBox) : frame,
+  //   );
 }
 
 @Riverpod(keepAlive: true)
@@ -86,159 +85,160 @@ class SelectedSceneGroup extends _$SelectedSceneGroup {
     }
   }
 
-  void setPlace(Id<Place> id, Place place) =>
-      _update((sceneGroup) => sceneGroup.placePath(id).set(sceneGroup, place));
-
-  void removePlace(Id<Place> id) =>
-      _update((sceneGroup) => sceneGroup.placePath(id).set(sceneGroup, null));
-
-  void editPlaceName(Id<Place> id, String name) => _update(
-    (sceneGroup) => sceneGroup
-        .placePath(id)
-        .select<String?>(
-          (p) => p?.metadata.name,
-          (p, n) => (p != null && n != null)
-              ? Place.fromBackgrounds(name: Name(n), backgrounds: p.value)
-              : p,
-        )
-        .set(sceneGroup, name),
+  void updatePlaces(Places newPlaces) => _update(
+    (sceneGroup) => SceneGroup.placesSelector.set(sceneGroup, newPlaces),
   );
 
-  void setBackground(FullId<Place, Background> id, Background bg) => _update(
-    (sceneGroup) => sceneGroup.backgroundPath(id).set(sceneGroup, bg),
-  );
+  // void setPlace(Id<Place> id, Place place) =>
+  //     _update((sceneGroup) => sceneGroup.placePath(id).set(sceneGroup, place));
 
-  void removeBackground(FullId<Place, Background> id) => _update(
-    (sceneGroup) => sceneGroup.backgroundPath(id).set(sceneGroup, null),
-  );
+  // void removePlace(Id<Place> id) =>
+  //     _update((sceneGroup) => sceneGroup.placePath(id).set(sceneGroup, null));
 
-  void editBackgroundName(FullId<Place, Background> id, String name) => _update(
-    (sceneGroup) => sceneGroup
-        .backgroundPath(id)
-        .select<String?>(
-          (background) => background?.metadata.name,
-          (b, n) => (b != null && n != null)
-              ? Background(name: Name(n), image: b.value)
-              : b,
-        )
-        .set(sceneGroup, name),
-  );
+  // void editPlaceName(Id<Place> id, String name) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .placePath(id)
+  //       .select<String?>(
+  //         (p) => p?.metadata.name,
+  //         (p, n) => (p != null && n != null)
+  //             ? Place.fromBackgrounds(name: Name(n), backgrounds: p.value)
+  //             : p,
+  //       )
+  //       .set(sceneGroup, name),
+  // );
 
-  void editBackgroundImage(FullId<Place, Background> id, ImageData image) =>
-      _update(
-        (sceneGroup) => sceneGroup
-            .backgroundPath(id)
-            .select<ImageData?>(
-              (background) => background?.value,
-              (background, newImage) => (background != null && newImage != null)
-                  ? Background(name: background.metadata, image: newImage)
-                  : background,
-            )
-            .set(sceneGroup, image),
-      );
+  // void setBackground(FullId<Background> id, Background bg) => _update(
+  //   (sceneGroup) => sceneGroup.backgroundPath(id).set(sceneGroup, bg),
+  // );
 
-  // ==== ACTORS ====
-  void setActor(Id<Actor> id, Actor actor) =>
-      _update((sceneGroup) => sceneGroup.actorPath(id).set(sceneGroup, actor));
+  // void removeBackground(FullId<Background> id) => _update(
+  //   (sceneGroup) => sceneGroup.backgroundPath(id).set(sceneGroup, null),
+  // );
 
-  void removeActor(Id<Actor> id) =>
-      _update((sceneGroup) => sceneGroup.actorPath(id).set(sceneGroup, null));
+  // void editBackgroundName(FullId<Background> id, String name) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .backgroundPath(id)
+  //       .select<String?>(
+  //         (background) => background?.metadata.name,
+  //         (b, n) => (b != null && n != null)
+  //             ? Background(name: Name(n), image: b.value)
+  //             : b,
+  //       )
+  //       .set(sceneGroup, name),
+  // );
 
-  void editActorName(Id<Actor> id, String name) => _update(
-    (sceneGroup) => sceneGroup
-        .actorPath(id)
-        .select<String?>(
-          (actor) => actor?.metadata.name,
-          (actor, n) => (actor != null && n != null)
-              ? Actor.fromPoses(name: Name(n), poses: actor.value)
-              : actor,
-        )
-        .set(sceneGroup, name),
-  );
+  // void editBackgroundImage(FullId<Background> id, ImageData image) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .backgroundPath(id)
+  //       .select<ImageData?>(
+  //         (background) => background?.value,
+  //         (background, newImage) => (background != null && newImage != null)
+  //             ? Background(name: background.metadata, image: newImage)
+  //             : background,
+  //       )
+  //       .set(sceneGroup, image),
+  // );
 
-  // ==== POSES ====
-  void setPose(FullId<Actor, Pose> id, Pose pose) =>
-      _update((sceneGroup) => sceneGroup.posePath(id).set(sceneGroup, pose));
+  // // ==== ACTORS ====
+  // void setActor(Id<Actor> id, Actor actor) =>
+  //     _update((sceneGroup) => sceneGroup.actorPath(id).set(sceneGroup, actor));
 
-  void removePose(FullId<Actor, Pose> id) =>
-      _update((sceneGroup) => sceneGroup.posePath(id).set(sceneGroup, null));
+  // void removeActor(Id<Actor> id) =>
+  //     _update((sceneGroup) => sceneGroup.actorPath(id).set(sceneGroup, null));
 
-  void editPoseName(FullId<Actor, Pose> id, String name) => _update(
-    (sceneGroup) => sceneGroup
-        .posePath(id)
-        .select<String?>(
-          (pose) => pose?.metadata.name,
-          (pose, newName) => (pose != null && newName != null)
-              ? Pose(name: Name(newName), image: pose.value)
-              : pose,
-        )
-        .set(sceneGroup, name),
-  );
+  // void editActorName(Id<Actor> id, String name) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .actorPath(id)
+  //       .select<String?>(
+  //         (actor) => actor?.metadata.name,
+  //         (actor, n) => (actor != null && n != null)
+  //             ? Actor.fromPoses(name: Name(n), poses: actor.value)
+  //             : actor,
+  //       )
+  //       .set(sceneGroup, name),
+  // );
 
-  void editPoseImage(FullId<Actor, Pose> id, ImageData image) => _update(
-    (sceneGroup) => sceneGroup
-        .posePath(id)
-        .select<ImageData?>(
-          (pose) => pose?.value,
-          (pose, newImage) => (pose != null && newImage != null)
-              ? Pose(name: pose.metadata, image: newImage)
-              : pose,
-        )
-        .set(sceneGroup, image),
-  );
+  // // ==== POSES ====
+  // void setPose(FullId<Pose> id, Pose pose) =>
+  //     _update((sceneGroup) => sceneGroup.posePath(id).set(sceneGroup, pose));
 
-  // ==== SCENES ====
-  void setScene(Id<Scene> id, Scene scene) =>
-      _update((sceneGroup) => sceneGroup.scenePath(id).set(sceneGroup, scene));
+  // void removePose(FullId<Pose> id) =>
+  //     _update((sceneGroup) => sceneGroup.posePath(id).set(sceneGroup, null));
 
-  void removeScene(Id<Scene> id) =>
-      _update((sceneGroup) => sceneGroup.scenePath(id).set(sceneGroup, null));
+  // void editPoseName(FullId<Pose> id, String name) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .posePath(id)
+  //       .select<String?>(
+  //         (pose) => pose?.metadata.name,
+  //         (pose, newName) => (pose != null && newName != null)
+  //             ? Pose(name: Name(newName), image: pose.value)
+  //             : pose,
+  //       )
+  //       .set(sceneGroup, name),
+  // );
 
-  void editSceneName(Id<Scene> id, String name) => _update(
-    (sceneGroup) => sceneGroup
-        .scenePath(id)
-        .select<String?>(
-          (scene) => scene?.metadata.name,
-          (scene, newName) => (scene != null && newName != null)
-              ? Scene.fromParts(name: Name(newName), parts: scene.value)
-              : scene,
-        )
-        .set(sceneGroup, name),
-  );
+  // void editPoseImage(FullId<Pose> id, ImageData image) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .posePath(id)
+  //       .select<ImageData?>(
+  //         (pose) => pose?.value,
+  //         (pose, newImage) => (pose != null && newImage != null)
+  //             ? Pose(name: pose.metadata, image: newImage)
+  //             : pose,
+  //       )
+  //       .set(sceneGroup, image),
+  // );
 
-  // ==== SCENE PARTS ====
-  void setScenePart(
-    FullId<Scene, OrderedScenePart> id,
-    OrderedScenePart part,
-  ) => _update(
-    (sceneGroup) => sceneGroup.scenePartPath(id).set(sceneGroup, part),
-  );
+  // // ==== SCENES ====
+  // void setScene(Id<Scene> id, Scene scene) =>
+  //     _update((sceneGroup) => sceneGroup.scenePath(id).set(sceneGroup, scene));
 
-  void removeScenePart(FullId<Scene, OrderedScenePart> id) => _update(
-    (sceneGroup) => sceneGroup.scenePartPath(id).set(sceneGroup, null),
-  );
+  // void removeScene(Id<Scene> id) =>
+  //     _update((sceneGroup) => sceneGroup.scenePath(id).set(sceneGroup, null));
 
-  void reorderScenePart(FullId<Scene, OrderedScenePart> id, double newOrder) =>
-      _update(
-        (sceneGroup) => sceneGroup
-            .scenePartPath(id)
-            .select<double?>(
-              (part) => part?.order,
-              (part, newOrder) => (part != null && newOrder != null)
-                  ? part.copyWith(order: newOrder)
-                  : part,
-            )
-            .set(sceneGroup, newOrder),
-      );
+  // void editSceneName(Id<Scene> id, String name) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .scenePath(id)
+  //       .select<String?>(
+  //         (scene) => scene?.metadata.name,
+  //         (scene, newName) => (scene != null && newName != null)
+  //             ? Scene.fromParts(name: Name(newName), parts: scene.value)
+  //             : scene,
+  //       )
+  //       .set(sceneGroup, name),
+  // );
 
-  // ==== FRAMES ====
+  // // ==== SCENE PARTS ====
+  // void setScenePart(FullId<OrderedScenePart> id, OrderedScenePart part) =>
+  //     _update(
+  //       (sceneGroup) => sceneGroup.scenePartPath(id).set(sceneGroup, part),
+  //     );
+
+  // void removeScenePart(FullId<OrderedScenePart> id) => _update(
+  //   (sceneGroup) => sceneGroup.scenePartPath(id).set(sceneGroup, null),
+  // );
+
+  // void reorderScenePart(FullId<OrderedScenePart> id, double newOrder) =>
+  //     _update(
+  //       (sceneGroup) => sceneGroup
+  //           .scenePartPath(id)
+  //           .select<double?>(
+  //             (part) => part?.order,
+  //             (part, newOrder) => (part != null && newOrder != null)
+  //                 ? part.copyWith(order: newOrder)
+  //                 : part,
+  //           )
+  //           .set(sceneGroup, newOrder),
+  //     );
+
+  // // ==== FRAMES ====
   void changeFrameBackground(
-    FullId<Scene, OrderedScenePart> id,
-    FullId<Place, Background> bgId,
+    FullId<OrderedScenePart> id,
+    FullId<Background> bgId,
   ) => _update(
     (sceneGroup) => sceneGroup
         .framePath(id)
-        .select<FullId<Place, Background>?>(
+        .select<FullId<Background>?>(
           (frame) => frame?.background,
           (frame, newBackground) => (frame != null && newBackground != null)
               ? frame.copyWith(background: newBackground)
@@ -247,54 +247,50 @@ class SelectedSceneGroup extends _$SelectedSceneGroup {
         .set(sceneGroup, bgId),
   );
 
-  void changeFramePoses(
-    FullId<Scene, OrderedScenePart> id,
-    IList<FullId<Actor, Pose>> poses,
-  ) => _update(
-    (sceneGroup) => sceneGroup
-        .framePath(id)
-        .select<IList<FullId<Actor, Pose>>?>(
-          (frame) => frame?.poses,
-          (frame, newPoses) => (frame != null && newPoses != null)
-              ? frame.copyWith(poses: newPoses)
-              : frame,
-        )
-        .set(sceneGroup, poses),
-  );
+  // void changeFramePoses(
+  //   FullId<OrderedScenePart> id,
+  //   IList<FullId<Pose>> poses,
+  // ) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .framePath(id)
+  //       .select<IList<FullId<Pose>>?>(
+  //         (frame) => frame?.poses,
+  //         (frame, newPoses) => (frame != null && newPoses != null)
+  //             ? frame.copyWith(poses: newPoses)
+  //             : frame,
+  //       )
+  //       .set(sceneGroup, poses),
+  // );
 
-  // ==== DIALOGUE BOX ====
-  void changeFrameDialogueBox(
-    FullId<Scene, OrderedScenePart> id,
-    DialogueBox? box,
-  ) => _update(
-    (sceneGroup) => sceneGroup.dialogueBoxPath(id).set(sceneGroup, box),
-  );
+  // // ==== DIALOGUE BOX ====
+  // void changeFrameDialogueBox(FullId<OrderedScenePart> id, DialogueBox? box) =>
+  //     _update(
+  //       (sceneGroup) => sceneGroup.dialogueBoxPath(id).set(sceneGroup, box),
+  //     );
 
-  void changeDialogueText(FullId<Scene, OrderedScenePart> id, String text) =>
-      _update(
-        (sceneGroup) => sceneGroup
-            .dialogueBoxPath(id)
-            .select<String?>(
-              (dialogueBox) => dialogueBox?.dialogue,
-              (dialogueBox, newText) => (dialogueBox != null && newText != null)
-                  ? dialogueBox.copyWith(dialogue: newText)
-                  : dialogueBox,
-            )
-            .set(sceneGroup, text),
-      );
+  // void changeDialogueText(FullId<OrderedScenePart> id, String text) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .dialogueBoxPath(id)
+  //       .select<String?>(
+  //         (dialogueBox) => dialogueBox?.dialogue,
+  //         (dialogueBox, newText) => (dialogueBox != null && newText != null)
+  //             ? dialogueBox.copyWith(dialogue: newText)
+  //             : dialogueBox,
+  //       )
+  //       .set(sceneGroup, text),
+  // );
 
-  void changeDialogueName(FullId<Scene, OrderedScenePart> id, String? name) =>
-      _update(
-        (sceneGroup) => sceneGroup
-            .dialogueBoxPath(id)
-            .select<String?>(
-              (dialogueBox) => dialogueBox?.name,
-              (dialogueBox, newName) => dialogueBox != null
-                  ? dialogueBox.copyWith(name: newName)
-                  : dialogueBox,
-            )
-            .set(sceneGroup, name),
-      );
+  // void changeDialogueName(FullId<OrderedScenePart> id, String? name) => _update(
+  //   (sceneGroup) => sceneGroup
+  //       .dialogueBoxPath(id)
+  //       .select<String?>(
+  //         (dialogueBox) => dialogueBox?.name,
+  //         (dialogueBox, newName) => dialogueBox != null
+  //             ? dialogueBox.copyWith(name: newName)
+  //             : dialogueBox,
+  //       )
+  //       .set(sceneGroup, name),
+  // );
 }
 
 @Riverpod(keepAlive: true)
@@ -311,7 +307,7 @@ class SelectedScene extends _$SelectedScene {
 @Riverpod(keepAlive: true)
 class SelectedScenePart extends _$SelectedScenePart {
   @override
-  FullId<Scene, OrderedScenePart>? build() => null;
+  Id<OrderedScenePart>? build() => null;
 
-  void select(FullId<Scene, OrderedScenePart>? id) => state = id;
+  void select(Id<OrderedScenePart>? id) => state = id;
 }

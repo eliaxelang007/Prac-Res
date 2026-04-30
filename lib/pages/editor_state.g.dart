@@ -42,7 +42,7 @@ final class SelectedSceneGroupProvider
 }
 
 String _$selectedSceneGroupHash() =>
-    r'8adece2da1c7780e840a503ad511b3d2c14c246c';
+    r'c35696ccd9e76582d37028221d962f9d4af4c9fc';
 
 abstract class _$SelectedSceneGroup extends $Notifier<SceneGroup?> {
   SceneGroup? build();
@@ -118,8 +118,7 @@ abstract class _$SelectedScene extends $Notifier<Id<Scene>?> {
 final selectedScenePartProvider = SelectedScenePartProvider._();
 
 final class SelectedScenePartProvider
-    extends
-        $NotifierProvider<SelectedScenePart, FullId<Scene, OrderedScenePart>?> {
+    extends $NotifierProvider<SelectedScenePart, Id<OrderedScenePart>?> {
   SelectedScenePartProvider._()
     : super(
         from: null,
@@ -139,38 +138,27 @@ final class SelectedScenePartProvider
   SelectedScenePart create() => SelectedScenePart();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(FullId<Scene, OrderedScenePart>? value) {
+  Override overrideWithValue(Id<OrderedScenePart>? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<FullId<Scene, OrderedScenePart>?>(
-        value,
-      ),
+      providerOverride: $SyncValueProvider<Id<OrderedScenePart>?>(value),
     );
   }
 }
 
-String _$selectedScenePartHash() => r'a3310bed19c9d7b97192eb47fbd9fb454efdf1c5';
+String _$selectedScenePartHash() => r'a080d2b92daeac3ca700717071e0935eea09b7bb';
 
-abstract class _$SelectedScenePart
-    extends $Notifier<FullId<Scene, OrderedScenePart>?> {
-  FullId<Scene, OrderedScenePart>? build();
+abstract class _$SelectedScenePart extends $Notifier<Id<OrderedScenePart>?> {
+  Id<OrderedScenePart>? build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref
-            as $Ref<
-              FullId<Scene, OrderedScenePart>?,
-              FullId<Scene, OrderedScenePart>?
-            >;
+    final ref = this.ref as $Ref<Id<OrderedScenePart>?, Id<OrderedScenePart>?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<
-                FullId<Scene, OrderedScenePart>?,
-                FullId<Scene, OrderedScenePart>?
-              >,
-              FullId<Scene, OrderedScenePart>?,
+              AnyNotifier<Id<OrderedScenePart>?, Id<OrderedScenePart>?>,
+              Id<OrderedScenePart>?,
               Object?,
               Object?
             >;

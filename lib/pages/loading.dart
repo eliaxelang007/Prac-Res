@@ -28,7 +28,7 @@ class NovelLoadingPage<T> extends StatelessWidget {
   }
 }
 
-class NovelLoading<T> extends StatelessWidget {
+class NovelLoading<T> extends HookWidget {
   const NovelLoading({
     super.key,
     required this.loader,
@@ -40,24 +40,19 @@ class NovelLoading<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HookBuilder(
-      builder: (context) {
-        useEffect(() {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            loader(context);
-          });
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        loader(context);
+      });
 
-          return null;
-        }, []);
-
-        return Center(
-          child: SizedBox(
-            width: sideLength,
-            height: sideLength,
-            child: CircularProgressIndicator(),
-          ),
-        );
-      },
+      return null;
+    }, []);
+    return Center(
+      child: SizedBox(
+        width: sideLength,
+        height: sideLength,
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }

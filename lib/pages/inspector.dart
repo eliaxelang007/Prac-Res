@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -16,11 +18,20 @@ class NovelInspector extends ConsumerWidget {
     final designValues = theme.extension<DesignValues>()!;
 
     final sceneGroup = ref.watch(selectedSceneGroupProvider);
-    final selectedScene = ref.watch(selectedSceneProvider);
-    final selectedScenePart = ref.watch(selectedScenePartProvider);
+    final selectedSceneId = ref.watch(selectedSceneProvider);
+    final selectedScenePartId = ref.watch(selectedScenePartProvider);
 
-    final scene = sceneGroup?.scenes.items.find(selectedScene);
-    final scenePart = scene?.resource.find(selectedScenePart)?.part;
+    final scenePartFullId =
+        selectedSceneId != null && selectedScenePartId != null
+        ? FullId<OrderedScenePart>(
+            parentId: selectedSceneId,
+            childId: selectedScenePartId,
+          )
+        : null;
+
+    final scenePart = scenePartFullId != null
+        ? sceneGroup?.scenePartPath(scenePartFullId).get(sceneGroup)?.part
+        : null;
 
     return Padding(
       padding: EdgeInsets.all(designValues.small),
@@ -29,15 +40,15 @@ class NovelInspector extends ConsumerWidget {
         children: [
           Text("Edit Properties", style: textTheme.bodyLarge),
           const Divider(),
-          if (scenePart is Frame) ...[
+          if (scenePart is Frame && scenePartFullId != null) ...[
             Text("Background", style: textTheme.bodyMedium),
             SizedBox(height: designValues.small),
             NovelBackgroundInspector(
               currentBackgroundId: scenePart.background,
               onChanged: (newBackgroundId) {
-                // TODO: Update your provider here!
-                // ref.read(selectedSceneGroupProvider.notifier).updateGroup(...)
-                print("Selected new background: ${newBackgroundId.toJson()}");
+                ref
+                    .read(selectedSceneGroupProvider.notifier)
+                    .changeFrameBackground(scenePartFullId, newBackgroundId);
               },
             ),
           ] else ...[
@@ -50,8 +61,8 @@ class NovelInspector extends ConsumerWidget {
 }
 
 class NovelBackgroundInspector extends HookConsumerWidget {
-  final FullBackgroundId? currentBackgroundId;
-  final ValueChanged<FullBackgroundId> onChanged;
+  final FullId<Background>? currentBackgroundId;
+  final ValueChanged<FullId<Background>> onChanged;
 
   const NovelBackgroundInspector({
     super.key,
@@ -63,119 +74,47 @@ class NovelBackgroundInspector extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
-    final backgroundId = currentBackgroundId;
-
-    if (backgroundId == null) {
+    if (currentBackgroundId == null) {
       return const Placeholder();
     }
 
     final currentBytes = ref.watch(
       selectedSceneGroupProvider.select((group) {
-        final currentPlace = group?.places.items.find(backgroundId.parentId);
-        final currentBackground = currentPlace?.resource.collection.find(
-          backgroundId.childId,
-        );
-        return currentBackground?.resource.resource.value.image;
+        if (group == null) return null;
+        return group
+            .backgroundPath(currentBackgroundId!)
+            .get(group)
+            ?.value
+            .image;
       }),
     );
 
     return InkWell(
+      borderRadius: BorderRadius.circular(designValues.small),
       onTap: () => showDialog(
         context: context,
         builder: (context) => Consumer(
           builder: (context, ref, child) {
-            final places = ref.watch(
+            final placesCollection = ref.watch(
               selectedSceneGroupProvider.select((group) => group?.places),
             );
 
-            // if (places == null) {
-            //   return const Placeholder();
-            // }
+            if (placesCollection == null) return const SizedBox.shrink();
 
-            return NovelCollectionEditor<
-              PlaceId,
-              BackgroundId,
-              Background,
-              FullBackgroundId
-            >(
+            return NovelImageCollectionEditor<Background>(
               title: "Select Background",
               addParentLabel: "Add Place",
               emptySelectionLabel: "Select a Place",
-              collection: places?.items,
-              currentImageId: backgroundId,
-              onChanged: onChanged,
-              idFactory: (placeId, bgId) => FullBackgroundId.fromJson({
-                'metadata': Id.toJson(placeId),
-                'value': Id.toJson(bgId),
-              }),
-
-              // --- NEW: Add Place Implementation ---
-              onAddParent: () async {
-                final placeName = await showDialog<String>(
-                  context: context,
-                  builder: (context) =>
-                      const _NewNameDialog(title: "New Place"),
-                );
-
-                if (placeName != null && placeName.isNotEmpty) {
-                  ref
-                      .read(selectedSceneGroupProvider.notifier)
-                      .addPlace(placeName);
-                }
-              },
-
-              onAddChild: (placeId) async {
-                final readHandles = await WebReadHandle.showOpenFileDialog(
-                  multiple: false,
-                  accept: [
-                    XTypeGroup(extensions: ['png', 'jpg', 'jpeg', 'webp']),
-                  ],
-                );
-
-                if (readHandles.isEmpty) return;
-
-                final fileItem = await readHandles.first.read();
-                final filename = fileItem.key;
-                final fileBytes = fileItem.value;
-
-                // Strip the extension for a cleaner default name
-                final defaultName = filename.contains('.')
-                    ? filename.substring(0, filename.lastIndexOf('.'))
-                    : filename;
-
-                // Prompt the user for a meaningful name
-                final customName = await showDialog<String>(
-                  context: context,
-                  builder: (context) => _NewNameDialog(
-                    title: "Name this Image",
-                    initialText: defaultName,
-                  ),
-                );
-
-                // Bail out if they cancelled or left it blank
-                if (customName == null || customName.trim().isEmpty) return;
-
-                ref
-                    .read(selectedSceneGroupProvider.notifier)
-                    .addBackground(placeId, customName.trim(), fileBytes.bytes);
-              },
-
-              // --- NEW: Deletion Callbacks ---
-              onDeleteParent: (placeId) {
-                ref
-                    .read(selectedSceneGroupProvider.notifier)
-                    .deletePlace(placeId);
-              },
-              onDeleteChild: (placeId, bgId) {
-                ref
-                    .read(selectedSceneGroupProvider.notifier)
-                    .deleteBackground(placeId, bgId);
-              },
+              imageCollection: placesCollection,
+              currentSelectionId: currentBackgroundId,
+              onSelectionChanged: onChanged,
+              onImageCollectionEdited: (newCollection) => ref
+                  .read(selectedSceneGroupProvider.notifier)
+                  .updatePlaces(newCollection as Places),
             );
           },
         ),
       ),
-      borderRadius: BorderRadius.circular(designValues.small),
       child: Container(
         height: 120,
         width: double.infinity,
@@ -192,6 +131,390 @@ class NovelBackgroundInspector extends HookConsumerWidget {
   }
 }
 
+/// A highly reusable and clean editor taking an immutable collection.
+class NovelImageCollectionEditor<ImageItem extends ImageResource>
+    extends HookWidget {
+  final String title;
+  final String addParentLabel;
+  final String emptySelectionLabel;
+
+  final Collection<ImageCollectionResource<ImageItem>> imageCollection;
+  final ValueChanged<Collection<ImageCollectionResource<ImageItem>>>
+  onImageCollectionEdited;
+
+  final FullId<ImageItem>? currentSelectionId;
+  final ValueChanged<FullId<ImageItem>> onSelectionChanged;
+
+  const NovelImageCollectionEditor({
+    super.key,
+    required this.title,
+    required this.addParentLabel,
+    required this.emptySelectionLabel,
+    required this.imageCollection,
+    required this.onImageCollectionEdited,
+    required this.currentSelectionId,
+    required this.onSelectionChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final designValues = Theme.of(context).extension<DesignValues>()!;
+
+    final selectedParentId = useState<Id<CollectionResource<ImageItem>>?>(
+      currentSelectionId?.parentId,
+    );
+
+    return AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: 800,
+        height: 500,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 1,
+              child: _ParentViewer(
+                collection: imageCollection,
+                selectedParentId: selectedParentId,
+                addParentLabel: addParentLabel,
+                designValues: designValues,
+                onCollectionChanged: onImageCollectionEdited,
+              ),
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(
+              flex: 3,
+              child: selectedParentId.value == null
+                  ? Center(child: Text(emptySelectionLabel))
+                  : _ChildGridView(
+                      collection: imageCollection,
+                      parentId: selectedParentId.value!,
+                      currentSelectionId: currentSelectionId,
+                      designValues: designValues,
+                      onSelectionChanged: (id) {
+                        onSelectionChanged(id);
+                        Navigator.of(context).pop();
+                      },
+                      onCollectionChanged: onImageCollectionEdited,
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("Cancel"),
+        ),
+      ],
+    );
+  }
+}
+
+class _ParentViewer<ImageItem extends ImageResource> extends HookWidget {
+  final Collection<ImageCollectionResource<ImageItem>> collection;
+
+  final ValueNotifier<Id<CollectionResource<ImageItem>>?> selectedParentId;
+  final String addParentLabel;
+  final DesignValues designValues;
+  final ValueChanged<Collection<ImageCollectionResource<ImageItem>>>
+  onCollectionChanged;
+
+  const _ParentViewer({
+    required this.collection,
+    required this.selectedParentId,
+    required this.addParentLabel,
+    required this.designValues,
+    required this.onCollectionChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final parentList = collection.entries.toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: parentList.length,
+            itemBuilder: (context, index) {
+              // FIX 4 continued: Cast the key to satisfy Dart's strict generic boundaries
+              final parentId =
+                  parentList[index].key as Id<CollectionResource<ImageItem>>;
+              final parent = parentList[index].value;
+              final isSelected = parentId == selectedParentId.value;
+
+              return ListTile(
+                selected: isSelected,
+                selectedTileColor: Theme.of(
+                  context,
+                ).primaryColor.withOpacity(0.1),
+                title: Text(parent.metadata.name),
+                onTap: () => selectedParentId.value = parentId,
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  onPressed: () {
+                    final nextCollection = Collection.childSelector(
+                      parentId,
+                    ).set(collection, null);
+                    onCollectionChanged(
+                      nextCollection
+                          as Collection<ImageCollectionResource<ImageItem>>,
+                    );
+
+                    if (isSelected) {
+                      selectedParentId.value = null;
+                    }
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        const Divider(height: 1),
+        TextButton.icon(
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.all(designValues.medium),
+            shape: const RoundedRectangleBorder(),
+          ),
+          icon: const Icon(Icons.add),
+          label: Text(addParentLabel),
+          onPressed: () async {
+            final placeName = await showDialog<String>(
+              context: context,
+              builder: (context) => const _NewNameDialog(title: "New Parent"),
+            );
+
+            if (placeName != null && placeName.isNotEmpty) {
+              final nextCollection =
+                  Collection.childSelector<ImageCollectionResource<ImageItem>>(
+                    Id.create(),
+                  ).set(
+                    collection,
+                    ImageCollectionResource(
+                      name: Name(placeName),
+                      images: Collection.empty(),
+                    ),
+                  );
+
+              onCollectionChanged(nextCollection);
+            }
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ChildGridView<ImageItem extends ImageResource> extends HookWidget {
+  final Collection<ImageCollectionResource<ImageItem>> collection;
+  final Id<CollectionResource<ImageItem>> parentId;
+  final FullId<ImageItem>? currentSelectionId;
+  final DesignValues designValues;
+  final ValueChanged<FullId<ImageItem>> onSelectionChanged;
+  final ValueChanged<Collection<ImageCollectionResource<ImageItem>>>
+  onCollectionChanged;
+
+  const _ChildGridView({
+    required this.collection,
+    required this.parentId,
+    required this.currentSelectionId,
+    required this.designValues,
+    required this.onSelectionChanged,
+    required this.onCollectionChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final parent = collection.find(
+      parentId as Id<ImageCollectionResource<ImageItem>>,
+    );
+    final childList = parent?.value.entries.toList() ?? [];
+
+    return GridView.builder(
+      padding: EdgeInsets.all(designValues.small),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: designValues.small,
+        mainAxisSpacing: designValues.small,
+        childAspectRatio: 0.85,
+      ),
+      itemCount: childList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == childList.length) {
+          return _AddChildButton(
+            designValues: designValues,
+            onAdd: () async {
+              final image = await pickImage();
+
+              if (image == null) return;
+
+              final customName = await showDialog<String>(
+                context: context,
+                builder: (context) =>
+                    const _NewNameDialog(title: "Name this Image"),
+              );
+
+              if (customName != null && customName.isNotEmpty) {
+                print("Woah!");
+
+                // // Sorry I'm kind of confused about what this is. Could you please fix this callback?
+
+                final nextCollection =
+                    FullId(
+                      parentId: parentId,
+                      childId: Id.create<ImageItem>(),
+                    ).childSelector().set(
+                      collection,
+                      ImageResource(
+                            name: Name(customName),
+                            image: ImageData(image: image),
+                          )
+                          as ImageItem,
+                    );
+
+                onCollectionChanged(
+                  nextCollection
+                      as Collection<ImageCollectionResource<ImageItem>>,
+                );
+              }
+            },
+          );
+        }
+
+        final childEntry = childList[index];
+        final childId = childEntry.key;
+        final child = childEntry.value;
+
+        // FIX 5 continued: parentId is now implicitly correctly typed
+        final fullId = FullId(parentId: parentId, childId: childId);
+
+        final isCurrentlyApplied =
+            currentSelectionId?.parentId == parentId &&
+            currentSelectionId?.childId == childId;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  InkWell(
+                    onTap: () => onSelectionChanged(fullId),
+                    child: Container(
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(designValues.small),
+                        border: Border.all(
+                          color: isCurrentlyApplied
+                              ? Theme.of(context).primaryColor
+                              : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                      child: Image.memory(child.value.image),
+                    ),
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: IconButton(
+                      icon: const Icon(Icons.cancel, color: Colors.redAccent),
+                      onPressed: () {
+                        final nextCollection = fullId.childSelector().set(
+                          collection,
+                          null,
+                        );
+                        onCollectionChanged(
+                          nextCollection
+                              as Collection<ImageCollectionResource<ImageItem>>,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: designValues.verySmall),
+            TextFormField(
+              key: ValueKey(childId),
+              initialValue: child.metadata.name,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                border: InputBorder.none,
+              ),
+              onChanged: (newValue) {
+                if (newValue.isNotEmpty) {
+                  final nextCollection = fullId.childSelector().update(
+                    collection,
+                    (child) {
+                      if (child == null) return null;
+
+                      return child.copyWith(metadata: Name(newValue))
+                          as ImageItem;
+                    },
+                  );
+
+                  onCollectionChanged(
+                    nextCollection
+                        as Collection<ImageCollectionResource<ImageItem>>,
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<Uint8List?> pickImage() async {
+    final readHandles = await WebReadHandle.showOpenFileDialog(
+      multiple: false,
+      accept: [
+        XTypeGroup(extensions: ['png', 'jpg', 'jpeg', 'webp']),
+      ],
+    );
+
+    if (readHandles.isEmpty) return null;
+
+    final fileItem = await readHandles.first.read();
+    final fileBytes = fileItem.value;
+
+    return fileBytes.bytes;
+  }
+}
+
+class _AddChildButton extends StatelessWidget {
+  final DesignValues designValues;
+  final VoidCallback onAdd;
+
+  const _AddChildButton({required this.designValues, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onAdd,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).dividerColor,
+            style: BorderStyle.solid,
+          ),
+          borderRadius: BorderRadius.circular(designValues.small),
+        ),
+        child: const Center(child: Icon(Icons.add_rounded, size: 32)),
+      ),
+    );
+  }
+}
+
 class _NewNameDialog extends HookWidget {
   final String title;
   final String? initialText;
@@ -200,7 +523,6 @@ class _NewNameDialog extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Pass the initial text to the hook
     final controller = useTextEditingController(text: initialText);
 
     return AlertDialog(
@@ -219,324 +541,6 @@ class _NewNameDialog extends HookWidget {
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text("Confirm"),
-        ),
-      ],
-    );
-  }
-}
-
-class NovelCollectionEditor<
-  ParentId extends Id,
-  ChildId extends Id,
-  ImageItem,
-  FullImageId extends FullId<ParentId, ChildId, ImageItem>
->
-    extends HookWidget {
-  final String title;
-  final String addParentLabel;
-  final String emptySelectionLabel;
-  final Collection<ParentId, ImageCollectionResource<ChildId, ImageItem>>?
-  collection;
-  final FullImageId currentImageId;
-  final ValueChanged<FullImageId> onChanged;
-  final FullImageId Function(ParentId parentId, ChildId childId) idFactory;
-  final VoidCallback? onAddParent;
-  final ValueChanged<ParentId>? onAddChild;
-
-  final ValueChanged<ParentId>? onDeleteParent;
-  final void Function(ParentId parentId, ChildId childId)? onDeleteChild;
-
-  // 1. Added callback for updating the name
-  final void Function(ParentId parentId, ChildId childId, String newName)?
-  onUpdateChildName;
-
-  const NovelCollectionEditor({
-    super.key,
-    required this.title,
-    this.addParentLabel = "Add Collection",
-    this.emptySelectionLabel = "Select a Collection",
-    required this.collection,
-    required this.currentImageId,
-    required this.onChanged,
-    required this.idFactory,
-    this.onAddParent,
-    this.onAddChild,
-    this.onDeleteParent,
-    this.onDeleteChild,
-    this.onUpdateChildName, // Make sure to add it here
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final designValues = Theme.of(context).extension<DesignValues>()!;
-
-    return AlertDialog(
-      title: Text(title),
-      content: SizedBox(
-        width: 800,
-        height: 500,
-        child: (collection != null)
-            ? HookBuilder(
-                builder: (context) {
-                  // We can use the parentId getter from FullId!
-                  final selectedParentId = useState<ParentId?>(
-                    currentImageId.parentId,
-                  );
-
-                  final parentList = collection!.items.entries.toList();
-                  final viewedParent = collection!.find(selectedParentId.value);
-                  final childList =
-                      viewedParent?.collection.resource.value.items.entries
-                          .toList() ??
-                      [];
-
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // --- LEFT SIDE: PARENT LIST ---
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: parentList.length,
-                                itemBuilder: (context, index) {
-                                  final parentEntry = parentList[index];
-                                  final parentId = parentEntry.key;
-                                  final parent = parentEntry.value;
-                                  final isSelected =
-                                      parentId == selectedParentId.value;
-
-                                  return ListTile(
-                                    selected: isSelected,
-                                    selectedTileColor: Theme.of(
-                                      context,
-                                    ).primaryColor.withOpacity(0.1),
-                                    title: Text(parent.metadata.toString()),
-                                    onTap: () =>
-                                        selectedParentId.value = parentId,
-                                    trailing: onDeleteParent != null
-                                        ? IconButton(
-                                            icon: const Icon(
-                                              Icons.delete_outline,
-                                              size: 20,
-                                            ),
-                                            onPressed: () {
-                                              // Optional: Show a confirmation dialog here first!
-                                              onDeleteParent!(parentId);
-                                              // Reset selection if we deleted the viewed item
-                                              if (isSelected) {
-                                                selectedParentId.value = null;
-                                              }
-                                            },
-                                          )
-                                        : null,
-                                  );
-                                },
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            TextButton.icon(
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.all(designValues.medium),
-                                shape: const RoundedRectangleBorder(),
-                              ),
-                              onPressed: onAddParent,
-                              icon: const Icon(Icons.add),
-                              label: Text(addParentLabel),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const VerticalDivider(width: 1),
-
-                      // --- RIGHT SIDE: IMAGES GRID ---
-                      Expanded(
-                        flex: 3,
-                        child: selectedParentId.value == null
-                            ? Center(child: Text(emptySelectionLabel))
-                            : Column(
-                                children: [
-                                  Expanded(
-                                    child: GridView.builder(
-                                      padding: EdgeInsets.all(
-                                        designValues.small,
-                                      ),
-                                      gridDelegate:
-                                          SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: 3,
-                                            crossAxisSpacing:
-                                                designValues.small,
-                                            mainAxisSpacing: designValues.small,
-                                            childAspectRatio: 0.85,
-                                          ),
-                                      itemCount: childList.length + 1,
-                                      itemBuilder: (context, index) {
-                                        if (index == childList.length) {
-                                          return InkWell(
-                                            onTap: () => onAddChild?.call(
-                                              selectedParentId.value!,
-                                            ),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).dividerColor,
-                                                  style: BorderStyle.solid,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                      designValues.small,
-                                                    ),
-                                              ),
-                                              child: const Center(
-                                                child: Icon(
-                                                  Icons.add_photo_alternate,
-                                                  size: 32,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }
-
-                                        final childEntry = childList[index];
-                                        final childId = childEntry.key;
-                                        final imageBytes =
-                                            childEntry.value.value.image;
-
-                                        final isCurrentlyApplied =
-                                            currentImageId.parentId ==
-                                                selectedParentId.value &&
-                                            currentImageId.childId == childId;
-
-                                        return Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            Expanded(
-                                              child: Stack(
-                                                fit: StackFit.expand,
-                                                children: [
-                                                  // Image Container
-                                                  InkWell(
-                                                    onTap: () {
-                                                      final fullId = idFactory(
-                                                        selectedParentId.value!,
-                                                        childId,
-                                                      );
-                                                      onChanged(fullId);
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop();
-                                                    },
-                                                    child: Container(
-                                                      clipBehavior:
-                                                          Clip.antiAlias,
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              designValues
-                                                                  .small,
-                                                            ),
-                                                        border: Border.all(
-                                                          color:
-                                                              isCurrentlyApplied
-                                                              ? Theme.of(
-                                                                  context,
-                                                                ).primaryColor
-                                                              : Colors
-                                                                    .transparent,
-                                                          width: 3,
-                                                        ),
-                                                      ),
-                                                      child: Image.memory(
-                                                        imageBytes,
-                                                        // 4. Change to contain to fit portrait actors
-                                                        fit: BoxFit.contain,
-                                                      ),
-                                                    ),
-                                                  ),
-
-                                                  // 5. Child Delete Button
-                                                  if (onDeleteChild != null)
-                                                    Positioned(
-                                                      top: 0,
-                                                      right: 0,
-                                                      child: IconButton(
-                                                        icon: const Icon(
-                                                          Icons.cancel,
-                                                          color:
-                                                              Colors.redAccent,
-                                                        ),
-                                                        onPressed: () =>
-                                                            onDeleteChild!(
-                                                              selectedParentId
-                                                                  .value!,
-                                                              childId,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              height: designValues.verySmall,
-                                            ),
-
-                                            // 6. Meaningful Name Label (Now Editable)
-                                            TextFormField(
-                                              // Use a key so the field resets if the underlying data completely changes
-                                              key: ValueKey(childId),
-                                              initialValue: childEntry
-                                                  .value
-                                                  .metadata
-                                                  .toString(),
-                                              textAlign: TextAlign.center,
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.bodySmall,
-                                              decoration: const InputDecoration(
-                                                isDense: true,
-                                                contentPadding: EdgeInsets.zero,
-                                                border: InputBorder
-                                                    .none, // Hide the underline for a cleaner look
-                                              ),
-                                              onFieldSubmitted: (newValue) {
-                                                if (onUpdateChildName != null &&
-                                                    newValue !=
-                                                        childEntry
-                                                            .value
-                                                            .metadata
-                                                            .toString()) {
-                                                  onUpdateChildName!(
-                                                    selectedParentId.value!,
-                                                    childId,
-                                                    newValue,
-                                                  );
-                                                }
-                                              },
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ],
-                  );
-                },
-              )
-            : const Placeholder(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
         ),
       ],
     );

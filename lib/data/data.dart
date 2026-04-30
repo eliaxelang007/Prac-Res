@@ -17,6 +17,10 @@ class Selector<Edited, InnerProperty> {
 
   Selector(this.get, this.set);
 
+  Edited update(Edited current, InnerProperty Function(InnerProperty) updater) {
+    return set(current, updater(get(current)));
+  }
+
   Selector<Edited, InnerInnerProperty> select<InnerInnerProperty>(
     InnerInnerProperty Function(InnerProperty) getInnerInner,
     InnerProperty Function(InnerProperty, InnerInnerProperty) setInner,
@@ -376,8 +380,8 @@ abstract class Choice with _$Choice {
 @Freezed(unionKey: 'type')
 sealed class ScenePart with _$ScenePart {
   const factory ScenePart.frame({
-    required FullId<Place, Background> background,
-    required IList<FullId<Actor, Pose>> poses,
+    required FullId<Background>? background,
+    required IList<FullId<Pose>> poses,
     required DialogueBox? dialogueBox,
   }) = Frame;
 
@@ -515,24 +519,30 @@ extension type Id<T>(String id) implements String {
 /// Well, it's really just because I was lazy and I saw that they have the same struct shape anyways.
 /// And as a bonus, you can think of the [metadata] as the collection id, and the [value] inside it as the item id,
 /// And that makes sense because [metadata] is data about [value].
-extension type FullId<Parent extends CollectionResource<Child>, Child>.from(
-  Resource<Id<Parent>, Id<Child>> fullId
+extension type FullId<Child>.from(
+  Resource<Id<CollectionResource<Child>>, Id<Child>> fullId
 )
-    implements Resource<Id<Parent>, Id<Child>> {
-  FullId({required Id<Parent> parentId, required Id<Child> childId})
-    : this.from(Resource(metadata: parentId, value: childId));
+    implements Resource<Id<CollectionResource<Child>>, Id<Child>> {
+  FullId({
+    required Id<CollectionResource<Child>> parentId,
+    required Id<Child> childId,
+  }) : this.from(Resource(metadata: parentId, value: childId));
 
-  Id<Parent> get parentId => metadata;
+  Id<CollectionResource<Child>> get parentId => metadata;
   Id<Child> get childId => value;
 
   factory FullId.fromJson(Map<String, dynamic> json) => FullId.from(
-    Resource.fromJson(json, Id.fromJson<Parent>, Id.fromJson<Child>),
+    Resource.fromJson(
+      json,
+      Id.fromJson<CollectionResource<Child>>,
+      Id.fromJson<Child>,
+    ),
   );
 
   Map<String, dynamic> toJson() => fullId.toJson(Id.toJson, Id.toJson);
 
-  Selector<Collection<Parent>, Child?> childSelector() {
-    return Collection.childSelector<Parent>(
+  Selector<Collection<CollectionResource<Child>>, Child?> childSelector() {
+    return Collection.childSelector<CollectionResource<Child>>(
       parentId,
     ).composeNullable(CollectionResource.childSelector<Child>(childId));
   }

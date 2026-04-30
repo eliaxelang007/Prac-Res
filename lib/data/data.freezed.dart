@@ -677,7 +677,7 @@ return frameResolver(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FullId<Place, Background> background,  IList<FullId<Actor, Pose>> poses,  DialogueBox? dialogueBox)?  frame,TResult Function()?  frameResolver,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( FullId<Background>? background,  IList<FullId<Pose>> poses,  DialogueBox? dialogueBox)?  frame,TResult Function()?  frameResolver,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case Frame() when frame != null:
 return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
@@ -699,7 +699,7 @@ return frameResolver();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FullId<Place, Background> background,  IList<FullId<Actor, Pose>> poses,  DialogueBox? dialogueBox)  frame,required TResult Function()  frameResolver,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( FullId<Background>? background,  IList<FullId<Pose>> poses,  DialogueBox? dialogueBox)  frame,required TResult Function()  frameResolver,}) {final _that = this;
 switch (_that) {
 case Frame():
 return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver():
@@ -717,7 +717,7 @@ return frameResolver();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FullId<Place, Background> background,  IList<FullId<Actor, Pose>> poses,  DialogueBox? dialogueBox)?  frame,TResult? Function()?  frameResolver,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( FullId<Background>? background,  IList<FullId<Pose>> poses,  DialogueBox? dialogueBox)?  frame,TResult? Function()?  frameResolver,}) {final _that = this;
 switch (_that) {
 case Frame() when frame != null:
 return frame(_that.background,_that.poses,_that.dialogueBox);case FrameResolver() when frameResolver != null:
@@ -736,8 +736,8 @@ class Frame implements ScenePart {
   const Frame({required this.background, required this.poses, required this.dialogueBox, final  String? $type}): $type = $type ?? 'frame';
   factory Frame.fromJson(Map<String, dynamic> json) => _$FrameFromJson(json);
 
- final  FullId<Place, Background> background;
- final  IList<FullId<Actor, Pose>> poses;
+ final  FullId<Background>? background;
+ final  IList<FullId<Pose>> poses;
  final  DialogueBox? dialogueBox;
 
 @JsonKey(name: 'type')
@@ -777,7 +777,7 @@ abstract mixin class $FrameCopyWith<$Res> implements $ScenePartCopyWith<$Res> {
   factory $FrameCopyWith(Frame value, $Res Function(Frame) _then) = _$FrameCopyWithImpl;
 @useResult
 $Res call({
- FullId<Place, Background> background, IList<FullId<Actor, Pose>> poses, DialogueBox? dialogueBox
+ FullId<Background>? background, IList<FullId<Pose>> poses, DialogueBox? dialogueBox
 });
 
 
@@ -794,11 +794,11 @@ class _$FrameCopyWithImpl<$Res>
 
 /// Create a copy of ScenePart
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? background = null,Object? poses = null,Object? dialogueBox = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? background = freezed,Object? poses = null,Object? dialogueBox = freezed,}) {
   return _then(Frame(
-background: null == background ? _self.background : background // ignore: cast_nullable_to_non_nullable
-as FullId<Place, Background>,poses: null == poses ? _self.poses : poses // ignore: cast_nullable_to_non_nullable
-as IList<FullId<Actor, Pose>>,dialogueBox: freezed == dialogueBox ? _self.dialogueBox : dialogueBox // ignore: cast_nullable_to_non_nullable
+background: freezed == background ? _self.background : background // ignore: cast_nullable_to_non_nullable
+as FullId<Background>?,poses: null == poses ? _self.poses : poses // ignore: cast_nullable_to_non_nullable
+as IList<FullId<Pose>>,dialogueBox: freezed == dialogueBox ? _self.dialogueBox : dialogueBox // ignore: cast_nullable_to_non_nullable
 as DialogueBox?,
   ));
 }

@@ -16,16 +16,7 @@ class NovelEditorPage extends ConsumerWidget {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 45,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: designValues.small),
-            child: const Divider(height: 1.0),
-          ),
-        ),
-      ),
+      appBar: NovelMenuBar(designValues: designValues),
       body: Padding(
         padding: EdgeInsets.all(designValues.small),
         child: const Row(
@@ -43,6 +34,29 @@ class NovelEditorPage extends ConsumerWidget {
   }
 }
 
+class NovelMenuBar extends StatelessWidget implements PreferredSizeWidget {
+  const NovelMenuBar({super.key, required this.designValues});
+
+  final DesignValues designValues;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      toolbarHeight: 45,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1.0),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: designValues.small),
+          child: const Divider(height: 1.0),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+}
+
 class NovelResourceSelector extends ConsumerWidget {
   const NovelResourceSelector({super.key});
 
@@ -55,6 +69,7 @@ class NovelResourceSelector extends ConsumerWidget {
     final scenes = ref.watch(
       selectedSceneGroupProvider.select((group) => group?.scenes),
     );
+
     final selectedScene = ref.watch(selectedSceneProvider);
 
     return Column(
@@ -116,7 +131,7 @@ class NovelFrameViewer extends ConsumerWidget {
 
     final selectedScenePart = ref.watch(selectedScenePartProvider);
 
-    final scenePart = scene?.find(selectedScenePart?.childId)?.part;
+    final scenePart = scene?.find(selectedScenePart)?.part;
     final sceneParts = scene?.value.entries;
 
     return Column(
@@ -169,6 +184,7 @@ class NovelScenePartPreview extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
+
     final sceneGroup = ref.watch(selectedSceneGroupProvider);
     final selectedPartId = ref.watch(selectedScenePartProvider);
 
@@ -193,7 +209,6 @@ class NovelScenePartPreview extends ConsumerWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    // Toggle selection directly through the provider
                     ref
                         .read(selectedScenePartProvider.notifier)
                         .select(isSelected ? null : scenePartId);
