@@ -27,7 +27,9 @@ class NovelFrame extends ConsumerWidget {
 
     return Stack(
       children: [
-        Positioned.fill(child: const Placeholder()),
+        Positioned.fill(
+          child: ColoredBox(color: Colors.white, child: SizedBox.expand()),
+        ),
 
         if (background != null)
           Positioned.fill(
@@ -69,29 +71,43 @@ class NovelFrame extends ConsumerWidget {
                           right: designValues.large * 5,
                           bottom: designValues.medium,
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            SizedBox(
-                              height: designValues.large * 1.2,
-                              child: Padding(
-                                padding: EdgeInsets.only(
-                                  left: designValues.large,
-                                  right: designValues.large * 10,
+                        child: Builder(
+                          builder: (context) {
+                            final dialogBox = frame.dialogueBox;
+
+                            if (dialogBox == null) return SizedBox();
+
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SizedBox(
+                                  height: designValues.large * 1.2,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      left: designValues.large,
+                                      right: designValues.large * 10,
+                                    ),
+                                    child: Builder(
+                                      builder: (context) {
+                                        final name = dialogBox.name;
+
+                                        if (name == null) return SizedBox();
+
+                                        return NovelNameBox(name: name);
+                                      },
+                                    ),
+                                  ),
                                 ),
-                                child: NovelNameBox(
-                                  name: frame.dialogueBox?.name ?? "",
+                                SizedBox(
+                                  height: designValues.large * 3,
+                                  child: NovelDialogueBox(
+                                    dialogue: frame.dialogueBox?.dialogue ?? "",
+                                  ),
                                 ),
-                              ),
-                            ),
-                            SizedBox(
-                              height: designValues.large * 3,
-                              child: NovelDialogueBox(
-                                dialogue: frame.dialogueBox?.dialogue ?? "",
-                              ),
-                            ),
-                          ],
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),

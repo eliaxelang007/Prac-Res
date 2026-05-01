@@ -39,35 +39,6 @@ class Selector<Edited, InnerProperty> {
   }
 }
 
-extension NullableSelectorExt<Edited, InnerProperty>
-    on Selector<Edited, InnerProperty?> {
-  Selector<Edited, InnerInnerProperty?> composeNullable<
-    InnerInnerProperty,
-    SuperProperty
-  >(Selector<SuperProperty, InnerInnerProperty?> composeWith) {
-    return Selector(
-      (edited) {
-        final inner = get(edited);
-
-        if (inner == null) return null;
-
-        return composeWith.get(inner as SuperProperty);
-      },
-      (edited, innerInner) {
-        final inner = get(edited);
-
-        if (inner == null) return edited;
-
-        final updatedInner =
-            composeWith.set(inner as SuperProperty, innerInner)
-                as InnerProperty;
-
-        return set(edited, updatedInner);
-      },
-    );
-  }
-}
-
 typedef ValueEditor<T> = Selector<T, T>;
 
 @freezed
@@ -88,10 +59,6 @@ abstract class SceneGroup with _$SceneGroup {
     places: Places.empty(),
     actors: Actors.empty(),
   );
-
-  ValueEditor<SceneGroup> edit() {
-    return Selector((_) => this, (_, newThis) => newThis);
-  }
 
   /// Why are the names defined here instead of their respective types?
   /// Well, think about how you would deserialize them.
@@ -542,9 +509,29 @@ extension type FullId<Child>.from(
   Map<String, dynamic> toJson() => fullId.toJson(Id.toJson, Id.toJson);
 
   Selector<Collection<CollectionResource<Child>>, Child?> childSelector() {
-    return Collection.childSelector<CollectionResource<Child>>(
+    final parentSelector = Collection.childSelector<CollectionResource<Child>>(
       parentId,
-    ).composeNullable(CollectionResource.childSelector<Child>(childId));
+    );
+    final childSelector = CollectionResource.childSelector<Child>(childId);
+
+    return Selector(
+      (edited) {
+        final inner = parentSelector.get(edited);
+
+        if (inner == null) return null;
+
+        return childSelector.get(inner);
+      },
+      (edited, innerInner) {
+        final inner = parentSelector.get(edited);
+
+        if (inner == null) return edited;
+
+        final updatedInner = childSelector.set(inner, innerInner);
+
+        return parentSelector.set(edited, updatedInner);
+      },
+    );
   }
 
   Child? findIn(Collection<CollectionResource<Child>> resourceCollection) {
@@ -692,11 +679,8 @@ extension type CollectionResource<Item>.from(
       Resource.fromJson(
         json,
         Name.fromJson,
-        (json) => Collection.fromJson(
-          json! as Map<String, dynamic>,
-          // itemIdFromJson,
-          itemFromJson,
-        ),
+        (json) =>
+            Collection.fromJson(json! as Map<String, dynamic>, itemFromJson),
       ),
     );
   }

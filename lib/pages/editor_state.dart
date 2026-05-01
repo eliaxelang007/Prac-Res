@@ -32,14 +32,14 @@ extension SceneGroupPaths on SceneGroup {
   //       .actorsSelector
   //       .compose(id.childSelector() as Selector<Actors, Pose?>);
 
-  //   // -- Scenes & Scene Parts --
-  //   Selector<SceneGroup, Scene?> scenePath(Id<Scene> id) {
-  //     final childSelector = Collection.childSelector<Scene>(id);
-  //     return SceneGroup.scenesSelector.select<Scene?>(
-  //       (scenes) => childSelector.get(scenes),
-  //       (scenes, scene) => Scenes.from(childSelector.set(scenes, scene)),
-  //     );
-  //   }
+  // -- Scenes & Scene Parts --
+  Selector<SceneGroup, Scene?> scenePath(Id<Scene> id) {
+    final childSelector = Collection.childSelector<Scene>(id);
+    return SceneGroup.scenesSelector.select<Scene?>(
+      (scenes) => childSelector.get(scenes),
+      (scenes, scene) => Scenes.from(childSelector.set(scenes, scene)),
+    );
+  }
 
   Selector<SceneGroup, OrderedScenePart?> scenePartPath(
     FullId<OrderedScenePart> id,
@@ -60,13 +60,13 @@ extension SceneGroupPaths on SceneGroup {
       );
 
   //   // -- Dialogue Box --
-  //   Selector<SceneGroup, DialogueBox?> dialogueBoxPath(
-  //     FullId<OrderedScenePart> id,
-  //   ) => framePath(id).select<DialogueBox?>(
-  //     (frame) => frame?.dialogueBox,
-  //     (frame, newBox) =>
-  //         frame != null ? frame.copyWith(dialogueBox: newBox) : frame,
-  //   );
+  Selector<SceneGroup, DialogueBox?> dialogueBoxPath(
+    FullId<OrderedScenePart> id,
+  ) => framePath(id).select<DialogueBox?>(
+    (frame) => frame?.dialogueBox,
+    (frame, newBox) =>
+        frame != null ? frame.copyWith(dialogueBox: newBox) : frame,
+  );
 }
 
 @Riverpod(keepAlive: true)
@@ -190,8 +190,8 @@ class SelectedSceneGroup extends _$SelectedSceneGroup {
   // );
 
   // // ==== SCENES ====
-  // void setScene(Id<Scene> id, Scene scene) =>
-  //     _update((sceneGroup) => sceneGroup.scenePath(id).set(sceneGroup, scene));
+  void setScene(Id<Scene> id, Scene? scene) =>
+      _update((sceneGroup) => sceneGroup.scenePath(id).set(sceneGroup, scene));
 
   // void removeScene(Id<Scene> id) =>
   //     _update((sceneGroup) => sceneGroup.scenePath(id).set(sceneGroup, null));
@@ -209,10 +209,10 @@ class SelectedSceneGroup extends _$SelectedSceneGroup {
   // );
 
   // // ==== SCENE PARTS ====
-  // void setScenePart(FullId<OrderedScenePart> id, OrderedScenePart part) =>
-  //     _update(
-  //       (sceneGroup) => sceneGroup.scenePartPath(id).set(sceneGroup, part),
-  //     );
+  void setScenePart(FullId<OrderedScenePart> id, OrderedScenePart? part) =>
+      _update(
+        (sceneGroup) => sceneGroup.scenePartPath(id).set(sceneGroup, part),
+      );
 
   // void removeScenePart(FullId<OrderedScenePart> id) => _update(
   //   (sceneGroup) => sceneGroup.scenePartPath(id).set(sceneGroup, null),
@@ -263,10 +263,10 @@ class SelectedSceneGroup extends _$SelectedSceneGroup {
   // );
 
   // // ==== DIALOGUE BOX ====
-  // void changeFrameDialogueBox(FullId<OrderedScenePart> id, DialogueBox? box) =>
-  //     _update(
-  //       (sceneGroup) => sceneGroup.dialogueBoxPath(id).set(sceneGroup, box),
-  //     );
+  void changeFrameDialogueBox(FullId<OrderedScenePart> id, DialogueBox? box) =>
+      _update(
+        (sceneGroup) => sceneGroup.dialogueBoxPath(id).set(sceneGroup, box),
+      );
 
   // void changeDialogueText(FullId<OrderedScenePart> id, String text) => _update(
   //   (sceneGroup) => sceneGroup

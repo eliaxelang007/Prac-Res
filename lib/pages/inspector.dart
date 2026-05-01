@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -35,27 +34,171 @@ class NovelInspector extends ConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.all(designValues.small),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Edit Properties", style: textTheme.bodyLarge),
-          const Divider(),
-          if (scenePart is Frame && scenePartFullId != null) ...[
-            Text("Background", style: textTheme.bodyMedium),
-            SizedBox(height: designValues.small),
-            NovelBackgroundInspector(
-              currentBackgroundId: scenePart.background,
-              onChanged: (newBackgroundId) {
-                ref
-                    .read(selectedSceneGroupProvider.notifier)
-                    .changeFrameBackground(scenePartFullId, newBackgroundId);
-              },
-            ),
-          ] else ...[
-            Text("Select a Frame to inspect.", style: textTheme.bodyMedium),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Edit Properties", style: textTheme.bodyLarge),
+            const Divider(),
+            if (scenePart is Frame && scenePartFullId != null) ...[
+              Text("Background", style: textTheme.bodyMedium),
+              SizedBox(height: designValues.small),
+              NovelBackgroundInspector(
+                currentBackgroundId: scenePart.background,
+                onChanged: (newBackgroundId) {
+                  ref
+                      .read(selectedSceneGroupProvider.notifier)
+                      .changeFrameBackground(scenePartFullId, newBackgroundId);
+                },
+              ),
+              SizedBox(height: designValues.medium),
+              Text("Dialogue", style: textTheme.bodyMedium),
+              SizedBox(height: designValues.small),
+              // +++ NEW DIALOGUE INSPECTOR +++
+              NovelDialogueInspector(
+                currentDialogue: scenePart.dialogueBox,
+                onChanged: (newDialogueBox) {
+                  ref
+                      .read(selectedSceneGroupProvider.notifier)
+                      .changeFrameDialogueBox(scenePartFullId, newDialogueBox);
+                },
+              ),
+            ] else ...[
+              Text("Select a Frame to inspect.", style: textTheme.bodyMedium),
+            ],
           ],
-        ],
+        ),
       ),
+    );
+  }
+}
+
+class NovelDialogueInspector extends HookWidget {
+  final DialogueBox? currentDialogue;
+  final ValueChanged<DialogueBox?> onChanged;
+
+  const NovelDialogueInspector({
+    super.key,
+    required this.currentDialogue,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final designValues = Theme.of(context).extension<DesignValues>()!;
+
+    final hasDialogueBox = currentDialogue != null;
+    final hasNameBox = currentDialogue?.name != null;
+
+    // We use controllers here so Riverpod rebuilds don't jump the cursor while typing.
+    final nameController = useTextEditingController(
+      text: currentDialogue?.name ?? "",
+    );
+    final dialogueController = useTextEditingController(
+      text: currentDialogue?.dialogue ?? "",
+    );
+
+    // Sync controllers if the user selects an entirely different frame
+    useEffect(() {
+      if (currentDialogue?.name != null &&
+          nameController.text != currentDialogue?.name) {
+        nameController.text = currentDialogue!.name!;
+      }
+      if (currentDialogue?.dialogue != null &&
+          dialogueController.text != currentDialogue?.dialogue) {
+        dialogueController.text = currentDialogue!.dialogue;
+      }
+      return null;
+    }, [currentDialogue]);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SwitchListTile(
+          title: const Text("Enable Dialogue Box"),
+          contentPadding: EdgeInsets.zero,
+          value: hasDialogueBox,
+          onChanged: (enabled) {
+            if (enabled) {
+              // Initializes with no name box, and empty dialogue
+              onChanged(const DialogueBox(name: null, dialogue: ""));
+            } else {
+              // Entire dialogue box is disabled (null)
+              onChanged(null);
+            }
+          },
+        ),
+        if (hasDialogueBox) ...[
+          Card(
+            elevation: 0,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              side: BorderSide(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(designValues.small),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(designValues.small),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SwitchListTile(
+                    title: const Text("Show Speaker Name"),
+                    contentPadding: EdgeInsets.zero,
+                    value: hasNameBox,
+                    onChanged: (enabled) {
+                      if (enabled) {
+                        // Restore whatever was in the text controller, or default to ""
+                        onChanged(
+                          currentDialogue?.copyWith(name: nameController.text),
+                        );
+                      } else {
+                        // Remove the name box entirely (null)
+                        onChanged(currentDialogue?.copyWith(name: null));
+                      }
+                    },
+                  ),
+                  if (hasNameBox) ...[
+                    Text(
+                      "Speaker Name",
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    SizedBox(height: designValues.verySmall),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        hintText: "Enter name...",
+                      ),
+                      onChanged: (value) {
+                        onChanged(currentDialogue?.copyWith(name: value));
+                      },
+                    ),
+                    SizedBox(height: designValues.small),
+                  ],
+                  Text(
+                    "Dialogue Text",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  SizedBox(height: designValues.verySmall),
+                  TextField(
+                    controller: dialogueController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                      hintText: "Enter dialogue...",
+                    ),
+                    onChanged: (value) {
+                      onChanged(currentDialogue?.copyWith(dialogue: value));
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -74,18 +217,12 @@ class NovelBackgroundInspector extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
-    if (currentBackgroundId == null) {
-      return const Placeholder();
-    }
-
     final currentBytes = ref.watch(
       selectedSceneGroupProvider.select((group) {
-        if (group == null) return null;
-        return group
-            .backgroundPath(currentBackgroundId!)
-            .get(group)
-            ?.value
-            .image;
+        final backgroundId = currentBackgroundId;
+
+        if (group == null || backgroundId == null) return null;
+        return group.backgroundPath(backgroundId).get(group)?.value.image;
       }),
     );
 
@@ -101,10 +238,10 @@ class NovelBackgroundInspector extends HookConsumerWidget {
 
             if (placesCollection == null) return const SizedBox.shrink();
 
-            return NovelImageCollectionEditor<Background>(
-              title: "Select Background",
-              addParentLabel: "Add Place",
-              emptySelectionLabel: "Select a Place",
+            return NovelImageGroupEditor<Background>(
+              title: Text("Select Background"),
+              addParentLabel: Text("Add Place"),
+              emptySelectionLabel: Text("Select a Place"),
               imageCollection: placesCollection,
               currentSelectionId: currentBackgroundId,
               onSelectionChanged: onChanged,
@@ -131,12 +268,11 @@ class NovelBackgroundInspector extends HookConsumerWidget {
   }
 }
 
-/// A highly reusable and clean editor taking an immutable collection.
-class NovelImageCollectionEditor<ImageItem extends ImageResource>
+class NovelImageGroupEditor<ImageItem extends ImageResource>
     extends HookWidget {
-  final String title;
-  final String addParentLabel;
-  final String emptySelectionLabel;
+  final Widget title;
+  final Widget addParentLabel;
+  final Widget emptySelectionLabel;
 
   final Collection<ImageCollectionResource<ImageItem>> imageCollection;
   final ValueChanged<Collection<ImageCollectionResource<ImageItem>>>
@@ -145,7 +281,7 @@ class NovelImageCollectionEditor<ImageItem extends ImageResource>
   final FullId<ImageItem>? currentSelectionId;
   final ValueChanged<FullId<ImageItem>> onSelectionChanged;
 
-  const NovelImageCollectionEditor({
+  const NovelImageGroupEditor({
     super.key,
     required this.title,
     required this.addParentLabel,
@@ -165,7 +301,7 @@ class NovelImageCollectionEditor<ImageItem extends ImageResource>
     );
 
     return AlertDialog(
-      title: Text(title),
+      title: title,
       content: SizedBox(
         width: 800,
         height: 500,
@@ -174,7 +310,7 @@ class NovelImageCollectionEditor<ImageItem extends ImageResource>
           children: [
             Expanded(
               flex: 1,
-              child: _ParentViewer(
+              child: NovelImageCollectionViewer(
                 collection: imageCollection,
                 selectedParentId: selectedParentId,
                 addParentLabel: addParentLabel,
@@ -186,8 +322,8 @@ class NovelImageCollectionEditor<ImageItem extends ImageResource>
             Expanded(
               flex: 3,
               child: selectedParentId.value == null
-                  ? Center(child: Text(emptySelectionLabel))
-                  : _ChildGridView(
+                  ? Center(child: emptySelectionLabel)
+                  : NovelImageResourceViewer(
                       collection: imageCollection,
                       parentId: selectedParentId.value!,
                       currentSelectionId: currentSelectionId,
@@ -212,16 +348,18 @@ class NovelImageCollectionEditor<ImageItem extends ImageResource>
   }
 }
 
-class _ParentViewer<ImageItem extends ImageResource> extends HookWidget {
+class NovelImageCollectionViewer<ImageItem extends ImageResource>
+    extends HookWidget {
   final Collection<ImageCollectionResource<ImageItem>> collection;
 
   final ValueNotifier<Id<CollectionResource<ImageItem>>?> selectedParentId;
-  final String addParentLabel;
+  final Widget addParentLabel;
   final DesignValues designValues;
   final ValueChanged<Collection<ImageCollectionResource<ImageItem>>>
   onCollectionChanged;
 
-  const _ParentViewer({
+  const NovelImageCollectionViewer({
+    super.key,
     required this.collection,
     required this.selectedParentId,
     required this.addParentLabel,
@@ -280,11 +418,12 @@ class _ParentViewer<ImageItem extends ImageResource> extends HookWidget {
             shape: const RoundedRectangleBorder(),
           ),
           icon: const Icon(Icons.add),
-          label: Text(addParentLabel),
+          label: addParentLabel,
           onPressed: () async {
             final placeName = await showDialog<String>(
               context: context,
-              builder: (context) => const _NewNameDialog(title: "New Parent"),
+              builder: (context) =>
+                  const NovelNewNameDialog(title: "New Parent"),
             );
 
             if (placeName != null && placeName.isNotEmpty) {
@@ -308,7 +447,8 @@ class _ParentViewer<ImageItem extends ImageResource> extends HookWidget {
   }
 }
 
-class _ChildGridView<ImageItem extends ImageResource> extends HookWidget {
+class NovelImageResourceViewer<ImageItem extends ImageResource>
+    extends HookWidget {
   final Collection<ImageCollectionResource<ImageItem>> collection;
   final Id<CollectionResource<ImageItem>> parentId;
   final FullId<ImageItem>? currentSelectionId;
@@ -317,7 +457,8 @@ class _ChildGridView<ImageItem extends ImageResource> extends HookWidget {
   final ValueChanged<Collection<ImageCollectionResource<ImageItem>>>
   onCollectionChanged;
 
-  const _ChildGridView({
+  const NovelImageResourceViewer({
+    super.key,
     required this.collection,
     required this.parentId,
     required this.currentSelectionId,
@@ -344,7 +485,7 @@ class _ChildGridView<ImageItem extends ImageResource> extends HookWidget {
       itemCount: childList.length + 1,
       itemBuilder: (context, index) {
         if (index == childList.length) {
-          return _AddChildButton(
+          return NovelAddChildButton(
             designValues: designValues,
             onAdd: () async {
               final image = await pickImage();
@@ -354,14 +495,10 @@ class _ChildGridView<ImageItem extends ImageResource> extends HookWidget {
               final customName = await showDialog<String>(
                 context: context,
                 builder: (context) =>
-                    const _NewNameDialog(title: "Name this Image"),
+                    const NovelNewNameDialog(title: "Name this Image"),
               );
 
               if (customName != null && customName.isNotEmpty) {
-                print("Woah!");
-
-                // // Sorry I'm kind of confused about what this is. Could you please fix this callback?
-
                 final nextCollection =
                     FullId(
                       parentId: parentId,
@@ -491,11 +628,15 @@ class _ChildGridView<ImageItem extends ImageResource> extends HookWidget {
   }
 }
 
-class _AddChildButton extends StatelessWidget {
+class NovelAddChildButton extends StatelessWidget {
   final DesignValues designValues;
   final VoidCallback onAdd;
 
-  const _AddChildButton({required this.designValues, required this.onAdd});
+  const NovelAddChildButton({
+    super.key,
+    required this.designValues,
+    required this.onAdd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -515,11 +656,11 @@ class _AddChildButton extends StatelessWidget {
   }
 }
 
-class _NewNameDialog extends HookWidget {
+class NovelNewNameDialog extends HookWidget {
   final String title;
   final String? initialText;
 
-  const _NewNameDialog({required this.title, this.initialText});
+  const NovelNewNameDialog({super.key, required this.title, this.initialText});
 
   @override
   Widget build(BuildContext context) {

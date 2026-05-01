@@ -1,4 +1,5 @@
 import 'package:device_frame/device_frame.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -22,7 +23,7 @@ class NovelEditorPage extends ConsumerWidget {
         child: const Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 3, child: NovelResourceSelector()),
+            Expanded(flex: 3, child: NovelSceneSelector()),
             VerticalDivider(),
             Expanded(flex: 9, child: NovelFrameViewer()),
             VerticalDivider(),
@@ -57,8 +58,8 @@ class NovelMenuBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => Size.fromHeight(kToolbarHeight);
 }
 
-class NovelResourceSelector extends ConsumerWidget {
-  const NovelResourceSelector({super.key});
+class NovelSceneSelector extends ConsumerWidget {
+  const NovelSceneSelector({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -94,14 +95,53 @@ class NovelResourceSelector extends ConsumerWidget {
                         in scenes.entries)
                       RadioListTile(
                         value: id,
-                        title: Text(
-                          scene.metadata,
-                          style: textTheme.bodyMedium,
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(scene.metadata, style: textTheme.bodyMedium),
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () async {
+                                final answer = await showDialog<bool?>(
+                                  context: context,
+                                  builder: (context) {
+                                    return NovelDeletionDialog();
+                                  },
+                                );
+
+                                if (answer != true) return;
+
+                                ref
+                                    .read(selectedSceneGroupProvider.notifier)
+                                    .setScene(id, null);
+                              },
+                            ),
+                          ],
                         ),
                         toggleable: true,
                       ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      final sceneName = await showDialog<String>(
+                        context: context,
+                        builder: (context) =>
+                            NovelNewNameDialog(title: "New Scene"),
+                      );
+
+                      if (sceneName == null) {
+                        return;
+                      }
+
+                      ref
+                          .read(selectedSceneGroupProvider.notifier)
+                          .setScene(
+                            Id.create(),
+                            Scene(
+                              name: Name(sceneName),
+                              parts: Collection.empty(),
+                            ),
+                          );
+                    },
                     icon: const Icon(Icons.add_rounded),
                   ),
                 ],
@@ -132,7 +172,9 @@ class NovelFrameViewer extends ConsumerWidget {
     final selectedScenePart = ref.watch(selectedScenePartProvider);
 
     final scenePart = scene?.find(selectedScenePart)?.part;
-    final sceneParts = scene?.value.entries;
+    final sceneParts = scene?.value.entries.toList();
+
+    sceneParts?.sort((a, b) => a.value.order.compareTo(b.value.order));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -163,7 +205,27 @@ class NovelFrameViewer extends ConsumerWidget {
                   for (final orderedPart in sceneParts)
                     NovelScenePartPreview(orderedPart: orderedPart),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      // This is safe because [sceneParts] is derived from [selectedScene] and we check if [sceneParts] is null or not.
+                      selectedScene!;
+
+                      ref
+                          .read(selectedSceneGroupProvider.notifier)
+                          .setScenePart(
+                            FullId(
+                              parentId: selectedScene,
+                              childId: Id.create(),
+                            ),
+                            OrderedScenePart(
+                              order: sceneParts.lastOrNull?.value.order ?? 0,
+                              part: ScenePart.frame(
+                                background: null,
+                                poses: IList(),
+                                dialogueBox: null,
+                              ),
+                            ),
+                          );
+                    },
                     icon: const Icon(Icons.add_rounded),
                   ),
                 ],
@@ -187,6 +249,7 @@ class NovelScenePartPreview extends ConsumerWidget {
 
     final sceneGroup = ref.watch(selectedSceneGroupProvider);
     final selectedPartId = ref.watch(selectedScenePartProvider);
+    final selectedScene = ref.watch(selectedSceneProvider);
 
     final scenePartId = orderedPart.key;
     final isSelected = selectedPartId == scenePartId;
@@ -216,6 +279,34 @@ class NovelScenePartPreview extends ConsumerWidget {
                 ),
               ),
             ),
+
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () async {
+                    if (selectedScene == null) return;
+
+                    final answer = await showDialog<bool?>(
+                      context: context,
+                      builder: (context) {
+                        return NovelDeletionDialog();
+                      },
+                    );
+
+                    if (answer != true) return;
+
+                    ref
+                        .read(selectedSceneGroupProvider.notifier)
+                        .setScenePart(
+                          FullId(parentId: selectedScene, childId: scenePartId),
+                          null,
+                        );
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -235,5 +326,27 @@ class NovelScenePartPreview extends ConsumerWidget {
             child: preview,
           )
         : preview;
+  }
+}
+
+class NovelDeletionDialog extends StatelessWidget {
+  const NovelDeletionDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Are you sure?'),
+      content: const Text("This will delete what you've selected."),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text("I'm sure."),
+        ),
+      ],
+    );
   }
 }
