@@ -1,755 +1,368 @@
-import 'dart:convert';
-import 'dart:typed_data';
+import 'package:drift/drift.dart';
+import 'package:drift/wasm.dart';
 
-import 'package:archive/archive.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
-import "package:junction/junction.dart";
-import 'package:prac_res/data/archive.dart';
-import 'package:uuid/uuid.dart';
+part 'data.g.dart';
 
-part 'data.freezed.dart';
-part "data.g.dart";
+/* -- Places & Backgrounds -- */
 
-class Selector<Edited, InnerProperty> {
-  final InnerProperty Function(Edited) get;
-  final Edited Function(Edited, InnerProperty) set;
-
-  Selector(this.get, this.set);
-
-  Edited update(Edited current, InnerProperty Function(InnerProperty) updater) {
-    return set(current, updater(get(current)));
-  }
-
-  Selector<Edited, InnerInnerProperty> select<InnerInnerProperty>(
-    InnerInnerProperty Function(InnerProperty) getInnerInner,
-    InnerProperty Function(InnerProperty, InnerInnerProperty) setInner,
-  ) {
-    return compose(Selector(getInnerInner, setInner));
-  }
-
-  Selector<Edited, InnerInnerProperty> compose<InnerInnerProperty>(
-    Selector<InnerProperty, InnerInnerProperty> composeWith,
-  ) {
-    return Selector(
-      (edited) => composeWith.get(get(edited)),
-      (edited, innerInnerProperty) =>
-          set(edited, composeWith.set(get(edited), innerInnerProperty)),
-    );
-  }
+class Places extends Table {
+  late final id = integer().autoIncrement()();
+  late final name = text()();
 }
 
-typedef ValueEditor<T> = Selector<T, T>;
-
-@freezed
-abstract class SceneGroup with _$SceneGroup {
-  /// We need a private constructor so we can define custom methods inside a class annotated with [freezed].
-  const SceneGroup._();
-
-  const factory SceneGroup({
-    required Choices choices,
-    required Scenes scenes,
-    required Places places,
-    required Actors actors,
-  }) = _SceneGroup;
-
-  static final empty = SceneGroup(
-    choices: Choices.empty(),
-    scenes: Scenes.empty(),
-    places: Places.empty(),
-    actors: Actors.empty(),
-  );
-
-  /// Why are the names defined here instead of their respective types?
-  /// Well, think about how you would deserialize them.
-  /// You would have to pass in the whole scene group folder to the child so that
-  /// it could look for its own name and deserialize itself!
-  /// That's why the file names are defined here in [SceneGroup].
-  static final choicesName = CrossFilesystemName("choices.json");
-  static final scenesName = CrossFilesystemName("scenes");
-  static final placesName = CrossFilesystemName("places");
-  static final actorsName = CrossFilesystemName("actors");
-
-  static final Selector<SceneGroup, Choices> choicesSelector = Selector(
-    (sceneGroup) => sceneGroup.choices,
-    (sceneGroup, choices) => sceneGroup.copyWith(choices: choices),
-  );
-
-  static final Selector<SceneGroup, Scenes> scenesSelector = Selector(
-    (sceneGroup) => sceneGroup.scenes,
-    (sceneGroup, scenes) => sceneGroup.copyWith(scenes: scenes),
-  );
-
-  static final Selector<SceneGroup, Places> placesSelector = Selector(
-    (sceneGroup) => sceneGroup.places,
-    (sceneGroup, places) => sceneGroup.copyWith(places: places),
-  );
-
-  static final Selector<SceneGroup, Actors> actorsSelector = Selector(
-    (sceneGroup) => sceneGroup.actors,
-    (sceneGroup, actors) => sceneGroup.copyWith(actors: actors),
-  );
-
-  CrossFolderData toFilesystemData() {
-    return CrossFolderData(
-      children: CrossFolderChildren({
-        choicesName: choices.toFilesystemData(),
-        scenesName: scenes.toFilesystemData(),
-        placesName: places.toFilesystemData(),
-        actorsName: actors.toFilesystemData(),
-      }),
-    );
-  }
-
-  Archive toArchiveData() {
-    return ArchiveExtension.fromFolder(toFilesystemData());
-  }
-
-  static SceneGroup fromArchiveData(Archive archive) {
-    return SceneGroup.fromFilesystemData(
-      CrossFolderDataExtension.fromArchive(archive),
-    );
-  }
-
-  static SceneGroup fromFilesystemData(CrossFolderData folder) {
-    final folderChildren = folder.children;
-
-    return SceneGroup(
-      choices: Choices.fromFilesystemData(
-        folderChildren.find(choicesName)! as CrossFileData,
-      ),
-      scenes: Scenes.fromFilesystemData(
-        folderChildren.find(scenesName)! as CrossFolderData,
-      ),
-      places: Places.fromFilesystemData(
-        folderChildren.find(placesName)! as CrossFolderData,
-      ),
-      actors: Actors.fromFilesystemData(
-        folderChildren.find(actorsName)! as CrossFolderData,
-      ),
-    );
-  }
+class Backgrounds extends Table {
+  late final id = integer().autoIncrement()();
+  late final placeId = integer().references(
+    Places,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final name = text()();
 }
 
-/* ++ Resource Collections ++ */
-
-extension type Choices.from(Collection<ChoiceResource> choiceCollection)
-    implements Collection<ChoiceResource> {
-  Choices.empty() : this.from(Collection.empty());
-
-  Choices(IMap<Id<ChoiceResource>, ChoiceResource> choices)
-    : this.from(Collection(choices));
-
-  factory Choices.fromJson(Map<String, dynamic> json) {
-    return Choices.from(
-      Collection.fromJson(
-        json,
-        (json) => ChoiceResource.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
-
-  Map<String, dynamic> toJson() =>
-      choiceCollection.toJson(ChoiceResource.staticToJson);
-
-  CrossFileData toFilesystemData() {
-    return CrossFileData.fromJson(toJson());
-  }
-
-  static Choices fromFilesystemData(CrossFileData data) {
-    return Choices.fromJson(data.toJson()! as Map<String, dynamic>);
-  }
-}
-
-extension type Scenes.from(Collection<Scene> scenes)
-    implements Collection<Scene> {
-  Scenes.empty() : this.from(Collection.empty());
-
-  Scenes(IMap<Id<Scene>, Scene> scenes) : this.from(Collection(scenes));
-
-  CrossFolderData toFilesystemData() {
-    return scenes.toFolderData(Scene.staticToJson);
-  }
-
-  static Scenes fromFilesystemData(CrossFolderData data) {
-    return Scenes(
-      Collection.fromFolderData(
-        data,
-        (json) => Scene.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
-}
-
-extension type Places.from(Collection<Place> places)
-    implements Collection<Place> {
-  Places.empty() : this.from(Collection.empty());
-
-  Places(IMap<Id<Place>, Place> places) : this.from(Collection(places));
-
-  CrossFolderData toFilesystemData() {
-    return places.toFolderData(Place.staticToJson);
-  }
-
-  static Places fromFilesystemData(CrossFolderData data) {
-    return Places.from(
-      Collection.fromFolderData(
-        data,
-        (json) => Place.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
-}
-
-extension type Actors.from(Collection<Actor> actors)
-    implements Collection<Actor> {
-  Actors.empty() : this.from(Collection.empty());
-
-  Actors(IMap<Id<Actor>, Actor> actors) : this.from(Collection(actors));
-
-  CrossFolderData toFilesystemData() {
-    return actors.toFolderData(Actor.staticToJson);
-  }
-
-  static Actors fromFilesystemData(CrossFolderData data) {
-    return Actors(
-      Collection.fromFolderData(
-        data,
-        (json) => Actor.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
-}
-
-/* -- Resource Collections -- */
-
-/* ++ Collection Resources ++ */
-
-extension type ChoiceResource.from(Resource<Name, Choice> resource)
-    implements Resource<Name, Choice> {
-  ChoiceResource({
-    required String name,
-    required ISet<Option> options,
-    required Option? selected,
-  }) : this.fromChoice(
-         name: name,
-         choice: Choice(options: options, selected: selected),
-       );
-
-  ChoiceResource.fromChoice({required String name, required Choice choice})
-    : this.from(Resource(metadata: Name(name), value: choice));
-
-  factory ChoiceResource.fromJson(Map<String, dynamic> json) =>
-      ChoiceResource.from(
-        Resource.fromJson(
-          json,
-          Name.fromJson,
-          (json) => Choice.fromJson(json! as Map<String, dynamic>),
-        ),
-      );
-
-  Map<String, dynamic> toJson() =>
-      resource.toJson(Name.toJson, Choice.staticToJson);
-
-  static Map<String, dynamic> staticToJson(ChoiceResource choice) =>
-      choice.toJson();
-}
-
-extension type Scene.from(CollectionResource<OrderedScenePart> scene)
-    implements CollectionResource<OrderedScenePart> {
-  Scene({
-    required Name name,
-    required IMap<Id<OrderedScenePart>, OrderedScenePart> parts,
-  }) : this.fromParts(name: name, parts: Collection(parts));
-
-  Scene.fromParts({
-    required Name name,
-    required Collection<OrderedScenePart> parts,
-  }) : this.from(CollectionResource(metadata: name, value: parts));
-
-  factory Scene.fromJson(Map<String, dynamic> json) {
-    return Scene.from(
-      CollectionResource.fromJson(
-        json,
-        (json) => OrderedScenePart.fromJson(json! as Map<String, dynamic>),
-      ),
-    );
-  }
-
-  Map<String, dynamic> toJson() => scene.toJson(OrderedScenePart.staticToJson);
-
-  static Map<String, dynamic> staticToJson(Scene scene) => scene.toJson();
-}
-
-extension type Place.from(ImageCollectionResource<Background> place)
-    implements ImageCollectionResource<Background> {
-  Place({
-    required Name name,
-    required IMap<Id<Background>, Background> backgrounds,
-  }) : this.fromBackgrounds(name: name, backgrounds: Collection(backgrounds));
-
-  Place.fromBackgrounds({
-    required Name name,
-    required Collection<Background> backgrounds,
-  }) : this.from(ImageCollectionResource(name: name, images: backgrounds));
-
-  factory Place.fromJson(Map<String, dynamic> json) =>
-      Place.from(ImageCollectionResource.fromJson(json, Background.fromJson));
-
-  static Map<String, dynamic> staticToJson(Place place) => place.toJson();
-}
-
-extension type Actor.from(ImageCollectionResource<Pose> actor)
-    implements ImageCollectionResource<Pose> {
-  Actor({required Name name, required IMap<Id<Pose>, Pose> poses})
-    : this.fromPoses(name: name, poses: Collection(poses));
-
-  Actor.fromPoses({required Name name, required Collection<Pose> poses})
-    : this.from(ImageCollectionResource(name: name, images: poses));
-
-  factory Actor.fromJson(Map<String, dynamic> json) =>
-      Actor.from(ImageCollectionResource.fromJson(json, Pose.fromJson));
-
-  static Map<String, dynamic> staticToJson(Actor actor) => actor.toJson();
-}
-
-/* -- Collection Resources -- */
-
-/* ++ Single Resources ++ */
-
-@freezed
-abstract class Choice with _$Choice {
-  /// We need a private constructor so we can define custom methods inside a class annotated with [freezed].
-  const Choice._();
-
-  @Assert(
-    'selected == null || options.contains(selected)',
-    '[selected] has to be either [null] or contained in the set of [options]!',
-  )
-  factory Choice({required ISet<Option> options, required Option? selected}) =
-      _Choice;
-
-  static final Selector<Choice, ISet<Option>> optionsSelector = Selector(
-    (choice) => choice.options,
-    (choice, options) => choice.copyWith(options: options),
-  );
-
-  static final Selector<Choice, Option?> choiceSelector = Selector(
-    (choice) => choice.selected,
-    (choice, selected) => choice.copyWith(selected: selected),
-  );
-
-  factory Choice.fromJson(Map<String, dynamic> json) => _$ChoiceFromJson(json);
-
-  static Map<String, dynamic> staticToJson(Choice choice) => choice.toJson();
-}
-
-@Freezed(unionKey: 'type')
-sealed class ScenePart with _$ScenePart {
-  const factory ScenePart.frame({
-    required FullId<Background>? background,
-    required IList<FullId<Pose>> poses,
-    required DialogueBox? dialogueBox,
-  }) = Frame;
-
-  // TODO: Unimplemented!
-  const factory ScenePart.frameResolver() = FrameResolver;
-
-  factory ScenePart.fromJson(Map<String, dynamic> json) =>
-      _$ScenePartFromJson(json);
-}
-
-extension type Background.from(ImageResource _background)
-    implements ImageResource {
-  Background({required Name name, required ImageData image})
-    : this.from(ImageResource(name: name, image: image));
-
-  static Background fromJson(Object? json) =>
-      Background.from(ImageResource.fromJson(json as Map<String, dynamic>));
-}
-
-extension type Pose.from(ImageResource _pose) implements ImageResource {
-  Pose({required Name name, required ImageData image})
-    : this.from(ImageResource(name: name, image: image));
-
-  static Pose fromJson(Object? json) =>
-      Pose.from(ImageResource.fromJson(json as Map<String, dynamic>));
-}
-
-/* -- Single Resources -- */
-
-/* ++ Choice Parts ++ */
-
-extension type Option(String _option) implements String {}
-
-enum ChoiceError implements Exception {
-  invalidOption(
-    "[selected] has to be either [null] or contained in the set of [options]!",
-  );
-
-  final String message;
-
-  const ChoiceError(this.message);
+class BackgroundImages extends Table {
+  late final backgroundId = integer().references(
+    Backgrounds,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final imageData = blob()();
 
   @override
-  String toString() => message;
+  Set<Column> get primaryKey => {backgroundId};
 }
 
-/* -- Choices Parts -- */
+/* -- Actors & Poses -- */
 
-/* ++ ScenePart Parts ++ */
-
-@freezed
-abstract class DialogueBox with _$DialogueBox {
-  const DialogueBox._();
-
-  const factory DialogueBox({required String? name, required String dialogue}) =
-      _DialogueBox;
-
-  static final Selector<DialogueBox, String?> nameSelector = Selector(
-    (dialogueBox) => dialogueBox.name,
-    (dialogueBox, name) => dialogueBox.copyWith(name: name),
-  );
-
-  static final Selector<DialogueBox, String> dialogueSelector = Selector(
-    (dialogueBox) => dialogueBox.dialogue,
-    (dialogueBox, dialogue) => dialogueBox.copyWith(dialogue: dialogue),
-  );
-
-  factory DialogueBox.fromJson(Map<String, dynamic> json) =>
-      _$DialogueBoxFromJson(json);
+class Actors extends Table {
+  late final id = integer().autoIncrement()();
+  late final name = text()();
 }
 
-@freezed
-abstract class OrderedScenePart with _$OrderedScenePart {
-  const OrderedScenePart._();
-
-  const factory OrderedScenePart({
-    required double order,
-    required ScenePart part,
-  }) = _OrderedScenePart;
-
-  Selector<OrderedScenePart, double> get orderSelector => Selector(
-    (orderedPart) => orderedPart.order,
-    (orderedPart, order) => orderedPart.copyWith(order: order),
-  );
-
-  Selector<OrderedScenePart, ScenePart> get partSelector => Selector(
-    (orderedPart) => orderedPart.part,
-    (orderedPart, part) => orderedPart.copyWith(part: part),
-  );
-
-  factory OrderedScenePart.fromJson(Map<String, dynamic> json) =>
-      _$OrderedScenePartFromJson(json);
-
-  static Map<String, dynamic> staticToJson(OrderedScenePart part) =>
-      part.toJson();
+class Poses extends Table {
+  late final id = integer().autoIncrement()();
+  late final actorId = integer().references(
+    Actors,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final name = text()();
 }
 
-/* -- ScenePart Parts -- */
+class PoseImages extends Table {
+  late final poseId = integer().references(
+    Poses,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final imageData = blob()();
 
-/* ++ Resources ++ */
-
-/* ++ Ids ++ */
-
-extension type Name(String name) implements String {
-  static Name fromJson(Object? json) => Name(json! as String);
-  static String toJson(Name name) => name.name;
+  @override
+  Set<Column> get primaryKey => {poseId};
 }
 
-extension type Id<T>(String id) implements String {
-  static final uuid = Uuid();
+/* -- Choices & Options -- */
 
-  static Id<T> create<T>() {
-    return Id(uuid.v4());
+class Choices extends Table {
+  late final id = integer().autoIncrement()();
+  late final name = text()();
+}
+
+@TableIndex.sql('''
+  CREATE UNIQUE INDEX one_selected_per_choice 
+  ON choice_options(choice_id) 
+  WHERE is_selected = 1;
+''')
+class ChoiceOptions extends Table {
+  late final id = integer().autoIncrement()();
+  late final choiceId = integer().references(
+    Choices,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final optionText = text()();
+
+  late final IntColumn isSelected = integer()
+      .withDefault(const Constant(0))
+      .check(isSelected.isIn([0, 1]))();
+}
+
+/* -- Scenes -- */
+
+class Scenes extends Table {
+  late final id = integer().autoIncrement()();
+  late final name = text()();
+}
+
+class SceneParts extends Table {
+  late final id = integer().autoIncrement()();
+  late final sceneId = integer().references(
+    Scenes,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final order = real()();
+  late final TextColumn partType = text().check(
+    partType.isIn(["frame", "resolver", "custom"]),
+  )();
+}
+
+class Frames extends Table {
+  late final scenePartId = integer().references(
+    SceneParts,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final backgroundId = integer().nullable().references(
+    Backgrounds,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+
+  @override
+  Set<Column> get primaryKey => {scenePartId};
+}
+
+class FrameResolvers extends Table {
+  late final scenePartId = integer().references(
+    SceneParts,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+
+  late final resolverScript = text()();
+
+  @override
+  Set<Column> get primaryKey => {scenePartId};
+}
+
+class Custom extends Table {
+  late final scenePartId = integer().references(
+    SceneParts,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final eventId = text()();
+
+  @override
+  Set<Column> get primaryKey => {scenePartId};
+}
+
+class DialogueBoxes extends Table {
+  late final frameId = integer().references(
+    Frames,
+    #scenePartId,
+    onDelete: KeyAction.cascade,
+  )();
+  late final name = text().nullable()();
+  late final dialogue = text()();
+
+  @override
+  Set<Column> get primaryKey => {frameId};
+}
+
+class FramePoses extends Table {
+  late final id = integer().autoIncrement()();
+  late final frameId = integer().references(
+    Frames,
+    #scenePartId,
+    onDelete: KeyAction.cascade,
+  )();
+  late final poseId = integer().references(
+    Poses,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  late final order = real()();
+}
+
+abstract class SceneTimelineView extends View {
+  SceneParts get sceneParts;
+  Frames get frames;
+  FrameResolvers get frameResolvers;
+  Custom get custom;
+
+  @override
+  Query as() =>
+      select([
+        sceneParts.id,
+        sceneParts.sceneId,
+        sceneParts.order,
+        sceneParts.partType,
+        frames.backgroundId,
+        frameResolvers.resolverScript,
+        custom.eventId,
+      ]).from(sceneParts).join([
+        leftOuterJoin(frames, frames.scenePartId.equalsExp(sceneParts.id)),
+        leftOuterJoin(
+          frameResolvers,
+          frameResolvers.scenePartId.equalsExp(sceneParts.id),
+        ),
+        leftOuterJoin(custom, custom.scenePartId.equalsExp(sceneParts.id)),
+      ]);
+}
+
+/* -- Database -- */
+
+@DriftDatabase(
+  tables: [
+    Places,
+    Backgrounds,
+    BackgroundImages,
+    Actors,
+    Poses,
+    PoseImages,
+    Choices,
+    ChoiceOptions,
+    Scenes,
+    SceneParts,
+    Frames,
+    FrameResolvers,
+    Custom,
+    DialogueBoxes,
+    FramePoses,
+  ],
+  views: [SceneTimelineView],
+)
+class SceneGroup extends _$SceneGroup {
+  final ExistingDatabase webDetails;
+
+  SceneGroup._(this.webDetails, super.e);
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      beforeOpen: (details) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
+    );
   }
 
-  static Id<T> fromJson<T>(Object? json) => Id(json! as String);
-  static String toJson<T>(Id<T> id) => id;
-
-  static const String jsonExtension = ".json";
-
-  static CrossFilesystemName toFilename<T>(Id<T> id) =>
-      CrossFilesystemName("$id$jsonExtension");
-  static Id<T> fromFilename<T>(CrossFilesystemName filename) {
-    if (!filename.endsWith(jsonExtension)) {
-      throw FormatException(
-        "Expected a $jsonExtension file, but got: $filename",
+  static Future<SceneGroup> _fromWasmDatabaseResult(
+    String databaseName,
+    WasmDatabaseResult result,
+  ) async {
+    if (result.missingFeatures.isNotEmpty) {
+      // ignore: avoid_print
+      print(
+        'Using ${result.chosenImplementation} due to missing browser '
+        'features: ${result.missingFeatures}',
       );
     }
 
-    return Id(filename.substring(0, filename.length - jsonExtension.length));
-  }
-}
+    final storageApi = result.chosenImplementation.storageApi;
 
-/// Why is this an extension type of [Resource<Id, Id>] you ask?
-/// Well, it's really just because I was lazy and I saw that they have the same struct shape anyways.
-/// And as a bonus, you can think of the [metadata] as the collection id, and the [value] inside it as the item id,
-/// And that makes sense because [metadata] is data about [value].
-extension type FullId<Child>.from(
-  Resource<Id<CollectionResource<Child>>, Id<Child>> fullId
-)
-    implements Resource<Id<CollectionResource<Child>>, Id<Child>> {
-  FullId({
-    required Id<CollectionResource<Child>> parentId,
-    required Id<Child> childId,
-  }) : this.from(Resource(metadata: parentId, value: childId));
-
-  Id<CollectionResource<Child>> get parentId => metadata;
-  Id<Child> get childId => value;
-
-  factory FullId.fromJson(Map<String, dynamic> json) => FullId.from(
-    Resource.fromJson(
-      json,
-      Id.fromJson<CollectionResource<Child>>,
-      Id.fromJson<Child>,
-    ),
-  );
-
-  Map<String, dynamic> toJson() => fullId.toJson(Id.toJson, Id.toJson);
-
-  Selector<Collection<CollectionResource<Child>>, Child?> childSelector() {
-    final parentSelector = Collection.childSelector<CollectionResource<Child>>(
-      parentId,
-    );
-    final childSelector = CollectionResource.childSelector<Child>(childId);
-
-    return Selector(
-      (edited) {
-        final inner = parentSelector.get(edited);
-
-        if (inner == null) return null;
-
-        return childSelector.get(inner);
-      },
-      (edited, innerInner) {
-        final inner = parentSelector.get(edited);
-
-        if (inner == null) return edited;
-
-        final updatedInner = childSelector.set(inner, innerInner);
-
-        return parentSelector.set(edited, updatedInner);
-      },
-    );
-  }
-
-  Child? findIn(Collection<CollectionResource<Child>> resourceCollection) {
-    return resourceCollection.find(parentId)?.find(childId);
-  }
-}
-
-/* -- Ids -- */
-
-@Freezed(genericArgumentFactories: true)
-abstract class Resource<Metadata, Value> with _$Resource<Metadata, Value> {
-  const Resource._();
-
-  const factory Resource({required Metadata metadata, required Value value}) =
-      _Resource<Metadata, Value>;
-
-  static Selector<Resource<Metadata, Value>, Metadata>
-  metadataSelector<Metadata, Value>() => Selector(
-    (resource) => resource.metadata,
-    (resource, metadata) => resource.copyWith(metadata: metadata),
-  );
-
-  static Selector<Resource<Metadata, Value>, Value>
-  valueSelector<Metadata, Value>() => Selector(
-    (resource) => resource.value,
-    (resource, value) => resource.copyWith(value: value),
-  );
-
-  factory Resource.fromJson(
-    Map<String, dynamic> json,
-    Metadata Function(Object? json) metadataFromJson,
-    Value Function(Object? json) valueFromJson,
-  ) => _$ResourceFromJson(json, metadataFromJson, valueFromJson);
-}
-
-extension type Collection<Item>(IMap<Id<Item>, Item> collection)
-    implements IMap<Id<Item>, Item> {
-  static Selector<Collection<Item>, Item?> childSelector<Item>(Id<Item>? id) {
-    return Selector((collection) => collection.find(id), (collection, item) {
-      if (id == null) return collection;
-
-      return Collection(
-        item == null ? collection.remove(id) : collection.add(id, item),
+    if (storageApi == null) {
+      throw StateError(
+        "We can't export this database to bytes because the browser its running on doesn't support a valid storage API!",
       );
-    });
+    }
+
+    return SceneGroup._((storageApi, databaseName), result.resolvedExecutor);
   }
 
-  Item? find(Id<Item>? id) {
-    if (id == null) return null;
-    return collection[id];
+  static Future<SceneGroup> fromBytes(
+    String databaseName,
+    Uint8List bytes,
+  ) async {
+    return _fromWasmDatabaseResult(
+      databaseName,
+      await WasmDatabase.open(
+        databaseName: databaseName,
+        sqlite3Uri: Uri.parse('sqlite3.wasm'),
+        driftWorkerUri: Uri.parse('drift_worker.js'),
+        initializeDatabase: () => bytes,
+      ),
+    );
   }
 
-  Collection.empty() : this(IMap());
+  static Future<SceneGroup> empty(String databaseName) async {
+    return _fromWasmDatabaseResult(
+      databaseName,
+      await WasmDatabase.open(
+        databaseName: databaseName,
+        sqlite3Uri: Uri.parse('sqlite3.wasm'),
+        driftWorkerUri: Uri.parse('drift_worker.js'),
+      ),
+    );
+  }
 
-  factory Collection.fromJson(
-    Map<String, dynamic> json,
-    Item Function(Object? json) itemFromJson,
+  Future<Uint8List> toBytes() async {
+    final probe = await WasmDatabase.probe(
+      sqlite3Uri: Uri.parse('sqlite3.wasm'),
+      driftWorkerUri: Uri.parse('drift_worker.js'),
+    );
+
+    // The bang operator here should be safe because the web details are attached to [this] database.
+    return (await probe.exportDatabase(webDetails))!;
+  }
+}
+
+class SceneTimelineItem {
+  final ScenePart part;
+  final SceneTimelineItemData specifics;
+
+  SceneTimelineItem({required this.part, required this.specifics});
+
+  static SceneTimelineItem fromSceneTimelineViewData(
+    SceneTimelineViewData entry,
   ) {
-    return Collection(
-      json
-          .map(
-            (idJson, itemJson) =>
-                MapEntry(Id.fromJson<Item>(idJson), itemFromJson(itemJson)),
-          )
-          .toIMap(),
-    );
-  }
+    final id = entry.id;
+    final partType = entry.partType;
 
-  Map<String, dynamic> toJson(Object? Function(Item item) itemToJson) =>
-      collection.unlock.map(
-        (id, item) => MapEntry(Id.toJson(id), itemToJson(item)),
-      );
+    return SceneTimelineItem(
+      part: ScenePart(
+        id: entry.id,
+        sceneId: entry.sceneId,
+        order: entry.order,
+        partType: partType,
+      ),
+      specifics: switch (partType) {
+        'frame' => TimelineFrame(
+          Frame(scenePartId: id, backgroundId: entry.backgroundId),
+        ),
 
-  CrossFolderData toFolderData(Object? Function(Item item) itemToJson) {
-    return CrossFolderData(
-      children: CrossFolderChildren(
-        collection.unlock.map(
-          (itemId, item) => CrossInMemoryFile(
-            name: Id.toFilename(itemId),
-            data: CrossFileData.fromJson(itemToJson(item)),
+        'resolver' => TimelineResolver(
+          FrameResolver(
+            scenePartId: id,
+            // SAFETY: This bang operator is safe because we know this is a resolver!
+            resolverScript: entry.resolverScript!,
           ),
         ),
-      ),
-    );
-  }
 
-  static Collection<Item> fromFolderData<Item>(
-    CrossFolderData data,
-    Item Function(Object? json) itemFromJson,
-  ) {
-    return Collection(
-      data.children
-          .map(
-            (itemId, item) => MapEntry(
-              Id.fromFilename<Item>(itemId),
-              itemFromJson((item as CrossFileData).toJson()),
-            ),
-          )
-          .toIMap(),
+        'custom' => TimelineCustom(
+          CustomData(
+            scenePartId: entry.id,
+            // SAFETY: This bang operator is safe because we know this is a custom event!
+            eventId: entry.eventId!,
+          ),
+        ),
+
+        _ => throw StateError("Invalid partType [$partType]!"),
+      },
     );
   }
 }
 
-extension type CollectionResource<Item>.from(
-  Resource<Name, Collection<Item>> collectionResource
-)
-    implements Resource<Name, Collection<Item>> {
-  CollectionResource({required Name metadata, required Collection<Item> value})
-    : this.from(Resource(metadata: metadata, value: value));
+sealed class SceneTimelineItemData {}
 
-  CollectionResource.fromMap({
-    required Name metadata,
-    required IMap<Id<Item>, Item> value,
-  }) : this(metadata: metadata, value: Collection(value));
-
-  static Selector<CollectionResource<Item>, Item?> childSelector<Item>(
-    Id<Item>? id,
-  ) {
-    return Selector((collection) => collection.find(id), (
-      collectionResource,
-      item,
-    ) {
-      if (id == null) return collectionResource;
-
-      return collectionResource.copyWith(
-            value: Collection(
-              (item == null)
-                  ? collectionResource.value.remove(id)
-                  : collectionResource.value.add(id, item),
-            ),
-          )
-          as CollectionResource<Item>;
-    });
-  }
-
-  Item? find(Id<Item>? id) {
-    return collectionResource.value.find(id);
-  }
-
-  factory CollectionResource.fromJson(
-    Map<String, dynamic> json,
-    Item Function(Object? json) itemFromJson,
-  ) {
-    return CollectionResource.from(
-      Resource.fromJson(
-        json,
-        Name.fromJson,
-        (json) =>
-            Collection.fromJson(json! as Map<String, dynamic>, itemFromJson),
-      ),
-    );
-  }
-
-  Map<String, dynamic> toJson(Object? Function(Item item) itemToJson) =>
-      collectionResource.toJson(
-        Name.toJson,
-        (collection) => collection.toJson(itemToJson),
-      );
+class TimelineFrame extends SceneTimelineItemData {
+  final Frame frameData;
+  TimelineFrame(this.frameData);
 }
 
-/* ++ Image Resources ++ */
-
-/// This isn't an extension type because I needed to override its [toString] implementation!
-/// Without the override, it tries to print all the image's bytes in the terminal, which slows everything down.
-class ImageData {
-  final Uint8List image;
-
-  ImageData({required this.image});
-
-  static ImageData fromJson(Object? json) =>
-      ImageData(image: base64Decode(json! as String));
-  static String toJson(ImageData image) => base64Encode(image.image);
-
-  @override
-  String toString() {
-    return "[Image]";
-  }
+class TimelineResolver extends SceneTimelineItemData {
+  final FrameResolver resolverData;
+  TimelineResolver(this.resolverData);
 }
 
-extension type ImageResource.from(Resource<Name, ImageData> resource)
-    implements Resource<Name, ImageData> {
-  ImageResource({required Name name, required ImageData image})
-    : this.from(Resource(metadata: name, value: image));
-
-  factory ImageResource.fromJson(Map<String, dynamic> json) =>
-      ImageResource.from(
-        Resource.fromJson(json, Name.fromJson, ImageData.fromJson),
-      );
-
-  Map<String, dynamic> toJson() =>
-      resource.toJson(Name.toJson, ImageData.toJson);
-
-  static Map<String, dynamic> staticToJson(ImageResource resource) =>
-      resource.toJson();
+class TimelineCustom extends SceneTimelineItemData {
+  final CustomData customData;
+  TimelineCustom(this.customData);
 }
-
-extension type ImageCollectionResource<ImageItem extends ImageResource>.from(
-  CollectionResource<ImageItem> imageCollection
-)
-    implements CollectionResource<ImageItem> {
-  ImageCollectionResource({
-    required Name name,
-    required Collection<ImageItem> images,
-  }) : this.from(CollectionResource(metadata: name, value: images));
-
-  factory ImageCollectionResource.fromJson(
-    Map<String, dynamic> json,
-    ImageItem Function(Object? json) itemFromJson,
-  ) {
-    return ImageCollectionResource.from(
-      CollectionResource.fromJson(json, itemFromJson),
-    );
-  }
-
-  Map<String, dynamic> toJson() =>
-      imageCollection.toJson(ImageResource.staticToJson);
-}
-
-/* -- Image Resources -- */
-
-/* -- Resources -- */

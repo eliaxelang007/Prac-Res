@@ -1,5 +1,5 @@
 import 'package:device_frame/device_frame.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -7,13 +7,14 @@ import 'package:prac_res/data/data.dart';
 import 'package:prac_res/pages/design_values.dart';
 import 'package:prac_res/pages/editor_state.dart';
 import 'package:prac_res/pages/frame.dart';
-import 'package:prac_res/pages/inspector.dart';
+import 'package:prac_res/pages/inspector/inspector.dart';
+import 'package:prac_res/pages/open.dart';
 
-class NovelEditorPage extends ConsumerWidget {
+class NovelEditorPage extends StatelessWidget {
   const NovelEditorPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
     return Scaffold(
@@ -25,9 +26,9 @@ class NovelEditorPage extends ConsumerWidget {
           children: [
             Expanded(flex: 3, child: NovelSceneSelector()),
             VerticalDivider(),
-            Expanded(flex: 9, child: NovelFrameViewer()),
+            Expanded(flex: 9, child: NovelScenePartTimeline()),
             VerticalDivider(),
-            Expanded(flex: 3, child: NovelInspector()),
+            Expanded(flex: 3, child: SizedBox() /*NovelInspector() */),
           ],
         ),
       ),
@@ -61,15 +62,21 @@ class NovelMenuBar extends StatelessWidget implements PreferredSizeWidget {
 class NovelSceneSelector extends ConsumerWidget {
   const NovelSceneSelector({super.key});
 
+  static final scenesProvider = StreamProvider((ref) {
+    final sceneGroup = ref.watch(selectedSceneGroupProvider);
+
+    if (sceneGroup == null) {
+      return Stream.value(null);
+    }
+
+    return sceneGroup.scenes.select().watch();
+  });
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final designValues = theme.extension<DesignValues>()!;
-
-    final scenes = ref.watch(
-      selectedSceneGroupProvider.select((group) => group?.scenes),
-    );
 
     final selectedScene = ref.watch(selectedSceneProvider);
 
@@ -80,9 +87,9 @@ class NovelSceneSelector extends ConsumerWidget {
           flex: 2,
           child: Padding(
             padding: EdgeInsets.all(designValues.small),
-            child: RadioGroup<Id<Scene>>(
+            child: RadioGroup<int>(
               onChanged: (selection) {
-                ref.read(selectedSceneProvider.notifier).select(selection);
+                ref.read(selectedSceneProvider.notifier).set(selection);
               },
               groupValue: selectedScene,
               child: Column(
@@ -90,57 +97,26 @@ class NovelSceneSelector extends ConsumerWidget {
                 children: [
                   Text("Scenes", style: textTheme.bodyLarge),
                   const Divider(),
-                  if (scenes != null)
-                    for (final MapEntry(key: id, value: scene)
-                        in scenes.entries)
-                      RadioListTile(
-                        value: id,
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(scene.metadata, style: textTheme.bodyMedium),
-                            IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () async {
-                                final answer = await showDialog<bool?>(
-                                  context: context,
-                                  builder: (context) {
-                                    return NovelDeletionDialog();
-                                  },
-                                );
 
-                                if (answer != true) return;
+                  ...thing(context, ref),
 
-                                ref
-                                    .read(selectedSceneGroupProvider.notifier)
-                                    .setScene(id, null);
-                              },
-                            ),
-                          ],
-                        ),
-                        toggleable: true,
-                      ),
                   IconButton(
                     onPressed: () async {
-                      final sceneName = await showDialog<String>(
-                        context: context,
-                        builder: (context) =>
-                            NovelNewNameDialog(title: "New Scene"),
+                      final sceneName = await NovelNewNameDialog.show(
+                        context,
+                        title: "New Scene",
                       );
 
                       if (sceneName == null) {
                         return;
                       }
 
-                      ref
-                          .read(selectedSceneGroupProvider.notifier)
-                          .setScene(
-                            Id.create(),
-                            Scene(
-                              name: Name(sceneName),
-                              parts: Collection.empty(),
-                            ),
-                          );
+                      final sceneGroup = ref.read(selectedSceneGroupProvider)!;
+
+                      // SAFETY: [scenes] isn't null, which means [sceneGroup] isn't null.
+                      sceneGroup
+                          .into(sceneGroup.scenes)
+                          .insert(ScenesCompanion.insert(name: sceneName));
                     },
                     icon: const Icon(Icons.add_rounded),
                   ),
@@ -152,29 +128,115 @@ class NovelSceneSelector extends ConsumerWidget {
       ],
     );
   }
+
+  List<Widget> thing(BuildContext context, WidgetRef ref) {
+    final scenesWatcher = ref.watch(scenesProvider);
+
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    return scenesWatcher.when(
+      data: (scenes) {
+        if (scenes == null) {
+          return [const Placeholder(child: Text("scenes == null"))];
+        }
+
+        return scenes.map((scene) {
+          final id = scene.id;
+
+          return RadioListTile(
+            value: id,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(scene.name, style: textTheme.bodyMedium),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () async {
+                    final answer = await showDialog<bool?>(
+                      context: context,
+                      builder: (context) {
+                        return NovelDeletionDialog();
+                      },
+                    );
+
+                    if (answer != true) return;
+
+                    // SAFETY: [scenes] isn't null, which means [sceneGroup] isn't null.
+                    final sceneGroup = ref.read(selectedSceneGroupProvider)!;
+
+                    sceneGroup
+                        .delete(sceneGroup.scenes)
+                        .where((scene) => scene.id.equals(id));
+                  },
+                ),
+              ],
+            ),
+            toggleable: true,
+          );
+        }).toList();
+      },
+      loading: () => [],
+      error: (_, _) => [],
+    );
+  }
 }
 
-class NovelFrameViewer extends ConsumerWidget {
-  const NovelFrameViewer({super.key});
+class NovelScenePartTimeline extends ConsumerWidget {
+  const NovelScenePartTimeline({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
-    final selectedScene = ref.watch(selectedSceneProvider);
+    // final selectedScene = ref.watch(selectedSceneProvider);
 
-    final scene = ref.watch(
-      selectedSceneGroupProvider.select((group) {
-        return group?.scenes.find(selectedScene);
-      }),
-    );
+    // final scene = ref.watch(
+    //   selectedSceneGroupProvider.select((sceneGroup) {
+    //     return sceneGroup
+    //         ?.select(sceneGroup.scenes)
+    //         .where((scene) => scene.id.equals(selectedScene));
+    //   }),
+    // );
+
+    // final selectedScenePart = ref.watch(selectedScenePartProvider);
+
+    // final scenePart =
+    // final sceneParts = scene?.value.entries.toList();
+
+    // sceneParts?.sort((a, b) => a.value.order.compareTo(b.value.order));
+
+    final sceneGroup = ref.watch(selectedSceneGroupProvider);
+
+    if (sceneGroup == null) {
+      return const Placeholder(child: Text("sceneGroup == null"));
+    }
 
     final selectedScenePart = ref.watch(selectedScenePartProvider);
 
-    final scenePart = scene?.find(selectedScenePart)?.part;
-    final sceneParts = scene?.value.entries.toList();
+    if (selectedScenePart == null) {
+      return const Placeholder(child: Text("sceneGroup == null"));
+    }
 
-    sceneParts?.sort((a, b) => a.value.order.compareTo(b.value.order));
+    final scenePart =
+        (sceneGroup.sceneTimelineView.select()
+              ..where((scenePart) => scenePart.id.equals(selectedScenePart)))
+            .getSingleOrNull();
+
+    final selectedScene = ref.watch(selectedSceneProvider);
+
+    if (selectedScene == null) {
+      return const Placeholder(child: Text("selectedScene == null"));
+    }
+
+    final sceneParts =
+        (sceneGroup.sceneTimelineView.select()
+              ..where((scenePart) => scenePart.sceneId.equals(selectedScene))
+              ..orderBy([
+                (u) =>
+                    drift.OrderingTerm.asc(sceneGroup.sceneTimelineView.order),
+              ]))
+            .get();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,13 +246,33 @@ class NovelFrameViewer extends ConsumerWidget {
           child: Center(
             child: Padding(
               padding: EdgeInsets.all(designValues.veryLarge),
-              child: (scenePart != null && scenePart is Frame)
-                  ? DeviceFrame(
-                      device: Devices.android.bigPhone,
-                      orientation: Orientation.landscape,
-                      screen: NovelFrame(frame: scenePart),
-                    )
-                  : const SizedBox(),
+              child: FutureBuilder(
+                future: scenePart,
+                builder: (context, asyncSnapshot) {
+                  if (!asyncSnapshot.hasData) {
+                    return Placeholder(child: Text("scenePart !hasData"));
+                  }
+
+                  final maybeFrame = asyncSnapshot.data;
+
+                  if (maybeFrame == null) {
+                    return Placeholder(child: Text("maybeFrame == null"));
+                  }
+
+                  final timelineItem =
+                      SceneTimelineItem.fromSceneTimelineViewData(
+                        maybeFrame,
+                      ).specifics;
+
+                  if (timelineItem is! TimelineFrame) {
+                    return Placeholder(
+                      child: Text("timelineItem is! TimelineFrame"),
+                    );
+                  }
+
+                  return NovelFrame(frame: timelineItem.frameData);
+                },
+              ),
             ),
           ),
         ),
@@ -198,38 +280,48 @@ class NovelFrameViewer extends ConsumerWidget {
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(designValues.small),
-            child: Row(
-              spacing: designValues.medium,
-              children: [
-                if (sceneParts != null) ...[
-                  for (final orderedPart in sceneParts)
-                    NovelScenePartPreview(orderedPart: orderedPart),
-                  IconButton(
-                    onPressed: () async {
-                      // This is safe because [sceneParts] is derived from [selectedScene] and we check if [sceneParts] is null or not.
-                      selectedScene!;
+            child: FutureBuilder(
+              future: sceneParts,
+              builder: (context, asyncSnapshot) {
+                if (!asyncSnapshot.hasData) {
+                  return Placeholder(child: Text("sceneParts !hasData"));
+                }
 
-                      ref
-                          .read(selectedSceneGroupProvider.notifier)
-                          .setScenePart(
-                            FullId(
-                              parentId: selectedScene,
-                              childId: Id.create(),
-                            ),
-                            OrderedScenePart(
-                              order: sceneParts.lastOrNull?.value.order ?? 0,
-                              part: ScenePart.frame(
-                                background: null,
-                                poses: IList(),
-                                dialogueBox: null,
-                              ),
-                            ),
-                          );
-                    },
-                    icon: const Icon(Icons.add_rounded),
-                  ),
-                ],
-              ],
+                final maybeParts = asyncSnapshot.data
+                    ?.map(
+                      (part) =>
+                          SceneTimelineItem.fromSceneTimelineViewData(part),
+                    )
+                    .toList();
+
+                if (maybeParts == null) {
+                  return Placeholder(child: Text("maybeParts == null"));
+                }
+
+                return Row(
+                  spacing: designValues.medium,
+                  children: [
+                    ...[
+                      for (final orderedPart in maybeParts)
+                        NovelScenePartPreview(orderedPart: orderedPart),
+                      IconButton(
+                        onPressed: () async {
+                          sceneGroup
+                              .into(sceneGroup.sceneParts)
+                              .insert(
+                                ScenePartsCompanion.insert(
+                                  sceneId: selectedScene,
+                                  order: maybeParts.lastOrNull?.part.order ?? 0,
+                                  partType: "frame",
+                                ),
+                              );
+                        },
+                        icon: const Icon(Icons.add_rounded),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -239,7 +331,7 @@ class NovelFrameViewer extends ConsumerWidget {
 }
 
 class NovelScenePartPreview extends ConsumerWidget {
-  final MapEntry<Id<OrderedScenePart>, OrderedScenePart> orderedPart;
+  final SceneTimelineItem orderedPart;
 
   const NovelScenePartPreview({super.key, required this.orderedPart});
 
@@ -247,13 +339,13 @@ class NovelScenePartPreview extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final designValues = Theme.of(context).extension<DesignValues>()!;
 
-    final sceneGroup = ref.watch(selectedSceneGroupProvider);
+    // final sceneGroup = ref.watch(selectedSceneGroupProvider);
     final selectedPartId = ref.watch(selectedScenePartProvider);
     final selectedScene = ref.watch(selectedSceneProvider);
 
-    final scenePartId = orderedPart.key;
+    final scenePartId = orderedPart.part.id;
     final isSelected = selectedPartId == scenePartId;
-    final scenePart = orderedPart.value.part;
+    final scenePart = orderedPart.specifics;
 
     final preview = Padding(
       padding: EdgeInsets.all(designValues.verySmall),
@@ -261,10 +353,10 @@ class NovelScenePartPreview extends ConsumerWidget {
         borderRadius: BorderRadius.circular(designValues.small),
         child: Stack(
           children: [
-            (sceneGroup != null && scenePart is Frame)
+            (scenePart is TimelineFrame)
                 ? AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: NovelFrame(frame: scenePart),
+                    child: NovelFrame(frame: scenePart.frameData),
                   )
                 : const Icon(Icons.alt_route_rounded),
             Positioned.fill(
@@ -274,7 +366,7 @@ class NovelScenePartPreview extends ConsumerWidget {
                   onTap: () {
                     ref
                         .read(selectedScenePartProvider.notifier)
-                        .select(isSelected ? null : scenePartId);
+                        .set(isSelected ? null : scenePartId);
                   },
                 ),
               ),
@@ -297,12 +389,11 @@ class NovelScenePartPreview extends ConsumerWidget {
 
                     if (answer != true) return;
 
-                    ref
-                        .read(selectedSceneGroupProvider.notifier)
-                        .setScenePart(
-                          FullId(parentId: selectedScene, childId: scenePartId),
-                          null,
-                        );
+                    final sceneGroup = ref.read(selectedSceneGroupProvider)!;
+
+                    sceneGroup.sceneParts.delete().where(
+                      (scenePart) => scenePart.id.equals(scenePartId),
+                    );
                   },
                 ),
               ),

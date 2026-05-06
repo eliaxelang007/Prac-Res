@@ -1,3 +1,6 @@
+// ignore_for_file: curly_braces_in_flow_control_structures
+
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:prac_res/data/data.dart';
@@ -15,15 +18,46 @@ class NovelFrame extends ConsumerWidget {
 
     final commonPhoneResolution = const Size(800, 360);
 
-    final (actors, places) = ref.watch(
-      selectedSceneGroupProvider.select((group) {
-        if (group == null) return (null, null);
+    final sceneGroup = ref.watch(selectedSceneGroupProvider);
 
-        return (group.actors, group.places);
-      }),
-    );
+    if (sceneGroup == null)
+      return const Placeholder(child: Text("sceneGroup == null"));
 
-    final background = frame.background;
+    final background = (() async {
+      final backgroundId = frame.backgroundId;
+
+      if (backgroundId == null) return null;
+
+      return await (sceneGroup.backgroundImages.select()..where(
+            (background) => background.backgroundId.equals(backgroundId),
+          ))
+          .getSingleOrNull();
+    })();
+
+    final poses = (() async {
+      final framePoses = sceneGroup.framePoses;
+      final poseImages = sceneGroup.poseImages;
+
+      final query =
+          framePoses.select().join([
+              drift.innerJoin(
+                poseImages,
+                poseImages.poseId.equalsExp(framePoses.poseId),
+              ),
+            ])
+            ..where(framePoses.frameId.equals(frame.scenePartId))
+            ..orderBy([drift.OrderingTerm.asc(framePoses.order)]);
+
+      final results = await query.get();
+
+      return results.map((row) => row.readTable(poseImages)).toList();
+    })();
+
+    final dialogBox =
+        (sceneGroup.dialogueBoxes.select()..where(
+              (dialogueBox) => dialogueBox.frameId.equals(frame.scenePartId),
+            ))
+            .getSingleOrNull();
 
     return Stack(
       children: [
@@ -31,13 +65,24 @@ class NovelFrame extends ConsumerWidget {
           child: ColoredBox(color: Colors.white, child: SizedBox.expand()),
         ),
 
-        if (background != null)
-          Positioned.fill(
-            child: Image.memory(
-              background.findIn(places!)!.value.image,
-              fit: BoxFit.cover,
-            ),
+        Positioned.fill(
+          child: FutureBuilder(
+            future: background,
+            builder: (context, asyncSnapshot) {
+              if (!asyncSnapshot.hasData) {
+                return Placeholder(child: Text("background !hasData"));
+              }
+
+              final backgroundImage = asyncSnapshot.data;
+
+              if (backgroundImage == null) {
+                return Placeholder(child: Text("backgroundImage == null"));
+              }
+
+              return Image.memory(backgroundImage.imageData, fit: BoxFit.cover);
+            },
           ),
+        ),
 
         Positioned.fill(
           child: FittedBox(
@@ -50,18 +95,35 @@ class NovelFrame extends ConsumerWidget {
                 child: Stack(
                   children: [
                     Positioned.fill(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        spacing: designValues.large,
-                        children: [
-                          for (final pose in frame.poses)
-                            Padding(
-                              padding: EdgeInsets.only(top: designValues.large),
-                              child: Image.memory(
-                                pose.findIn(actors!)!.value.image,
-                              ),
-                            ),
-                        ],
+                      child: FutureBuilder(
+                        future: poses,
+                        builder: (context, asyncSnapshot) {
+                          if (!asyncSnapshot.hasData) {
+                            return Placeholder(child: Text("poses !hasData"));
+                          }
+
+                          final poseImages = asyncSnapshot.data;
+
+                          if (poseImages == null) {
+                            return Placeholder(
+                              child: Text("poseImages == null"),
+                            );
+                          }
+
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            spacing: designValues.large,
+                            children: [
+                              for (final poseImage in poseImages)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: designValues.large,
+                                  ),
+                                  child: Image.memory(poseImage.imageData),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                     Positioned.fill(
@@ -71,11 +133,20 @@ class NovelFrame extends ConsumerWidget {
                           right: designValues.large * 5,
                           bottom: designValues.medium,
                         ),
-                        child: Builder(
-                          builder: (context) {
-                            final dialogBox = frame.dialogueBox;
+                        child: FutureBuilder(
+                          future: dialogBox,
+                          builder: (context, asyncSnapshot) {
+                            if (!asyncSnapshot.hasData) {
+                              return Placeholder(
+                                child: Text("dialogBox !hasData"),
+                              );
+                            }
 
-                            if (dialogBox == null) return SizedBox();
+                            final dialog = asyncSnapshot.data;
+
+                            if (dialog == null) {
+                              return Placeholder(child: Text("dialog == null"));
+                            }
 
                             return Column(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -90,9 +161,12 @@ class NovelFrame extends ConsumerWidget {
                                     ),
                                     child: Builder(
                                       builder: (context) {
-                                        final name = dialogBox.name;
+                                        final name = dialog.name;
 
-                                        if (name == null) return SizedBox();
+                                        if (name == null)
+                                          return Placeholder(
+                                            child: Text("name == null"),
+                                          );
 
                                         return NovelNameBox(name: name);
                                       },
@@ -102,7 +176,7 @@ class NovelFrame extends ConsumerWidget {
                                 SizedBox(
                                   height: designValues.large * 3,
                                   child: NovelDialogueBox(
-                                    dialogue: frame.dialogueBox?.dialogue ?? "",
+                                    dialogue: dialog.dialogue,
                                   ),
                                 ),
                               ],
