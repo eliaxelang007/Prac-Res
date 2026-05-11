@@ -1,5 +1,5 @@
 // import 'dart:typed_data';
-// import 'package:drift/drift.dart' as drift;
+// import 'package:drift/drift.dart' hide Column;
 // import 'package:flutter/material.dart';
 // import 'package:flutter_hooks/flutter_hooks.dart';
 // import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -7,6 +7,17 @@
 // import 'package:prac_res/data/data.dart';
 // import 'package:prac_res/pages/design_values.dart';
 // import 'package:prac_res/pages/editor_state.dart';
+
+import 'package:flutter/material.dart';
+
+class NovelInspector extends StatelessWidget {
+  const NovelInspector({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Placeholder();
+  }
+}
 
 // class NovelInspector extends ConsumerWidget {
 //   const NovelInspector({super.key});

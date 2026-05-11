@@ -4,108 +4,99 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:junction/junction.dart';
-
 import 'package:prac_res/data/data.dart';
+
 import 'package:prac_res/pages/design_values.dart';
-import 'package:prac_res/pages/editor.dart';
-import 'package:prac_res/pages/editor_state.dart';
-import 'package:prac_res/pages/loading.dart';
+import 'package:prac_res/pages/editor/editor.dart';
+import 'package:prac_res/pages/editor/editor_state.dart';
 
 class NovelOpenPage extends StatelessWidget {
   const NovelOpenPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final designValues = theme.extension<DesignValues>()!;
-
     return Scaffold(
       body: Center(
-        child: Consumer(
-          builder: (context, ref, _) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: designValues.large,
-              children: [
-                SizedBox(
-                  width: designValues.veryLarge * 2,
-                  child: openEditor(
-                    context,
-                    ref,
-                    Icon(Icons.add_rounded),
-                    () async {
-                      final name = await NovelNewNameDialog.show(
-                        context,
-                        title: "New Scene Group",
-                      );
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: DesignValues.large,
+          children: [
+            sceneOpener(
+              context,
+              icon: Icon(Icons.add_rounded),
+              buildSceneGroup: () async {
+                final name = await NovelNewNameDialog.show(
+                  context,
+                  title: "New Scene",
+                );
 
-                      if (name == null) {
-                        return null;
-                      }
+                if (name == null) {
+                  return null;
+                }
 
-                      return await SceneGroup.empty(name);
-                    },
-                  ),
-                ),
-                SizedBox(
-                  width: designValues.veryLarge * 2,
-                  child: openEditor(
-                    context,
-                    ref,
-                    Icon(Icons.file_open_rounded),
-                    () async {
-                      final selected = await WebReadHandle.showOpenFileDialog(
-                        accept: [
-                          XTypeGroup(extensions: ["novel"]),
-                        ],
-                      );
+                return await SceneGroup.instance.replace(
+                  (replacer) => replacer.empty(name),
+                );
+              },
+            ),
+            sceneOpener(
+              context,
+              icon: Icon(Icons.file_open_rounded),
+              buildSceneGroup: () async {
+                final selected = await WebReadHandle.showOpenFileDialog(
+                  accept: [
+                    XTypeGroup(extensions: ["novel"]),
+                  ],
+                );
 
-                      if (selected.isEmpty) {
-                        return null;
-                      }
+                if (selected.isEmpty) {
+                  return null;
+                }
 
-                      return await compute((selected) async {
-                        final file = await selected.first.read();
-                        return SceneGroup.fromBytes(file.key, file.value.bytes);
-                      }, selected);
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
+                return await compute((selected) async {
+                  final file = await selected.first.read();
+                  return await SceneGroup.instance.replace((replacer) {
+                    return replacer.fromBytes(file.key, file.value.bytes);
+                  });
+                }, selected);
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  NovelIconButton openEditor(
-    BuildContext context,
-    WidgetRef ref,
-    Icon icon,
-    Future<SceneGroup?> Function() createSceneGroup,
-  ) {
-    return NovelIconButton(
-      onPressed: () async {
-        final selectedSceneGroup = await createSceneGroup();
+  Widget sceneOpener(
+    BuildContext context, {
+    required Icon icon,
+    required Future<SceneGroup?> Function() buildSceneGroup,
+  }) {
+    return SizedBox(
+      width: DesignValues.veryLarge * 2,
+      child: Consumer(
+        builder: (context, ref, _) {
+          return NovelIconButton(
+            onPressed: () async {
+              final sceneGroup = await buildSceneGroup();
 
-        if (selectedSceneGroup == null) return;
+              if (sceneGroup == null) {
+                return;
+              }
 
-        ref.read(selectedSceneGroupProvider.notifier).set(selectedSceneGroup);
+              ref.read(selectedSceneGroupProvider.notifier).set(sceneGroup);
 
-        NovelLoadingPage.load(context, (context) async {
-          // SAFETY: It should be safe to use context here because
-          // [NovelLoadingPage] will not unmount until this async function completes.
-          await Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => NovelEditorPage()),
+              // SAFETY: This should be safe because [context] shouldn't unmount until this navigator function pushes through!
+              await Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => NovelEditorPage()),
+              );
+            },
+            icon: icon,
           );
-        });
-      },
-      icon: icon,
+        },
+      ),
     );
   }
 }
@@ -126,9 +117,6 @@ class NovelIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final designValues = theme.extension<DesignValues>()!;
-
     return AspectRatio(
       aspectRatio: 1,
       child: OutlinedButton(
@@ -137,9 +125,9 @@ class NovelIconButton extends StatelessWidget {
             style ??
             OutlinedButton.styleFrom(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(designValues.medium),
+                borderRadius: BorderRadius.circular(DesignValues.medium),
               ),
-              padding: EdgeInsets.all(designValues.semiSmall),
+              padding: EdgeInsets.all(DesignValues.semiSmall),
             ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -147,7 +135,7 @@ class NovelIconButton extends StatelessWidget {
               data: Theme.of(context).iconTheme.copyWith(
                 size:
                     min(constraints.maxWidth, constraints.maxHeight) *
-                    (iconSizePercentage ?? designValues.semiLargePercent),
+                    (iconSizePercentage ?? DesignValues.semiLargePercent),
               ),
               child: icon,
             );
@@ -158,7 +146,7 @@ class NovelIconButton extends StatelessWidget {
   }
 }
 
-class NovelNewNameDialog extends HookWidget {
+class NovelNewNameDialog extends StatelessWidget {
   final String title;
   final String? initialText;
 
@@ -178,24 +166,61 @@ class NovelNewNameDialog extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = useTextEditingController(text: initialText);
+    return HookBuilder(
+      builder: (context) {
+        final controller = useTextEditingController(text: initialText);
 
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(hintText: "Pick a name!"),
+            onSubmitted: (value) => Navigator.of(context).pop(value),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class NovelDeletionDialog extends StatelessWidget {
+  static Future<bool> show(BuildContext context) async {
+    final result = await showDialog<bool?>(
+      context: context,
+      builder: (context) {
+        return NovelDeletionDialog();
+      },
+    );
+
+    return (result != null) ? result : false;
+  }
+
+  const NovelDeletionDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(title),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        decoration: const InputDecoration(hintText: "Enter name..."),
-        onSubmitted: (value) => Navigator.of(context).pop(value),
-      ),
-      actions: [
+      title: Text('Are you sure?'),
+      content: Text("This will delete what you've selected."),
+      actions: <Widget>[
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          onPressed: () => Navigator.pop(context, false),
+          child: Text("Cancel"),
         ),
         TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text("Confirm"),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text("I'm sure."),
         ),
       ],
     );

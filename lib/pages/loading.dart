@@ -18,21 +18,15 @@ class NovelLoadingPage<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final designValues = theme.extension<DesignValues>()!;
-    final sideLength = designValues.large * (1 + designValues.semiLargePercent);
-
-    return Scaffold(
-      body: NovelLoading<T>(loader: loader, sideLength: sideLength),
-    );
+    return Scaffold(body: NovelLoader<T>(loader: loader));
   }
 }
 
-class NovelLoading<T> extends HookWidget {
-  const NovelLoading({
+class NovelLoader<T> extends StatelessWidget {
+  const NovelLoader({
     super.key,
     required this.loader,
-    required this.sideLength,
+    this.sideLength = DesignValues.large * (1 + DesignValues.semiLargePercent),
   });
 
   final Future<T> Function(BuildContext context) loader;
@@ -40,13 +34,32 @@ class NovelLoading<T> extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    useEffect(() {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        loader(context);
-      });
+    return HookBuilder(
+      builder: (context) {
+        useEffect(() {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            loader(context);
+          });
 
-      return null;
-    }, []);
+          return null;
+        }, []);
+
+        return NovelLoading(sideLength: sideLength);
+      },
+    );
+  }
+}
+
+class NovelLoading extends StatelessWidget {
+  final double sideLength;
+
+  const NovelLoading({
+    super.key,
+    this.sideLength = DesignValues.large * (1 + DesignValues.semiLargePercent),
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
         width: sideLength,

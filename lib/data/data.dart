@@ -17,19 +17,9 @@ class Backgrounds extends Table {
     #id,
     onDelete: KeyAction.cascade,
   )();
+
   late final name = text()();
-}
-
-class BackgroundImages extends Table {
-  late final backgroundId = integer().references(
-    Backgrounds,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
   late final imageData = blob()();
-
-  @override
-  Set<Column> get primaryKey => {backgroundId};
 }
 
 /* -- Actors & Poses -- */
@@ -46,19 +36,9 @@ class Poses extends Table {
     #id,
     onDelete: KeyAction.cascade,
   )();
+
   late final name = text()();
-}
-
-class PoseImages extends Table {
-  late final poseId = integer().references(
-    Poses,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
   late final imageData = blob()();
-
-  @override
-  Set<Column> get primaryKey => {poseId};
 }
 
 /* -- Choices & Options -- */
@@ -149,7 +129,7 @@ class Custom extends Table {
 }
 
 class DialogueBoxes extends Table {
-  late final frameId = integer().references(
+  late final frameScenePartId = integer().references(
     Frames,
     #scenePartId,
     onDelete: KeyAction.cascade,
@@ -158,12 +138,12 @@ class DialogueBoxes extends Table {
   late final dialogue = text()();
 
   @override
-  Set<Column> get primaryKey => {frameId};
+  Set<Column> get primaryKey => {frameScenePartId};
 }
 
 class FramePoses extends Table {
   late final id = integer().autoIncrement()();
-  late final frameId = integer().references(
+  late final frameScenePartId = integer().references(
     Frames,
     #scenePartId,
     onDelete: KeyAction.cascade,
@@ -174,6 +154,25 @@ class FramePoses extends Table {
     onDelete: KeyAction.cascade,
   )();
   late final order = real()();
+}
+
+abstract class FramePosesView extends View {
+  FramePoses get framePoses;
+  Poses get poses;
+
+  @override
+  Query as() =>
+      select([
+        framePoses.id,
+        framePoses.frameScenePartId,
+        framePoses.poseId,
+        framePoses.order,
+        poses.actorId,
+        poses.name,
+        poses.imageData,
+      ]).from(framePoses).join([
+        innerJoin(poses, poses.id.equalsExp(framePoses.poseId)),
+      ]);
 }
 
 abstract class SceneTimelineView extends View {
@@ -200,108 +199,6 @@ abstract class SceneTimelineView extends View {
         ),
         leftOuterJoin(custom, custom.scenePartId.equalsExp(sceneParts.id)),
       ]);
-}
-
-/* -- Database -- */
-
-@DriftDatabase(
-  tables: [
-    Places,
-    Backgrounds,
-    BackgroundImages,
-    Actors,
-    Poses,
-    PoseImages,
-    Choices,
-    ChoiceOptions,
-    Scenes,
-    SceneParts,
-    Frames,
-    FrameResolvers,
-    Custom,
-    DialogueBoxes,
-    FramePoses,
-  ],
-  views: [SceneTimelineView],
-)
-class SceneGroup extends _$SceneGroup {
-  final ExistingDatabase webDetails;
-
-  SceneGroup._(this.webDetails, super.e);
-
-  @override
-  int get schemaVersion => 1;
-
-  @override
-  MigrationStrategy get migration {
-    return MigrationStrategy(
-      onCreate: (Migrator m) async {
-        await m.createAll();
-      },
-      beforeOpen: (details) async {
-        await customStatement('PRAGMA foreign_keys = ON');
-      },
-    );
-  }
-
-  static Future<SceneGroup> _fromWasmDatabaseResult(
-    String databaseName,
-    WasmDatabaseResult result,
-  ) async {
-    if (result.missingFeatures.isNotEmpty) {
-      // ignore: avoid_print
-      print(
-        'Using ${result.chosenImplementation} due to missing browser '
-        'features: ${result.missingFeatures}',
-      );
-    }
-
-    final storageApi = result.chosenImplementation.storageApi;
-
-    if (storageApi == null) {
-      throw StateError(
-        "We can't export this database to bytes because the browser its running on doesn't support a valid storage API!",
-      );
-    }
-
-    return SceneGroup._((storageApi, databaseName), result.resolvedExecutor);
-  }
-
-  static Future<SceneGroup> fromBytes(
-    String databaseName,
-    Uint8List bytes,
-  ) async {
-    return _fromWasmDatabaseResult(
-      databaseName,
-      await WasmDatabase.open(
-        databaseName: databaseName,
-        sqlite3Uri: Uri.parse('sqlite3.wasm'),
-        driftWorkerUri: Uri.parse('drift_worker.js'),
-        initializeDatabase: () => bytes,
-      ),
-    );
-  }
-
-  static Future<SceneGroup> empty(String databaseName) async {
-    return _fromWasmDatabaseResult(
-      databaseName,
-      await WasmDatabase.open(
-        databaseName: databaseName,
-        sqlite3Uri: Uri.parse('sqlite3.wasm'),
-        driftWorkerUri: Uri.parse('drift_worker.js'),
-      ),
-    );
-  }
-
-  Future<Uint8List> toBytes() async {
-    final probe = await WasmDatabase.probe(
-      sqlite3Uri: Uri.parse('sqlite3.wasm'),
-      driftWorkerUri: Uri.parse('drift_worker.js'),
-    );
-
-    // The bang operator here should be safe because the web details are attached to [this] database.
-    return (await probe.exportDatabase(webDetails))!;
-  }
 }
 
 class SceneTimelineItem {
@@ -365,4 +262,126 @@ class TimelineResolver extends SceneTimelineItemData {
 class TimelineCustom extends SceneTimelineItemData {
   final CustomData customData;
   TimelineCustom(this.customData);
+}
+
+/* -- Database -- */
+@DriftDatabase(
+  tables: [
+    Places,
+    Backgrounds,
+    Actors,
+    Poses,
+    Choices,
+    ChoiceOptions,
+    Scenes,
+    SceneParts,
+    Frames,
+    FrameResolvers,
+    Custom,
+    DialogueBoxes,
+    FramePoses,
+  ],
+  views: [SceneTimelineView, FramePosesView],
+)
+class SceneGroup extends _$SceneGroup {
+  final Future<ExistingDatabase> webDetailsFuture;
+
+  static final Uri sqlite3Uri = Uri.parse("sqlite3.wasm");
+  static final Uri driftWorkerUri = Uri.parse("drift_worker.js");
+
+  static var instance = SceneGroupBuilder._().empty("Untitled");
+
+  Future<SceneGroup> replace(
+    SceneGroup Function(SceneGroupBuilder) replacer,
+  ) async {
+    await instance.close();
+
+    instance = replacer(SceneGroupBuilder._());
+
+    return instance;
+  }
+
+  SceneGroup._(this.webDetailsFuture, super.e);
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      beforeOpen: (details) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
+    );
+  }
+
+  Future<Uint8List> toBytes() async {
+    final probe = await WasmDatabase.probe(
+      sqlite3Uri: sqlite3Uri,
+      driftWorkerUri: driftWorkerUri,
+    );
+
+    return (await probe.exportDatabase(await webDetailsFuture))!;
+  }
+}
+
+class SceneGroupBuilder {
+  bool _used;
+
+  SceneGroupBuilder._() : _used = false;
+
+  SceneGroup _fromWasmDatabaseResult(
+    String databaseName, {
+    Uint8List? initialBytes,
+  }) {
+    if (_used) {
+      throw StateError("You can only make one Database instance at a time!");
+    }
+
+    _used = true;
+
+    final resultFuture = WasmDatabase.open(
+      databaseName: databaseName,
+      sqlite3Uri: SceneGroup.sqlite3Uri,
+      driftWorkerUri: SceneGroup.driftWorkerUri,
+      initializeDatabase: (initialBytes != null) ? (() => initialBytes) : null,
+    );
+
+    final connectionFuture = resultFuture.then((result) {
+      if (result.missingFeatures.isNotEmpty) {
+        // ignore: avoid_print
+        print(
+          'Using ${result.chosenImplementation} due to missing browser '
+          'features: ${result.missingFeatures}',
+        );
+      }
+      return result.resolvedExecutor;
+    });
+
+    final webDetailsFuture = resultFuture.then((result) {
+      final storageApi = result.chosenImplementation.storageApi;
+      if (storageApi == null) {
+        throw StateError(
+          "We can't export this database to bytes because the browser its running on doesn't support a valid storage API!",
+        );
+      }
+      return (storageApi, databaseName);
+    });
+
+    return SceneGroup._(
+      webDetailsFuture,
+      DatabaseConnection.delayed(connectionFuture),
+    );
+  }
+
+  SceneGroup fromBytes(String databaseName, Uint8List bytes) {
+    return _fromWasmDatabaseResult(databaseName, initialBytes: bytes);
+  }
+
+  SceneGroup empty(String databaseName) {
+    return _fromWasmDatabaseResult(databaseName);
+  }
 }
