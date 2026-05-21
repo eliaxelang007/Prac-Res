@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prac_res/pages/design_values.dart';
 import 'package:prac_res/pages/editor/inspector/inspector.dart';
-import 'package:prac_res/pages/editor/scene_part_timeline.dart';
+import 'package:prac_res/pages/editor/scene_viewer.dart';
 import 'package:prac_res/pages/editor/scene_selector.dart';
 
 class NovelEditorPage extends StatelessWidget {
@@ -13,12 +13,18 @@ class NovelEditorPage extends StatelessWidget {
       appBar: NovelMenuBar(),
       body: Padding(
         padding: EdgeInsets.all(DesignValues.small),
-        child: const Row(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 3, child: NovelSceneSelector()),
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: EdgeInsets.all(DesignValues.small),
+                child: NovelSceneSelector(),
+              ),
+            ),
             VerticalDivider(),
-            Expanded(flex: 9, child: NovelScenePartTimeline()),
+            Expanded(flex: 9, child: NovelSceneViewer()),
             VerticalDivider(),
             Expanded(flex: 3, child: NovelInspector()),
           ],
@@ -39,7 +45,7 @@ class NovelMenuBar extends StatelessWidget implements PreferredSizeWidget {
         preferredSize: const Size.fromHeight(1.0),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: DesignValues.small),
-          child: const Divider(height: 1.0),
+          child: Divider(height: 1.0),
         ),
       ),
     );

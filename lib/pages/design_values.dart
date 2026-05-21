@@ -17,4 +17,6 @@ class DesignValues {
   static const double semiLargePercent = ((10 / 8) / 10) * 5; // 0.625
   static const double largePercent = ((10 / 8) / 10) * 6; // 0.75
   static const double veryLargePercent = ((10 / 8) / 10) * 7; // 0.875
+
+  const DesignValues._();
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/wasm.dart';
 
@@ -49,7 +50,7 @@ class Choices extends Table {
 }
 
 @TableIndex.sql('''
-  CREATE UNIQUE INDEX one_selected_per_choice 
+  CREATE UNIQUE INDEX IF NOT EXISTS one_selected_per_choice 
   ON choice_options(choice_id) 
   WHERE is_selected = 1;
 ''')
@@ -203,7 +204,7 @@ abstract class SceneTimelineView extends View {
 
 class SceneTimelineItem {
   final ScenePart part;
-  final SceneTimelineItemData specifics;
+  final SceneTimelineItemSpecifics specifics;
 
   SceneTimelineItem({required this.part, required this.specifics});
 
@@ -247,24 +248,25 @@ class SceneTimelineItem {
   }
 }
 
-sealed class SceneTimelineItemData {}
+sealed class SceneTimelineItemSpecifics {}
 
-class TimelineFrame extends SceneTimelineItemData {
+class TimelineFrame extends SceneTimelineItemSpecifics {
   final Frame frameData;
   TimelineFrame(this.frameData);
 }
 
-class TimelineResolver extends SceneTimelineItemData {
+class TimelineResolver extends SceneTimelineItemSpecifics {
   final FrameResolver resolverData;
   TimelineResolver(this.resolverData);
 }
 
-class TimelineCustom extends SceneTimelineItemData {
+class TimelineCustom extends SceneTimelineItemSpecifics {
   final CustomData customData;
   TimelineCustom(this.customData);
 }
 
 /* -- Database -- */
+
 @DriftDatabase(
   tables: [
     Places,
@@ -289,14 +291,40 @@ class SceneGroup extends _$SceneGroup {
   static final Uri sqlite3Uri = Uri.parse("sqlite3.wasm");
   static final Uri driftWorkerUri = Uri.parse("drift_worker.js");
 
-  static var instance = SceneGroupBuilder._().empty("Untitled");
+  static SceneGroup instance = SceneGroupBuilder._().empty("Untitled");
 
+  static final Future<WasmProbeResult> probe = WasmDatabase.probe(
+    sqlite3Uri: sqlite3Uri,
+    driftWorkerUri: driftWorkerUri,
+  );
+
+  Future<String> databaseDisplayName() async {
+    final uniqueDatabaseNameParts = (await webDetailsFuture).$2.split("_");
+
+    return uniqueDatabaseNameParts
+        .sublist(0, uniqueDatabaseNameParts.length - 1)
+        .join("_");
+  }
+
+  // SAFETY: This also causes an
+  // `InvalidStateError: Failed to read the 'error' property from 'IDBRequest': The request has not finished.`
+  // which is probably safe to ignore? Fix this someday.
   Future<SceneGroup> replace(
     SceneGroup Function(SceneGroupBuilder) replacer,
   ) async {
-    await instance.close();
+    // Currently, something is making [close] hang when awaited.
+    // Not sure what's causing it, but for now, I'm doing this so
+    // that I'm still technically delete the database *once* it finishes closing.
+    close().then((_) async {
+      // SAFETY: This may seem unsafe, but this only deletes the copy of the database in OPFS. It doesn't delete the file its bytes were loaded from.
+      // SAFETY: [webDetailsFuture] is an instance variable, not a static variable. This doesn't delete the current [instance]'s [webDetailsFuture].
+      await (await probe).deleteDatabase(await webDetailsFuture);
+    });
 
     instance = replacer(SceneGroupBuilder._());
+
+    // SAFETY: NOOP Just to ensure that the database is actually loaded.
+    await instance.customStatement("SELECT 1");
 
     return instance;
   }
@@ -319,22 +347,19 @@ class SceneGroup extends _$SceneGroup {
   }
 
   Future<Uint8List> toBytes() async {
-    final probe = await WasmDatabase.probe(
-      sqlite3Uri: sqlite3Uri,
-      driftWorkerUri: driftWorkerUri,
-    );
-
-    return (await probe.exportDatabase(await webDetailsFuture))!;
+    return (await (await probe).exportDatabase(await webDetailsFuture))!;
   }
 }
 
 class SceneGroupBuilder {
+  static int _uniqueId = 0;
+
   bool _used;
 
   SceneGroupBuilder._() : _used = false;
 
   SceneGroup _fromWasmDatabaseResult(
-    String databaseName, {
+    String databaseDisplayName, {
     Uint8List? initialBytes,
   }) {
     if (_used) {
@@ -343,8 +368,11 @@ class SceneGroupBuilder {
 
     _used = true;
 
+    final uniqueDatabaseName = "${databaseDisplayName}_$_uniqueId";
+    _uniqueId += 1;
+
     final resultFuture = WasmDatabase.open(
-      databaseName: databaseName,
+      databaseName: uniqueDatabaseName,
       sqlite3Uri: SceneGroup.sqlite3Uri,
       driftWorkerUri: SceneGroup.driftWorkerUri,
       initializeDatabase: (initialBytes != null) ? (() => initialBytes) : null,
@@ -352,8 +380,7 @@ class SceneGroupBuilder {
 
     final connectionFuture = resultFuture.then((result) {
       if (result.missingFeatures.isNotEmpty) {
-        // ignore: avoid_print
-        print(
+        debugPrint(
           'Using ${result.chosenImplementation} due to missing browser '
           'features: ${result.missingFeatures}',
         );
@@ -368,7 +395,7 @@ class SceneGroupBuilder {
           "We can't export this database to bytes because the browser its running on doesn't support a valid storage API!",
         );
       }
-      return (storageApi, databaseName);
+      return (storageApi, uniqueDatabaseName);
     });
 
     return SceneGroup._(

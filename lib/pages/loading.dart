@@ -7,7 +7,7 @@ class NovelLoadingPage<T> extends StatelessWidget {
 
   const NovelLoadingPage({required this.loader, super.key});
 
-  static void load<T>(
+  static Future<void> load<T>(
     BuildContext context,
     Future<T> Function(BuildContext context) loader,
   ) async {

@@ -3654,7 +3654,7 @@ abstract class _$SceneGroup extends GeneratedDatabase {
   late final $FramePosesViewView framePosesView = $FramePosesViewView(this);
   late final Index oneSelectedPerChoice = Index(
     'one_selected_per_choice',
-    'CREATE UNIQUE INDEX one_selected_per_choice ON choice_options (choice_id) WHERE is_selected = 1',
+    'CREATE UNIQUE INDEX IF NOT EXISTS one_selected_per_choice ON choice_options (choice_id) WHERE is_selected = 1',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>

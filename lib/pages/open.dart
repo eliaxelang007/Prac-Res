@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -9,7 +10,20 @@ import 'package:prac_res/data/data.dart';
 
 import 'package:prac_res/pages/design_values.dart';
 import 'package:prac_res/pages/editor/editor.dart';
-import 'package:prac_res/pages/editor/editor_state.dart';
+import 'package:prac_res/pages/loading.dart';
+
+class SceneGroupNotifier extends Notifier<SceneGroup> {
+  @override
+  SceneGroup build() => SceneGroup.instance;
+
+  void set(SceneGroup newSceneGroup) {
+    state = newSceneGroup;
+  }
+}
+
+final sceneGroupProvider = NotifierProvider<SceneGroupNotifier, SceneGroup>(
+  SceneGroupNotifier.new,
+);
 
 class NovelOpenPage extends StatelessWidget {
   const NovelOpenPage({super.key});
@@ -33,10 +47,10 @@ class NovelOpenPage extends StatelessWidget {
                 );
 
                 if (name == null) {
-                  return null;
+                  return Future.syncValue(Future.syncValue(null));
                 }
 
-                return await SceneGroup.instance.replace(
+                return SceneGroup.instance.replace(
                   (replacer) => replacer.empty(name),
                 );
               },
@@ -52,15 +66,18 @@ class NovelOpenPage extends StatelessWidget {
                 );
 
                 if (selected.isEmpty) {
-                  return null;
+                  return Future.syncValue(Future.syncValue(null));
                 }
 
-                return await compute((selected) async {
+                final computeSceneGroup = compute((selected) async {
                   final file = await selected.first.read();
+
                   return await SceneGroup.instance.replace((replacer) {
                     return replacer.fromBytes(file.key, file.value.bytes);
                   });
                 }, selected);
+
+                return computeSceneGroup;
               },
             ),
           ],
@@ -72,7 +89,7 @@ class NovelOpenPage extends StatelessWidget {
   Widget sceneOpener(
     BuildContext context, {
     required Icon icon,
-    required Future<SceneGroup?> Function() buildSceneGroup,
+    required Future<Future<SceneGroup?>> Function() buildSceneGroup,
   }) {
     return SizedBox(
       width: DesignValues.veryLarge * 2,
@@ -80,18 +97,22 @@ class NovelOpenPage extends StatelessWidget {
         builder: (context, ref, _) {
           return NovelIconButton(
             onPressed: () async {
-              final sceneGroup = await buildSceneGroup();
+              final sceneGroupFuture = await buildSceneGroup();
 
-              if (sceneGroup == null) {
-                return;
-              }
+              await NovelLoadingPage.load(context, (context) async {
+                final sceneGroup = await sceneGroupFuture;
 
-              ref.read(selectedSceneGroupProvider.notifier).set(sceneGroup);
+                if (sceneGroup == null) {
+                  return;
+                }
 
-              // SAFETY: This should be safe because [context] shouldn't unmount until this navigator function pushes through!
-              await Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => NovelEditorPage()),
-              );
+                ref.read(sceneGroupProvider.notifier).set(sceneGroup);
+
+                // SAFETY: This should be safe because [context] shouldn't unmount until this navigator function pushes through!
+                await Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => NovelEditorPage()),
+                );
+              });
             },
             icon: icon,
           );

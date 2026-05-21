@@ -17,6 +17,8 @@ class Remove<T> extends ListDifference<T> {
   Remove({required super.at});
 }
 
+bool equalsEquals(dynamic a, dynamic b) => a == b;
+
 /// LCS stands for longest common subsequence.
 /// The general idea of this algorithm is that
 /// If the current element of the source is the same as the target, then it must be in the longest common subsequence!
@@ -27,8 +29,9 @@ int _findLcsLength<T>(
   int targetStart,
   List<T> source,
   List<T> target,
-  List<List<int>> cache,
-) {
+  List<List<int>> cache, {
+  bool Function(T, T) isEqual = equalsEquals,
+}) {
   if (sourceStart >= source.length || targetStart >= target.length) {
     return 0;
   }
@@ -43,7 +46,7 @@ int _findLcsLength<T>(
   final currentTarget = target[targetStart];
   final remainingTargetStart = targetStart + 1;
 
-  if (currentSource == currentTarget) {
+  if (isEqual(currentSource, currentTarget)) {
     final result =
         1 +
         _findLcsLength(
@@ -52,6 +55,7 @@ int _findLcsLength<T>(
           source,
           target,
           cache,
+          isEqual: isEqual,
         );
     cache[sourceStart][targetStart] = result;
     return result;
@@ -63,6 +67,7 @@ int _findLcsLength<T>(
     source,
     target,
     cache,
+    isEqual: isEqual,
   );
 
   final snippedTargetLength = _findLcsLength(
@@ -71,6 +76,7 @@ int _findLcsLength<T>(
     source,
     target,
     cache,
+    isEqual: isEqual,
   );
 
   final result = ((snippedSourceLength > snippedTargetLength)
@@ -82,14 +88,18 @@ int _findLcsLength<T>(
   return result;
 }
 
-List<List<int>> lcsCache<T>(List<T> source, List<T> target) {
+List<List<int>> lcsCache<T>(
+  List<T> source,
+  List<T> target, {
+  bool Function(T, T) isEqual = equalsEquals,
+}) {
   List<List<int>> cache = List.generate(
     source.length,
     (_) => List.filled(target.length, -1),
   );
 
   /// The longest common subsequence length will be at 0, 0!
-  _findLcsLength(0, 0, source, target, cache);
+  _findLcsLength(0, 0, source, target, cache, isEqual: isEqual);
 
   return cache;
 }
@@ -101,15 +111,16 @@ List<List<int>> lcsCache<T>(List<T> source, List<T> target) {
 /// If you're trying to compare a type that can't be compared with [==], just wrap it in an extension type or something.
 (Iterable<ListDifference<T>>, List<T>) differencesAndLCS<T>(
   List<T> source,
-  List<T> target,
-) {
+  List<T> target, {
+  bool Function(T, T) isEqual = equalsEquals,
+}) {
   final sourceLength = source.length;
   final targetLength = target.length;
 
   /// Why am I not returning the [cache] too?
   /// Well, I think that this function turns the LCS cache into its most useful forms,
   /// so I don't need it anymore!
-  final cache = lcsCache(source, target);
+  final cache = lcsCache(source, target, isEqual: isEqual);
 
   /// We use a [DoubleLinkedQueue] here so that each [ListDifference] can be added in reverse order;
   /// we do that so that the differences can be applied in order without recalculating indexes!
@@ -119,7 +130,7 @@ List<List<int>> lcsCache<T>(List<T> source, List<T> target) {
   var targetIndex = 0;
 
   while (sourceIndex < sourceLength && targetIndex < targetLength) {
-    if (source[sourceIndex] == target[targetIndex]) {
+    if (isEqual(source[sourceIndex], target[targetIndex])) {
       lcs.add(source[sourceIndex]);
 
       sourceIndex++;
@@ -158,5 +169,3 @@ List<List<int>> lcsCache<T>(List<T> source, List<T> target) {
 
   return (diffs, lcs);
 }
-
-void main() {}
