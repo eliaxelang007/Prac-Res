@@ -38,14 +38,19 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   drift: 2.33.0
+  # drift:
+  #   path: "C:/Users/Elijah Ang/Desktop/Projects/Coding/Flutter/drift/drift"
   drift_flutter: ^0.3.0
+  # drift_flutter:
+  #   path: "C:/Users/Elijah Ang/Desktop/Projects/Coding/Flutter/drift/drift_flutter"
   flutter_riverpod: ^3.3.1
   hooks_riverpod: ^3.3.1
   flutter_hooks: ^0.21.3+1
   device_frame: ^1.4.0
   animated_text_kit: ^4.3.0
   handy: ^1.1.5
-  crypto: ^3.0.7
+  stack_trace: ^1.12.1
+  flutter_resizable_container: ^4.2.0
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +64,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.15.0
   drift_dev: ^2.33.0
+  # drift_dev:
+  #   path: "C:/Users/Elijah Ang/Desktop/Projects/Coding/Flutter/drift/drift_dev"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

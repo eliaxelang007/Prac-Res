@@ -1,21 +1,136 @@
-// import 'dart:typed_data';
-// import 'package:drift/drift.dart' hide Column;
-// import 'package:flutter/material.dart';
-// import 'package:flutter_hooks/flutter_hooks.dart';
-// import 'package:hooks_riverpod/hooks_riverpod.dart';
-// import 'package:junction/junction.dart';
-// import 'package:prac_res/data/data.dart';
-// import 'package:prac_res/pages/design_values.dart';
-// import 'package:prac_res/pages/editor_state.dart';
-
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:prac_res/data/data.dart';
+import 'package:prac_res/pages/editor/inspector/dialogue.dart';
+import 'package:prac_res/pages/editor/inspector/image_group.dart';
+import 'package:prac_res/pages/editor/scene_viewer.dart';
+import 'package:prac_res/pages/editor/scrolling.dart';
+import 'package:prac_res/pages/frame/frame.dart';
+import 'package:prac_res/pages/open.dart';
 
 class NovelInspector extends StatelessWidget {
   const NovelInspector({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return NovelQueryBuilder(
+      provider: (_) => NovelSelectedScenePart.selectedScenePartProvider,
+      builder: (context, ref, selectedScenePart) => (selectedScenePart != null)
+          ? switch (selectedScenePart.specifics) {
+              TimelineFrame(:final frameData) => NovelFrameInspector(
+                frame: frameData,
+              ),
+              TimelineResolver(:final resolverData) =>
+                NovelScenePartResolverInspector(resolver: resolverData),
+              TimelineCustom(:final customData) =>
+                NovelCustomScenePartInspector(custom: customData),
+            }
+          : SizedBox.shrink(),
+    );
+  }
+}
+
+class NovelFrameInspector extends StatelessWidget {
+  final Frame frame;
+
+  const NovelFrameInspector({super.key, required this.frame});
+
+  static final placesTableProvider = Provider<$PlacesTable>((ref) {
+    final sceneGroup = ref.watch(sceneGroupProvider);
+
+    return sceneGroup.places;
+  });
+
+  static final backgroundMetadataTableProvider =
+      Provider<$BackgroundMetadatasTable>((ref) {
+        final sceneGroup = ref.watch(sceneGroupProvider);
+        return sceneGroup.backgroundMetadatas;
+      });
+
+  static final framesTableProvider = Provider<$FramesTable>((ref) {
+    final sceneGroup = ref.watch(sceneGroupProvider);
+    return sceneGroup.frames;
+  });
+
+  static final dialogueBoxesTableProvider = Provider<$DialogueBoxesTable>((
+    ref,
+  ) {
+    final sceneGroup = ref.watch(sceneGroupProvider);
+    return sceneGroup.dialogueBoxes;
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return SingleChildScrollbarView(
+      scrollDirection: Axis.vertical,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Edit Properties", style: textTheme.bodyLarge),
+          Divider(),
+          Text("Background", style: textTheme.bodyMedium),
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Consumer(
+              builder: (context, ref, _) {
+                return NovelImageSelectorPreview(
+                  imageGroupTable: placesTableProvider,
+                  imageDataTable: NovelBackground.backgroundImageTableProvider,
+                  imageMetadataTable: backgroundMetadataTableProvider,
+                  selectedImageId: frame.backgroundId,
+                  onImageSelected: (newBackgroundId) async {
+                    await (ref.read(framesTableProvider).update()..where(
+                          (frameEntry) =>
+                              frameEntry.scenePartId.equals(frame.scenePartId),
+                        ))
+                        .write(
+                          FramesCompanion(backgroundId: Value(newBackgroundId)),
+                        );
+                  },
+                );
+              },
+            ),
+          ),
+          Divider(),
+          Text("Dialogue", style: textTheme.bodyMedium),
+
+          // AspectRatio(
+          //   aspectRatio: 16 / 9,
+          //   child: ,
+          // ),
+          NovelDialogueInspector(
+            dialogBoxTableProvider: dialogueBoxesTableProvider,
+            frameScenePartId: frame.scenePartId,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class NovelScenePartResolverInspector extends StatelessWidget {
+  final ScenePartResolver resolver;
+
+  const NovelScenePartResolverInspector({super.key, required this.resolver});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: []);
+  }
+}
+
+class NovelCustomScenePartInspector extends StatelessWidget {
+  final CustomScenePart custom;
+
+  const NovelCustomScenePartInspector({super.key, required this.custom});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: []);
   }
 }
 

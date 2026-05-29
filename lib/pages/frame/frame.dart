@@ -1,40 +1,41 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:drift/drift.dart' hide Column;
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/material.dart' hide Table;
 import 'package:handy/handy.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/misc.dart';
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/pages/design_values.dart';
+import 'package:prac_res/pages/editor/scene_viewer.dart';
 import 'package:prac_res/pages/frame/animated_list.dart';
 import 'package:prac_res/pages/loading.dart';
 import 'package:prac_res/pages/open.dart';
 
-class NovelFrame extends ConsumerWidget {
+class NovelFrame extends StatelessWidget {
   const NovelFrame({super.key, required this.frame});
 
   final Frame frame;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final commonPhoneResolution = const Size(800, 360); // 20:9 Aspect Ratio
 
     final backgroundId = frame.backgroundId;
+    final scenePartId = frame.scenePartId;
 
     return Stack(
       children: [
+        Positioned.fill(child: ColoredBox(color: Colors.white)),
+
         Positioned.fill(
-          child: ColoredBox(
-            color: Colors.white,
-            child: Center(
-              child: Icon(Icons.image_not_supported_rounded, size: 50),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            child: SizedBox.expand(
+              key: ValueKey(backgroundId),
+              child: NovelBackground(backgroundId: backgroundId),
             ),
           ),
         ),
-
-        if (backgroundId != null)
-          Positioned.fill(child: NovelBackground(backgroundId: backgroundId)),
 
         Positioned.fill(
           child: FittedBox(
@@ -42,7 +43,10 @@ class NovelFrame extends ConsumerWidget {
             child: SizedBox(
               width: commonPhoneResolution.width,
               height: commonPhoneResolution.height,
-              child: NovelFrameSafeArea(scenePartId: frame.scenePartId),
+              child: NovelFrameSafeArea(
+                poses: AnimatedNovelPoses(scenePartId: scenePartId),
+                dialogue: NovelDialogueArea(scenePartId: scenePartId),
+              ),
             ),
           ),
         ),
@@ -51,42 +55,99 @@ class NovelFrame extends ConsumerWidget {
   }
 }
 
-class NovelBackground extends StatelessWidget {
-  final Duration fadeDuration;
-  final int backgroundId;
+final imageProvider =
+    StreamProvider.family<
+      ImageData,
+      (EquatableTableInfo<ImageDataTable, ImageData>, int)
+    >((ref, ids) {
+      final (imageDataTableWrapper, imageId) = ids;
 
-  const NovelBackground({
-    super.key,
-    required this.backgroundId,
-    this.fadeDuration = const Duration(milliseconds: 500),
-  });
-
-  static final backgroundImageProvider = StreamProvider.family<Background, int>(
-    (ref, backgroundId) {
-      final db = ref.watch(sceneGroupProvider);
-
-      return (db.backgrounds.select()
-            ..where((background) => background.id.equals(backgroundId)))
+      return (imageDataTableWrapper.wrapped.select()
+            ..where((poseImage) => poseImage.metadataId.equals(imageId)))
           .watchSingle();
-    },
-  );
+    });
+
+class NovelPose extends StatelessWidget {
+  final int? poseId;
+
+  const NovelPose({super.key, required this.poseId});
+
+  static final poseImageTableProvider = Provider<$PoseImagesTable>((ref) {
+    final sceneGroup = ref.watch(sceneGroupProvider);
+    return sceneGroup.poseImages;
+  });
 
   @override
   Widget build(BuildContext context) {
-    return NovelQueryBuilder(
-      provider: backgroundImageProvider(backgroundId),
-      builder: (context, ref, data) => AnimatedSwitcher(
-        duration: fadeDuration,
-        child: Image.memory(key: ValueKey(data.id), data.imageData),
-      ),
+    return NovelImage(imageTable: poseImageTableProvider, maybeImageId: poseId);
+  }
+}
+
+class NovelBackground extends StatelessWidget {
+  final int? backgroundId;
+
+  const NovelBackground({super.key, required this.backgroundId});
+
+  static final backgroundImageTableProvider = Provider<$BackgroundImagesTable>((
+    ref,
+  ) {
+    final sceneGroup = ref.watch(sceneGroupProvider);
+    return sceneGroup.backgroundImages;
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelImage(
+      imageTable: backgroundImageTableProvider,
+      maybeImageId: backgroundId,
     );
   }
 }
 
-class NovelFrameSafeArea extends StatelessWidget {
-  final int scenePartId;
+class NovelImage extends StatelessWidget {
+  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageTable;
+  final int? maybeImageId;
+  final BoxFit? fit;
 
-  const NovelFrameSafeArea({super.key, required this.scenePartId});
+  const NovelImage({
+    super.key,
+    required this.imageTable,
+    required this.maybeImageId,
+    this.fit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final imageId = maybeImageId;
+
+    return (imageId != null)
+        ? NovelQueryBuilder(
+            provider: (ref) => imageProvider((
+              EquatableTableInfo(ref.watch(imageTable)),
+              imageId,
+            )),
+            builder: (context, ref, data) => Image.memory(
+              key: ValueKey(data.metadataId),
+              data.imageData,
+              fit: fit,
+            ),
+          )
+        : NovelFittedIcon(
+            icon: Icon(Icons.image_not_supported_rounded),
+            sizePercentage: 0.5,
+          );
+  }
+}
+
+class NovelFrameSafeArea extends StatelessWidget {
+  final Widget poses;
+  final Widget dialogue;
+
+  const NovelFrameSafeArea({
+    super.key,
+    required this.poses,
+    required this.dialogue,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +162,7 @@ class NovelFrameSafeArea extends StatelessWidget {
                 right: DesignValues.large * 5,
                 top: DesignValues.large,
               ),
-              child: NovelPoses(scenePartId: scenePartId),
+              child: poses,
             ),
           ),
           Positioned.fill(
@@ -111,10 +172,83 @@ class NovelFrameSafeArea extends StatelessWidget {
                 right: DesignValues.large * 5,
                 bottom: DesignValues.medium,
               ),
-              child: NovelDialogueArea(scenePartId: scenePartId),
+              child: dialogue,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AnimatedNovelPoses extends StatelessWidget {
+  final Duration popInDuration;
+  final Duration popOutDuration;
+  final Duration switchPoseDuration;
+  final int scenePartId;
+
+  const AnimatedNovelPoses({
+    super.key,
+    required this.scenePartId,
+    this.popInDuration = const Duration(milliseconds: 400),
+    this.popOutDuration = const Duration(milliseconds: 500),
+    this.switchPoseDuration = const Duration(milliseconds: 300),
+  });
+
+  static final framePoseProvider =
+      StreamProvider.family<List<FramePosesViewData>, int>((ref, scenePartId) {
+        final sceneGroup = ref.watch(sceneGroupProvider);
+
+        return (sceneGroup.framePosesView.select()
+              ..where(
+                (framePose) => framePose.frameScenePartId.equals(scenePartId),
+              )
+              ..orderBy([
+                (framePose) => OrderingTerm(expression: framePose.order),
+              ]))
+            .watch();
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelQueryBuilder(
+      provider: (_) => framePoseProvider(scenePartId),
+      builder: (context, ref, framePoses) => Center(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return ImplicitlyAnimatedList(
+              insertDuration: popInDuration,
+              removeDuration: popOutDuration,
+              animateChild: (context, _, widget, animation) {
+                final driver = animation.drive(
+                  CurveTween(curve: Curves.easeOutCubic),
+                );
+
+                return SizeTransition(
+                  axis: Axis.horizontal,
+                  sizeFactor: driver,
+                  child: ScaleTransition(
+                    scale: driver,
+                    child: FadeTransition(opacity: driver, child: widget),
+                  ),
+                );
+              },
+              children: <Widget>[
+                for (final framePose in framePoses)
+                  AnimatedSwitcher(
+                    key: ValueKey(framePose.groupId),
+                    duration: switchPoseDuration,
+                    child: SizedBox(
+                      key: ValueKey(framePose.poseId),
+                      width: constraints.maxWidth / 3,
+                      height: constraints.maxHeight,
+                      child: NovelPose(poseId: framePose.poseId),
+                    ),
+                  ),
+              ].inBetween((_) => SizedBox(width: DesignValues.large)).toList(),
+            );
+          },
+        ),
       ),
     );
   }
@@ -125,13 +259,13 @@ class NovelDialogueArea extends StatelessWidget {
 
   const NovelDialogueArea({super.key, required this.scenePartId});
 
-  static final dialogueProvider = StreamProvider.family<DialogueBoxe?, int>((
+  static final dialogueProvider = StreamProvider.family<DialogueBox?, int>((
     ref,
     scenePartId,
   ) {
-    final db = ref.watch(sceneGroupProvider);
+    final sceneGroup = ref.watch(sceneGroupProvider);
 
-    return (db.dialogueBoxes.select()
+    return (sceneGroup.dialogueBoxes.select()
           ..where((b) => b.frameScenePartId.equals(scenePartId)))
         .watchSingleOrNull();
   });
@@ -139,7 +273,7 @@ class NovelDialogueArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NovelQueryBuilder(
-      provider: dialogueProvider(scenePartId),
+      provider: (_) => dialogueProvider(scenePartId),
       builder: (context, ref, dialog) {
         if (dialog != null) {
           final name = dialog.name;
@@ -171,6 +305,7 @@ class NovelDialogueArea extends StatelessWidget {
                         cursor: "",
                       ),
                     ],
+                    isRepeatingAnimation: false,
                     totalRepeatCount: 1,
                   ),
                 ),
@@ -181,65 +316,6 @@ class NovelDialogueArea extends StatelessWidget {
           return SizedBox.shrink();
         }
       },
-    );
-  }
-}
-
-class NovelPoses extends StatelessWidget {
-  final Duration popDuration;
-  final Duration slideDuration;
-  final int scenePartId;
-
-  const NovelPoses({
-    super.key,
-    required this.scenePartId,
-    this.slideDuration = const Duration(milliseconds: 500),
-    this.popDuration = const Duration(milliseconds: 400),
-  });
-
-  static final poseProvider =
-      StreamProvider.family<List<FramePosesViewData>, int>((ref, scenePartId) {
-        final db = ref.watch(sceneGroupProvider);
-
-        return (db.framePosesView.select()
-              ..where(
-                (framePose) => framePose.frameScenePartId.equals(scenePartId),
-              )
-              ..orderBy([
-                (framePose) => OrderingTerm(expression: framePose.order),
-              ]))
-            .watch();
-      });
-
-  @override
-  Widget build(BuildContext context) {
-    return NovelQueryBuilder(
-      provider: poseProvider(scenePartId),
-      builder: (context, ref, framePoses) => Center(
-        child: ImplicitlyAnimatedList(
-          shrinkWrap: true,
-          scrollDirection: Axis.horizontal,
-          physics: NeverScrollableScrollPhysics(),
-          animateChild: (context, _, widget, animation) {
-            final driver = animation.drive(
-              CurveTween(curve: Curves.easeOutCubic),
-            );
-
-            return SizeTransition(
-              axis: Axis.horizontal,
-              sizeFactor: driver,
-              child: ScaleTransition(
-                scale: driver,
-                child: FadeTransition(opacity: driver, child: widget),
-              ),
-            );
-          },
-          children: <Widget>[
-            for (final pose in framePoses)
-              Image.memory(pose.imageData, key: ValueKey(pose.actorId)),
-          ].inBetween((_) => SizedBox(width: DesignValues.large)).toList(),
-        ),
-      ),
     );
   }
 }
@@ -302,7 +378,8 @@ class NovelError extends StatelessWidget {
 }
 
 class NovelQueryBuilder<QueryResult> extends StatelessWidget {
-  final ProviderListenable<AsyncValue<QueryResult>> provider;
+  final ProviderListenable<AsyncValue<QueryResult>> Function(WidgetRef)
+  provider;
   final Widget Function(BuildContext, WidgetRef, QueryResult) builder;
   final bool skipLoadingOnReload;
 
@@ -317,7 +394,7 @@ class NovelQueryBuilder<QueryResult> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer(
       builder: (context, ref, _) {
-        final result = ref.watch(provider);
+        final result = ref.watch(provider(ref));
 
         return result.when(
           skipLoadingOnReload: skipLoadingOnReload,

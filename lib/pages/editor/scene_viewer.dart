@@ -1,6 +1,7 @@
 import 'package:device_frame/device_frame.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/pages/design_values.dart';
@@ -40,12 +41,7 @@ class NovelSceneViewer extends StatelessWidget {
           ),
         ),
         const Divider(),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.all(DesignValues.small),
-            child: NovelScenePartTimeline(),
-          ),
-        ),
+        Expanded(child: NovelScenePartTimeline()),
       ],
     );
   }
@@ -78,17 +74,21 @@ class NovelSelectedScenePart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NovelQueryBuilder(
-      provider: selectedScenePartProvider,
-      builder: (context, ref, scenePart) => (scenePart != null)
-          ?
-            // DeviceFrame(
-            //   device: Devices.android.bigPhone,
-            //   screen: NovelScenePartPreview(specifics: scenePart.specifics),
-            //   orientation: Orientation.landscape,
-            // )
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: NovelScenePartPreview(specifics: scenePart.specifics),
+      provider: (_) => selectedScenePartProvider,
+      builder: (context, ref, selectedScenePart) => (selectedScenePart != null)
+          ? DeviceFrame(
+              device: Devices.android.bigPhone,
+              screen: Stack(
+                children: [
+                  Positioned.fill(child: ColoredBox(color: Colors.white)),
+                  Positioned.fill(
+                    child: NovelScenePartPreview(
+                      specifics: selectedScenePart.specifics,
+                    ),
+                  ),
+                ],
+              ),
+              orientation: Orientation.landscape,
             )
           : SizedBox.shrink(),
     );
@@ -129,38 +129,80 @@ class NovelScenePartTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NovelQueryBuilder(
-      provider: selectedSceneProvider,
+      provider: (_) => selectedSceneProvider,
       builder: (context, ref, sceneParts) {
         if (sceneParts == null) return SizedBox.shrink();
 
-        return Row(
-          spacing: DesignValues.medium,
-          children: [
-            ...[
-              for (final scenePart in sceneParts)
-                NovelSceneTimelineItem(scenePart: scenePart),
-              IconButton(
-                onPressed: () async {
-                  final selectedSceneId = ref.read(selectedSceneIdProvider);
+        final scenePartCount = sceneParts.length;
 
-                  if (selectedSceneId == null) return;
+        return HookBuilder(
+          builder: (context) {
+            final controller = useScrollController();
+
+            return Scrollbar(
+              controller: controller,
+              child: ReorderableListView.builder(
+                scrollController: controller,
+                onReorderItem: (oldIndex, newIndex) async {
+                  final double newOrder;
+
+                  if ((newIndex + 1) == scenePartCount) {
+                    newOrder = (sceneParts.lastOrNull?.part.order ?? -1) + 1;
+                  } else if (newIndex == 0) {
+                    newOrder = (sceneParts.firstOrNull?.part.order ?? 1) + -1;
+                  } else {
+                    final leftIndex =
+                        newIndex - ((oldIndex > newIndex) ? 1 : 0);
+                    final rightIndex = leftIndex + 1;
+
+                    final beforeOrder = sceneParts[leftIndex].part.order;
+                    final afterOrder = sceneParts[rightIndex].part.order;
+
+                    newOrder = (beforeOrder + afterOrder) / 2;
+                  }
 
                   final sceneGroup = ref.read(sceneGroupProvider);
 
-                  sceneGroup
-                      .into(sceneGroup.sceneParts)
-                      .insert(
+                  await (sceneGroup.sceneParts.update()..where(
+                        (scenePart) =>
+                            scenePart.id.equals(sceneParts[oldIndex].part.id),
+                      ))
+                      .write(ScenePartsCompanion(order: Value(newOrder)));
+                },
+                scrollDirection: Axis.horizontal,
+                footer: AspectRatio(
+                  aspectRatio: 1,
+                  child: IconButton(
+                    onPressed: () async {
+                      final selectedSceneId = ref.read(selectedSceneIdProvider);
+
+                      if (selectedSceneId == null) return;
+
+                      final sceneGroup = ref.read(sceneGroupProvider);
+
+                      await sceneGroup.sceneParts.insert().insert(
                         ScenePartsCompanion.insert(
                           sceneId: selectedSceneId,
                           order: (sceneParts.lastOrNull?.part.order ?? -1) + 1,
                           partType: "frame",
                         ),
                       );
+                    },
+                    icon: const Icon(Icons.add_rounded),
+                  ),
+                ),
+                itemCount: scenePartCount,
+                itemBuilder: (context, index) {
+                  final scenePart = sceneParts[index];
+
+                  return NovelSceneTimelineItem(
+                    key: ValueKey(scenePart.part.id),
+                    scenePart: scenePart,
+                  );
                 },
-                icon: const Icon(Icons.add_rounded),
               ),
-            ],
-          ],
+            );
+          },
         );
       },
     );
@@ -181,82 +223,87 @@ class NovelSceneTimelineItem extends StatelessWidget {
         final scenePartId = scenePart.part.id;
         final isSelected = scenePartId == selectedScenePartId;
 
-        final specifics = scenePart.specifics;
-
-        final preview = Padding(
-          padding: EdgeInsets.all(DesignValues.verySmall),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(DesignValues.small),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: NovelScenePartPreview(specifics: specifics),
-                ),
-
-                Positioned.fill(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        ref
-                            .read(selectedScenePartIdProvider.notifier)
-                            .set(isSelected ? null : scenePartId);
-                      },
-                    ),
-                  ),
-                ),
-
-                Positioned.fill(
-                  child: Align(
-                    alignment: Alignment.bottomRight,
-                    child: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () async {
-                        final answer = await NovelDeletionDialog.show(context);
-
-                        debugPrint("a3");
-
-                        if (answer != true) return;
-
-                        debugPrint("a4");
-
-                        final sceneGroup = ref.read(sceneGroupProvider);
-
-                        debugPrint("a5");
-
-                        await (sceneGroup.sceneParts.delete()..where(
-                              (scenePart) => scenePart.id.equals(scenePartId),
-                            ))
-                            .go();
-
-                        debugPrint("a6");
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-
         return AspectRatio(
           aspectRatio: 16 / 9,
-          child: isSelected
-              ? DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(
-                      DesignValues.small * (1 + DesignValues.semiSmallPercent),
-                    ),
-                    border: Border.all(
-                      width: 2,
-                      color: Theme.of(context).primaryColor,
-                    ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: NovelCard(
+                  isSelected: isSelected,
+                  onTap: () {
+                    ref
+                        .read(selectedScenePartIdProvider.notifier)
+                        .set(isSelected ? null : scenePartId);
+                  },
+                  child: NovelScenePartPreview(specifics: scenePart.specifics),
+                ),
+              ),
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () async {
+                      final answer = await NovelDeletionDialog.show(context);
+
+                      if (answer != true) return;
+
+                      final sceneGroup = ref.read(sceneGroupProvider);
+
+                      await (sceneGroup.sceneParts.delete()..where(
+                            (scenePart) => scenePart.id.equals(scenePartId),
+                          ))
+                          .go();
+                    },
                   ),
-                  child: preview,
-                )
-              : preview,
+                ),
+              ),
+            ],
+          ),
         );
       },
+    );
+  }
+}
+
+class NovelCard extends StatelessWidget {
+  final bool isSelected;
+  final Widget child;
+  final void Function()? onTap;
+
+  const NovelCard({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.isSelected = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedColor = Theme.of(context).colorScheme.onPrimaryContainer;
+
+    final cardBuilder = (isSelected) ? Card.outlined : Card.new;
+    final shape = (isSelected)
+        ? RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(DesignValues.small),
+            side: BorderSide(width: 3.0, color: selectedColor),
+          )
+        : null;
+
+    return cardBuilder(
+      shape: shape,
+      clipBehavior: Clip.hardEdge,
+      child: Stack(
+        children: [
+          Positioned.fill(child: child),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(onTap: onTap),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -270,8 +317,48 @@ class NovelScenePartPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (specifics) {
       TimelineFrame(:final frameData) => NovelFrame(frame: frameData),
-      TimelineResolver() => Center(child: Icon(Icons.alt_route_rounded)),
-      TimelineCustom() => Center(child: Icon(Icons.build_circle_rounded)),
+      TimelineResolver() => NovelFittedIcon(
+        icon: Icon(Icons.alt_route_rounded),
+        sizePercentage: 0.5,
+      ),
+      TimelineCustom() => NovelFittedIcon(
+        icon: Icon(Icons.build_circle_rounded),
+        sizePercentage: 0.5,
+      ),
     };
+  }
+}
+
+class NovelFittedIcon extends StatelessWidget {
+  final Widget icon;
+  final BoxFit fit;
+  final double sizePercentage;
+
+  const NovelFittedIcon({
+    super.key,
+    required this.icon,
+    required this.sizePercentage,
+    this.fit = BoxFit.contain,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const double kArbitrarySize = 500;
+
+    return FittedBox(
+      fit: fit,
+      child: SizedBox(
+        width: kArbitrarySize,
+        height: kArbitrarySize,
+        child: Center(
+          child: IconTheme(
+            data: Theme.of(
+              context,
+            ).iconTheme.copyWith(size: kArbitrarySize * sizePercentage),
+            child: icon,
+          ),
+        ),
+      ),
+    );
   }
 }

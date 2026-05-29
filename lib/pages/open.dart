@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +9,7 @@ import 'package:prac_res/data/data.dart';
 
 import 'package:prac_res/pages/design_values.dart';
 import 'package:prac_res/pages/editor/editor.dart';
+import 'package:prac_res/pages/editor/scene_viewer.dart';
 import 'package:prac_res/pages/loading.dart';
 
 class SceneGroupNotifier extends Notifier<SceneGroup> {
@@ -102,14 +102,17 @@ class NovelOpenPage extends StatelessWidget {
               await NovelLoadingPage.load(context, (context) async {
                 final sceneGroup = await sceneGroupFuture;
 
+                final naviagtor = Navigator.of(context);
+
                 if (sceneGroup == null) {
+                  naviagtor.pop();
                   return;
                 }
 
                 ref.read(sceneGroupProvider.notifier).set(sceneGroup);
 
                 // SAFETY: This should be safe because [context] shouldn't unmount until this navigator function pushes through!
-                await Navigator.of(context).pushReplacement(
+                await naviagtor.pushReplacement(
                   MaterialPageRoute(builder: (context) => NovelEditorPage()),
                 );
               });
@@ -125,13 +128,13 @@ class NovelOpenPage extends StatelessWidget {
 class NovelIconButton extends StatelessWidget {
   final void Function()? onPressed;
   final Widget icon;
-  final double? iconSizePercentage;
+  final double iconSizePercentage;
   final ButtonStyle? style;
 
   const NovelIconButton({
     required this.onPressed,
     required this.icon,
-    this.iconSizePercentage,
+    this.iconSizePercentage = DesignValues.semiLargePercent,
     this.style,
     super.key,
   });
@@ -150,18 +153,7 @@ class NovelIconButton extends StatelessWidget {
               ),
               padding: EdgeInsets.all(DesignValues.semiSmall),
             ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return IconTheme(
-              data: Theme.of(context).iconTheme.copyWith(
-                size:
-                    min(constraints.maxWidth, constraints.maxHeight) *
-                    (iconSizePercentage ?? DesignValues.semiLargePercent),
-              ),
-              child: icon,
-            );
-          },
-        ),
+        child: NovelFittedIcon(icon: icon, sizePercentage: iconSizePercentage),
       ),
     );
   }

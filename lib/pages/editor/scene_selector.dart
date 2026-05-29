@@ -1,8 +1,11 @@
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:prac_res/data/data.dart';
+import 'package:prac_res/pages/editor/inspector/image_group.dart';
 import 'package:prac_res/pages/editor/scene_viewer.dart';
+import 'package:prac_res/pages/editor/scrolling.dart';
 import 'package:prac_res/pages/frame/frame.dart';
 import 'package:prac_res/pages/open.dart';
 
@@ -23,98 +26,136 @@ final selectedSceneIdProvider = NotifierProvider<SelectedSceneIdProvider, int?>(
 class NovelSceneSelector extends StatelessWidget {
   const NovelSceneSelector({super.key});
 
-  static final scenesProvider = StreamProvider((ref) {
+  static final scenesTableProvider = Provider<$ScenesTable>((ref) {
     final sceneGroup = ref.watch(sceneGroupProvider);
 
-    return sceneGroup.scenes.select().watch();
+    return sceneGroup.scenes;
   });
 
   @override
   Widget build(BuildContext context) {
     return Consumer(
       builder: (context, ref, _) {
-        final textTheme = Theme.of(context).textTheme;
-        final selectedScene = ref.watch(selectedSceneIdProvider);
-
-        return RadioGroup<int>(
+        return NovelGroupSelector(
+          title: Text("Scenes"),
           onChanged: (selection) {
             ref.read(selectedSceneIdProvider.notifier).set(selection);
           },
-          groupValue: selectedScene,
-          child: NovelQueryBuilder(
-            provider: scenesProvider,
-            builder: (context, ref, scenes) => Column(
+          groupTableProvider: scenesTableProvider,
+          selectedGroup: ref.watch(selectedSceneIdProvider),
+        );
+      },
+    );
+  }
+}
+
+class NovelGroupSelector<G extends Group> extends StatelessWidget {
+  final Widget title;
+  final ProviderListenable<TableInfo<GroupTable, G>> groupTableProvider;
+  final void Function(int?) onChanged;
+  final int? selectedGroup;
+
+  const NovelGroupSelector({
+    super.key,
+    required this.title,
+    required this.onChanged,
+    required this.groupTableProvider,
+    required this.selectedGroup,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return RadioGroup<int>(
+      onChanged: onChanged,
+      groupValue: selectedGroup,
+      child: NovelQueryBuilder(
+        provider: (ref) =>
+            groupsProvider(EquatableTableInfo(ref.watch(groupTableProvider))),
+        builder: (context, ref, groups) {
+          // final table = ref.watch(groupTableProvider);
+
+          return SingleChildScrollbarView(
+            scrollDirection: Axis.vertical,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Scenes", style: textTheme.bodyLarge),
-                const Divider(),
-
-                ...scenes.map(
-                  (scene) => RadioListTile(
-                    value: scene.id,
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          flex: 5,
-                          child: Text(
-                            scene.name,
-                            style: textTheme.bodySmall,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () async {
-                              final answer = await NovelDeletionDialog.show(
-                                context,
-                              );
-
-                              if (answer != true) return;
-
-                              final sceneGroup = ref.read(sceneGroupProvider);
-
-                              await (sceneGroup.delete(sceneGroup.scenes)
-                                    ..where(
-                                      (sceneEntry) =>
-                                          sceneEntry.id.equals(scene.id),
-                                    ))
-                                  .go();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    toggleable: true,
-                  ),
+                DefaultTextStyle.merge(
+                  child: title,
+                  style: textTheme.bodyLarge,
                 ),
 
-                IconButton(
-                  onPressed: () async {
-                    final sceneName = await NovelNewNameDialog.show(
-                      context,
-                      title: "New Scene",
-                    );
+                const Divider(),
 
-                    if (sceneName == null) {
-                      return;
-                    }
+                for (final group in groups)
+                  ListTile(
+                    leading: Radio<int>(value: group.id, toggleable: true),
+                    title: NovelEditableText(
+                      sourceText: group.name,
+                      builder: (controller, focusNode) => TextField(
+                        focusNode: focusNode,
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.zero,
+                          border: OutlineInputBorder(),
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                        textAlignVertical: TextAlignVertical.center,
+                        controller: controller,
+                        onChanged: (newName) async {
+                          final groupTable = ref.read(groupTableProvider);
 
-                    final sceneGroup = ref.read(sceneGroupProvider);
+                          await (groupTable.update()..where(
+                                (groupEntry) => groupEntry.id.equals(group.id),
+                              ))
+                              .write(GroupCompanion(name: Value(newName)));
+                        },
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () async {
+                        final answer = await NovelDeletionDialog.show(context);
 
-                    sceneGroup
-                        .into(sceneGroup.scenes)
-                        .insert(ScenesCompanion.insert(name: sceneName));
-                  },
-                  icon: Icon(Icons.add_rounded),
+                        if (answer != true) return;
+
+                        final groupTable = ref.read(groupTableProvider);
+
+                        await (groupTable.delete()..where(
+                              (groupEntry) => groupEntry.id.equals(group.id),
+                            ))
+                            .go();
+                      },
+                    ),
+                  ),
+
+                ListTile(
+                  leading: IconButton(
+                    onPressed: () async {
+                      final name = await NovelNewNameDialog.show(
+                        context,
+                        title: "New Group",
+                      );
+
+                      if (name == null) {
+                        return;
+                      }
+
+                      final groupTable = ref.read(groupTableProvider);
+
+                      await groupTable.insert().insert(
+                        GroupCompanion.insert(name: name),
+                      );
+                    },
+                    icon: Icon(Icons.add_rounded),
+                  ),
                 ),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

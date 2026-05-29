@@ -81,7 +81,7 @@ class $PlacesTable extends Places with TableInfo<$PlacesTable, Place> {
   }
 }
 
-class Place extends DataClass implements Insertable<Place> {
+class Place extends DataClass implements Insertable<Place>, Group {
   final int id;
   final String name;
   const Place({required this.id, required this.name});
@@ -187,12 +187,12 @@ class PlacesCompanion extends UpdateCompanion<Place> {
   }
 }
 
-class $BackgroundsTable extends Backgrounds
-    with TableInfo<$BackgroundsTable, Background> {
+class $BackgroundMetadatasTable extends BackgroundMetadatas
+    with TableInfo<$BackgroundMetadatasTable, BackgroundMetadata> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $BackgroundsTable(this.attachedDatabase, [this._alias]);
+  $BackgroundMetadatasTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -206,12 +206,12 @@ class $BackgroundsTable extends Backgrounds
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
-  static const VerificationMeta _placeIdMeta = const VerificationMeta(
-    'placeId',
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
   );
   @override
-  late final GeneratedColumn<int> placeId = GeneratedColumn<int>(
-    'place_id',
+  late final GeneratedColumn<int> groupId = GeneratedColumn<int>(
+    'group_id',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -229,6 +229,237 @@ class $BackgroundsTable extends Backgrounds
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  @override
+  List<GeneratedColumn> get $columns => [id, groupId, name];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'background_metadatas';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BackgroundMetadata> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_groupIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BackgroundMetadata map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BackgroundMetadata(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}group_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+    );
+  }
+
+  @override
+  $BackgroundMetadatasTable createAlias(String alias) {
+    return $BackgroundMetadatasTable(attachedDatabase, alias);
+  }
+}
+
+class BackgroundMetadata extends DataClass
+    implements Insertable<BackgroundMetadata>, ImageMetadata {
+  final int id;
+  final int groupId;
+  final String name;
+  const BackgroundMetadata({
+    required this.id,
+    required this.groupId,
+    required this.name,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['group_id'] = Variable<int>(groupId);
+    map['name'] = Variable<String>(name);
+    return map;
+  }
+
+  BackgroundMetadatasCompanion toCompanion(bool nullToAbsent) {
+    return BackgroundMetadatasCompanion(
+      id: Value(id),
+      groupId: Value(groupId),
+      name: Value(name),
+    );
+  }
+
+  factory BackgroundMetadata.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BackgroundMetadata(
+      id: serializer.fromJson<int>(json['id']),
+      groupId: serializer.fromJson<int>(json['groupId']),
+      name: serializer.fromJson<String>(json['name']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'groupId': serializer.toJson<int>(groupId),
+      'name': serializer.toJson<String>(name),
+    };
+  }
+
+  BackgroundMetadata copyWith({int? id, int? groupId, String? name}) =>
+      BackgroundMetadata(
+        id: id ?? this.id,
+        groupId: groupId ?? this.groupId,
+        name: name ?? this.name,
+      );
+  BackgroundMetadata copyWithCompanion(BackgroundMetadatasCompanion data) {
+    return BackgroundMetadata(
+      id: data.id.present ? data.id.value : this.id,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      name: data.name.present ? data.name.value : this.name,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackgroundMetadata(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('name: $name')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, groupId, name);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BackgroundMetadata &&
+          other.id == this.id &&
+          other.groupId == this.groupId &&
+          other.name == this.name);
+}
+
+class BackgroundMetadatasCompanion extends UpdateCompanion<BackgroundMetadata> {
+  final Value<int> id;
+  final Value<int> groupId;
+  final Value<String> name;
+  const BackgroundMetadatasCompanion({
+    this.id = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.name = const Value.absent(),
+  });
+  BackgroundMetadatasCompanion.insert({
+    this.id = const Value.absent(),
+    required int groupId,
+    required String name,
+  }) : groupId = Value(groupId),
+       name = Value(name);
+  static Insertable<BackgroundMetadata> custom({
+    Expression<int>? id,
+    Expression<int>? groupId,
+    Expression<String>? name,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (groupId != null) 'group_id': groupId,
+      if (name != null) 'name': name,
+    });
+  }
+
+  BackgroundMetadatasCompanion copyWith({
+    Value<int>? id,
+    Value<int>? groupId,
+    Value<String>? name,
+  }) {
+    return BackgroundMetadatasCompanion(
+      id: id ?? this.id,
+      groupId: groupId ?? this.groupId,
+      name: name ?? this.name,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<int>(groupId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackgroundMetadatasCompanion(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('name: $name')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BackgroundImagesTable extends BackgroundImages
+    with TableInfo<$BackgroundImagesTable, BackgroundImage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BackgroundImagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _metadataIdMeta = const VerificationMeta(
+    'metadataId',
+  );
+  @override
+  late final GeneratedColumn<int> metadataId = GeneratedColumn<int>(
+    'metadata_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES background_metadatas (id) ON DELETE CASCADE',
+    ),
+  );
   static const VerificationMeta _imageDataMeta = const VerificationMeta(
     'imageData',
   );
@@ -241,37 +472,24 @@ class $BackgroundsTable extends Backgrounds
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, placeId, name, imageData];
+  List<GeneratedColumn> get $columns => [metadataId, imageData];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'backgrounds';
+  static const String $name = 'background_images';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Background> instance, {
+    Insertable<BackgroundImage> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('place_id')) {
+    if (data.containsKey('metadata_id')) {
       context.handle(
-        _placeIdMeta,
-        placeId.isAcceptableOrUnknown(data['place_id']!, _placeIdMeta),
+        _metadataIdMeta,
+        metadataId.isAcceptableOrUnknown(data['metadata_id']!, _metadataIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_placeIdMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
     }
     if (data.containsKey('image_data')) {
       context.handle(
@@ -285,22 +503,14 @@ class $BackgroundsTable extends Backgrounds
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {metadataId};
   @override
-  Background map(Map<String, dynamic> data, {String? tablePrefix}) {
+  BackgroundImage map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Background(
-      id: attachedDatabase.typeMapping.read(
+    return BackgroundImage(
+      metadataId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      placeId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}place_id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
+        data['${effectivePrefix}metadata_id'],
       )!,
       imageData: attachedDatabase.typeMapping.read(
         DriftSqlType.blob,
@@ -310,50 +520,38 @@ class $BackgroundsTable extends Backgrounds
   }
 
   @override
-  $BackgroundsTable createAlias(String alias) {
-    return $BackgroundsTable(attachedDatabase, alias);
+  $BackgroundImagesTable createAlias(String alias) {
+    return $BackgroundImagesTable(attachedDatabase, alias);
   }
 }
 
-class Background extends DataClass implements Insertable<Background> {
-  final int id;
-  final int placeId;
-  final String name;
+class BackgroundImage extends DataClass
+    implements Insertable<BackgroundImage>, ImageData {
+  final int metadataId;
   final Uint8List imageData;
-  const Background({
-    required this.id,
-    required this.placeId,
-    required this.name,
-    required this.imageData,
-  });
+  const BackgroundImage({required this.metadataId, required this.imageData});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['place_id'] = Variable<int>(placeId);
-    map['name'] = Variable<String>(name);
+    map['metadata_id'] = Variable<int>(metadataId);
     map['image_data'] = Variable<Uint8List>(imageData);
     return map;
   }
 
-  BackgroundsCompanion toCompanion(bool nullToAbsent) {
-    return BackgroundsCompanion(
-      id: Value(id),
-      placeId: Value(placeId),
-      name: Value(name),
+  BackgroundImagesCompanion toCompanion(bool nullToAbsent) {
+    return BackgroundImagesCompanion(
+      metadataId: Value(metadataId),
       imageData: Value(imageData),
     );
   }
 
-  factory Background.fromJson(
+  factory BackgroundImage.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Background(
-      id: serializer.fromJson<int>(json['id']),
-      placeId: serializer.fromJson<int>(json['placeId']),
-      name: serializer.fromJson<String>(json['name']),
+    return BackgroundImage(
+      metadataId: serializer.fromJson<int>(json['metadataId']),
       imageData: serializer.fromJson<Uint8List>(json['imageData']),
     );
   }
@@ -361,39 +559,29 @@ class Background extends DataClass implements Insertable<Background> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'placeId': serializer.toJson<int>(placeId),
-      'name': serializer.toJson<String>(name),
+      'metadataId': serializer.toJson<int>(metadataId),
       'imageData': serializer.toJson<Uint8List>(imageData),
     };
   }
 
-  Background copyWith({
-    int? id,
-    int? placeId,
-    String? name,
-    Uint8List? imageData,
-  }) => Background(
-    id: id ?? this.id,
-    placeId: placeId ?? this.placeId,
-    name: name ?? this.name,
-    imageData: imageData ?? this.imageData,
-  );
-  Background copyWithCompanion(BackgroundsCompanion data) {
-    return Background(
-      id: data.id.present ? data.id.value : this.id,
-      placeId: data.placeId.present ? data.placeId.value : this.placeId,
-      name: data.name.present ? data.name.value : this.name,
+  BackgroundImage copyWith({int? metadataId, Uint8List? imageData}) =>
+      BackgroundImage(
+        metadataId: metadataId ?? this.metadataId,
+        imageData: imageData ?? this.imageData,
+      );
+  BackgroundImage copyWithCompanion(BackgroundImagesCompanion data) {
+    return BackgroundImage(
+      metadataId: data.metadataId.present
+          ? data.metadataId.value
+          : this.metadataId,
       imageData: data.imageData.present ? data.imageData.value : this.imageData,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('Background(')
-          ..write('id: $id, ')
-          ..write('placeId: $placeId, ')
-          ..write('name: $name, ')
+    return (StringBuffer('BackgroundImage(')
+          ..write('metadataId: $metadataId, ')
           ..write('imageData: $imageData')
           ..write(')'))
         .toString();
@@ -401,60 +589,42 @@ class Background extends DataClass implements Insertable<Background> {
 
   @override
   int get hashCode =>
-      Object.hash(id, placeId, name, $driftBlobEquality.hash(imageData));
+      Object.hash(metadataId, $driftBlobEquality.hash(imageData));
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Background &&
-          other.id == this.id &&
-          other.placeId == this.placeId &&
-          other.name == this.name &&
+      (other is BackgroundImage &&
+          other.metadataId == this.metadataId &&
           $driftBlobEquality.equals(other.imageData, this.imageData));
 }
 
-class BackgroundsCompanion extends UpdateCompanion<Background> {
-  final Value<int> id;
-  final Value<int> placeId;
-  final Value<String> name;
+class BackgroundImagesCompanion extends UpdateCompanion<BackgroundImage> {
+  final Value<int> metadataId;
   final Value<Uint8List> imageData;
-  const BackgroundsCompanion({
-    this.id = const Value.absent(),
-    this.placeId = const Value.absent(),
-    this.name = const Value.absent(),
+  const BackgroundImagesCompanion({
+    this.metadataId = const Value.absent(),
     this.imageData = const Value.absent(),
   });
-  BackgroundsCompanion.insert({
-    this.id = const Value.absent(),
-    required int placeId,
-    required String name,
+  BackgroundImagesCompanion.insert({
+    this.metadataId = const Value.absent(),
     required Uint8List imageData,
-  }) : placeId = Value(placeId),
-       name = Value(name),
-       imageData = Value(imageData);
-  static Insertable<Background> custom({
-    Expression<int>? id,
-    Expression<int>? placeId,
-    Expression<String>? name,
+  }) : imageData = Value(imageData);
+  static Insertable<BackgroundImage> custom({
+    Expression<int>? metadataId,
     Expression<Uint8List>? imageData,
   }) {
     return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (placeId != null) 'place_id': placeId,
-      if (name != null) 'name': name,
+      if (metadataId != null) 'metadata_id': metadataId,
       if (imageData != null) 'image_data': imageData,
     });
   }
 
-  BackgroundsCompanion copyWith({
-    Value<int>? id,
-    Value<int>? placeId,
-    Value<String>? name,
+  BackgroundImagesCompanion copyWith({
+    Value<int>? metadataId,
     Value<Uint8List>? imageData,
   }) {
-    return BackgroundsCompanion(
-      id: id ?? this.id,
-      placeId: placeId ?? this.placeId,
-      name: name ?? this.name,
+    return BackgroundImagesCompanion(
+      metadataId: metadataId ?? this.metadataId,
       imageData: imageData ?? this.imageData,
     );
   }
@@ -462,14 +632,8 @@ class BackgroundsCompanion extends UpdateCompanion<Background> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (placeId.present) {
-      map['place_id'] = Variable<int>(placeId.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
+    if (metadataId.present) {
+      map['metadata_id'] = Variable<int>(metadataId.value);
     }
     if (imageData.present) {
       map['image_data'] = Variable<Uint8List>(imageData.value);
@@ -479,10 +643,8 @@ class BackgroundsCompanion extends UpdateCompanion<Background> {
 
   @override
   String toString() {
-    return (StringBuffer('BackgroundsCompanion(')
-          ..write('id: $id, ')
-          ..write('placeId: $placeId, ')
-          ..write('name: $name, ')
+    return (StringBuffer('BackgroundImagesCompanion(')
+          ..write('metadataId: $metadataId, ')
           ..write('imageData: $imageData')
           ..write(')'))
         .toString();
@@ -567,7 +729,7 @@ class $ActorsTable extends Actors with TableInfo<$ActorsTable, Actor> {
   }
 }
 
-class Actor extends DataClass implements Insertable<Actor> {
+class Actor extends DataClass implements Insertable<Actor>, Group {
   final int id;
   final String name;
   const Actor({required this.id, required this.name});
@@ -673,11 +835,12 @@ class ActorsCompanion extends UpdateCompanion<Actor> {
   }
 }
 
-class $PosesTable extends Poses with TableInfo<$PosesTable, Pose> {
+class $PoseMetadatasTable extends PoseMetadatas
+    with TableInfo<$PoseMetadatasTable, PoseMetadata> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $PosesTable(this.attachedDatabase, [this._alias]);
+  $PoseMetadatasTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
@@ -691,12 +854,12 @@ class $PosesTable extends Poses with TableInfo<$PosesTable, Pose> {
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
-  static const VerificationMeta _actorIdMeta = const VerificationMeta(
-    'actorId',
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
   );
   @override
-  late final GeneratedColumn<int> actorId = GeneratedColumn<int>(
-    'actor_id',
+  late final GeneratedColumn<int> groupId = GeneratedColumn<int>(
+    'group_id',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -714,6 +877,236 @@ class $PosesTable extends Poses with TableInfo<$PosesTable, Pose> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  @override
+  List<GeneratedColumn> get $columns => [id, groupId, name];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pose_metadatas';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PoseMetadata> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_groupIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PoseMetadata map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PoseMetadata(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}group_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+    );
+  }
+
+  @override
+  $PoseMetadatasTable createAlias(String alias) {
+    return $PoseMetadatasTable(attachedDatabase, alias);
+  }
+}
+
+class PoseMetadata extends DataClass
+    implements Insertable<PoseMetadata>, ImageMetadata {
+  final int id;
+  final int groupId;
+  final String name;
+  const PoseMetadata({
+    required this.id,
+    required this.groupId,
+    required this.name,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['group_id'] = Variable<int>(groupId);
+    map['name'] = Variable<String>(name);
+    return map;
+  }
+
+  PoseMetadatasCompanion toCompanion(bool nullToAbsent) {
+    return PoseMetadatasCompanion(
+      id: Value(id),
+      groupId: Value(groupId),
+      name: Value(name),
+    );
+  }
+
+  factory PoseMetadata.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PoseMetadata(
+      id: serializer.fromJson<int>(json['id']),
+      groupId: serializer.fromJson<int>(json['groupId']),
+      name: serializer.fromJson<String>(json['name']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'groupId': serializer.toJson<int>(groupId),
+      'name': serializer.toJson<String>(name),
+    };
+  }
+
+  PoseMetadata copyWith({int? id, int? groupId, String? name}) => PoseMetadata(
+    id: id ?? this.id,
+    groupId: groupId ?? this.groupId,
+    name: name ?? this.name,
+  );
+  PoseMetadata copyWithCompanion(PoseMetadatasCompanion data) {
+    return PoseMetadata(
+      id: data.id.present ? data.id.value : this.id,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      name: data.name.present ? data.name.value : this.name,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PoseMetadata(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('name: $name')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, groupId, name);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PoseMetadata &&
+          other.id == this.id &&
+          other.groupId == this.groupId &&
+          other.name == this.name);
+}
+
+class PoseMetadatasCompanion extends UpdateCompanion<PoseMetadata> {
+  final Value<int> id;
+  final Value<int> groupId;
+  final Value<String> name;
+  const PoseMetadatasCompanion({
+    this.id = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.name = const Value.absent(),
+  });
+  PoseMetadatasCompanion.insert({
+    this.id = const Value.absent(),
+    required int groupId,
+    required String name,
+  }) : groupId = Value(groupId),
+       name = Value(name);
+  static Insertable<PoseMetadata> custom({
+    Expression<int>? id,
+    Expression<int>? groupId,
+    Expression<String>? name,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (groupId != null) 'group_id': groupId,
+      if (name != null) 'name': name,
+    });
+  }
+
+  PoseMetadatasCompanion copyWith({
+    Value<int>? id,
+    Value<int>? groupId,
+    Value<String>? name,
+  }) {
+    return PoseMetadatasCompanion(
+      id: id ?? this.id,
+      groupId: groupId ?? this.groupId,
+      name: name ?? this.name,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<int>(groupId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PoseMetadatasCompanion(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('name: $name')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PoseImagesTable extends PoseImages
+    with TableInfo<$PoseImagesTable, PoseImage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PoseImagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _metadataIdMeta = const VerificationMeta(
+    'metadataId',
+  );
+  @override
+  late final GeneratedColumn<int> metadataId = GeneratedColumn<int>(
+    'metadata_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES pose_metadatas (id) ON DELETE CASCADE',
+    ),
+  );
   static const VerificationMeta _imageDataMeta = const VerificationMeta(
     'imageData',
   );
@@ -726,37 +1119,24 @@ class $PosesTable extends Poses with TableInfo<$PosesTable, Pose> {
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, actorId, name, imageData];
+  List<GeneratedColumn> get $columns => [metadataId, imageData];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'poses';
+  static const String $name = 'pose_images';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Pose> instance, {
+    Insertable<PoseImage> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('actor_id')) {
+    if (data.containsKey('metadata_id')) {
       context.handle(
-        _actorIdMeta,
-        actorId.isAcceptableOrUnknown(data['actor_id']!, _actorIdMeta),
+        _metadataIdMeta,
+        metadataId.isAcceptableOrUnknown(data['metadata_id']!, _metadataIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_actorIdMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
     }
     if (data.containsKey('image_data')) {
       context.handle(
@@ -770,22 +1150,14 @@ class $PosesTable extends Poses with TableInfo<$PosesTable, Pose> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => {metadataId};
   @override
-  Pose map(Map<String, dynamic> data, {String? tablePrefix}) {
+  PoseImage map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Pose(
-      id: attachedDatabase.typeMapping.read(
+    return PoseImage(
+      metadataId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      actorId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}actor_id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
+        data['${effectivePrefix}metadata_id'],
       )!,
       imageData: attachedDatabase.typeMapping.read(
         DriftSqlType.blob,
@@ -795,50 +1167,37 @@ class $PosesTable extends Poses with TableInfo<$PosesTable, Pose> {
   }
 
   @override
-  $PosesTable createAlias(String alias) {
-    return $PosesTable(attachedDatabase, alias);
+  $PoseImagesTable createAlias(String alias) {
+    return $PoseImagesTable(attachedDatabase, alias);
   }
 }
 
-class Pose extends DataClass implements Insertable<Pose> {
-  final int id;
-  final int actorId;
-  final String name;
+class PoseImage extends DataClass implements Insertable<PoseImage>, ImageData {
+  final int metadataId;
   final Uint8List imageData;
-  const Pose({
-    required this.id,
-    required this.actorId,
-    required this.name,
-    required this.imageData,
-  });
+  const PoseImage({required this.metadataId, required this.imageData});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['actor_id'] = Variable<int>(actorId);
-    map['name'] = Variable<String>(name);
+    map['metadata_id'] = Variable<int>(metadataId);
     map['image_data'] = Variable<Uint8List>(imageData);
     return map;
   }
 
-  PosesCompanion toCompanion(bool nullToAbsent) {
-    return PosesCompanion(
-      id: Value(id),
-      actorId: Value(actorId),
-      name: Value(name),
+  PoseImagesCompanion toCompanion(bool nullToAbsent) {
+    return PoseImagesCompanion(
+      metadataId: Value(metadataId),
       imageData: Value(imageData),
     );
   }
 
-  factory Pose.fromJson(
+  factory PoseImage.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Pose(
-      id: serializer.fromJson<int>(json['id']),
-      actorId: serializer.fromJson<int>(json['actorId']),
-      name: serializer.fromJson<String>(json['name']),
+    return PoseImage(
+      metadataId: serializer.fromJson<int>(json['metadataId']),
       imageData: serializer.fromJson<Uint8List>(json['imageData']),
     );
   }
@@ -846,35 +1205,28 @@ class Pose extends DataClass implements Insertable<Pose> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'actorId': serializer.toJson<int>(actorId),
-      'name': serializer.toJson<String>(name),
+      'metadataId': serializer.toJson<int>(metadataId),
       'imageData': serializer.toJson<Uint8List>(imageData),
     };
   }
 
-  Pose copyWith({int? id, int? actorId, String? name, Uint8List? imageData}) =>
-      Pose(
-        id: id ?? this.id,
-        actorId: actorId ?? this.actorId,
-        name: name ?? this.name,
-        imageData: imageData ?? this.imageData,
-      );
-  Pose copyWithCompanion(PosesCompanion data) {
-    return Pose(
-      id: data.id.present ? data.id.value : this.id,
-      actorId: data.actorId.present ? data.actorId.value : this.actorId,
-      name: data.name.present ? data.name.value : this.name,
+  PoseImage copyWith({int? metadataId, Uint8List? imageData}) => PoseImage(
+    metadataId: metadataId ?? this.metadataId,
+    imageData: imageData ?? this.imageData,
+  );
+  PoseImage copyWithCompanion(PoseImagesCompanion data) {
+    return PoseImage(
+      metadataId: data.metadataId.present
+          ? data.metadataId.value
+          : this.metadataId,
       imageData: data.imageData.present ? data.imageData.value : this.imageData,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('Pose(')
-          ..write('id: $id, ')
-          ..write('actorId: $actorId, ')
-          ..write('name: $name, ')
+    return (StringBuffer('PoseImage(')
+          ..write('metadataId: $metadataId, ')
           ..write('imageData: $imageData')
           ..write(')'))
         .toString();
@@ -882,60 +1234,42 @@ class Pose extends DataClass implements Insertable<Pose> {
 
   @override
   int get hashCode =>
-      Object.hash(id, actorId, name, $driftBlobEquality.hash(imageData));
+      Object.hash(metadataId, $driftBlobEquality.hash(imageData));
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Pose &&
-          other.id == this.id &&
-          other.actorId == this.actorId &&
-          other.name == this.name &&
+      (other is PoseImage &&
+          other.metadataId == this.metadataId &&
           $driftBlobEquality.equals(other.imageData, this.imageData));
 }
 
-class PosesCompanion extends UpdateCompanion<Pose> {
-  final Value<int> id;
-  final Value<int> actorId;
-  final Value<String> name;
+class PoseImagesCompanion extends UpdateCompanion<PoseImage> {
+  final Value<int> metadataId;
   final Value<Uint8List> imageData;
-  const PosesCompanion({
-    this.id = const Value.absent(),
-    this.actorId = const Value.absent(),
-    this.name = const Value.absent(),
+  const PoseImagesCompanion({
+    this.metadataId = const Value.absent(),
     this.imageData = const Value.absent(),
   });
-  PosesCompanion.insert({
-    this.id = const Value.absent(),
-    required int actorId,
-    required String name,
+  PoseImagesCompanion.insert({
+    this.metadataId = const Value.absent(),
     required Uint8List imageData,
-  }) : actorId = Value(actorId),
-       name = Value(name),
-       imageData = Value(imageData);
-  static Insertable<Pose> custom({
-    Expression<int>? id,
-    Expression<int>? actorId,
-    Expression<String>? name,
+  }) : imageData = Value(imageData);
+  static Insertable<PoseImage> custom({
+    Expression<int>? metadataId,
     Expression<Uint8List>? imageData,
   }) {
     return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (actorId != null) 'actor_id': actorId,
-      if (name != null) 'name': name,
+      if (metadataId != null) 'metadata_id': metadataId,
       if (imageData != null) 'image_data': imageData,
     });
   }
 
-  PosesCompanion copyWith({
-    Value<int>? id,
-    Value<int>? actorId,
-    Value<String>? name,
+  PoseImagesCompanion copyWith({
+    Value<int>? metadataId,
     Value<Uint8List>? imageData,
   }) {
-    return PosesCompanion(
-      id: id ?? this.id,
-      actorId: actorId ?? this.actorId,
-      name: name ?? this.name,
+    return PoseImagesCompanion(
+      metadataId: metadataId ?? this.metadataId,
       imageData: imageData ?? this.imageData,
     );
   }
@@ -943,14 +1277,8 @@ class PosesCompanion extends UpdateCompanion<Pose> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (actorId.present) {
-      map['actor_id'] = Variable<int>(actorId.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
+    if (metadataId.present) {
+      map['metadata_id'] = Variable<int>(metadataId.value);
     }
     if (imageData.present) {
       map['image_data'] = Variable<Uint8List>(imageData.value);
@@ -960,10 +1288,8 @@ class PosesCompanion extends UpdateCompanion<Pose> {
 
   @override
   String toString() {
-    return (StringBuffer('PosesCompanion(')
-          ..write('id: $id, ')
-          ..write('actorId: $actorId, ')
-          ..write('name: $name, ')
+    return (StringBuffer('PoseImagesCompanion(')
+          ..write('metadataId: $metadataId, ')
           ..write('imageData: $imageData')
           ..write(')'))
         .toString();
@@ -1540,7 +1866,7 @@ class $ScenesTable extends Scenes with TableInfo<$ScenesTable, Scene> {
   }
 }
 
-class Scene extends DataClass implements Insertable<Scene> {
+class Scene extends DataClass implements Insertable<Scene>, Group {
   final int id;
   final String name;
   const Scene({required this.id, required this.name});
@@ -1978,7 +2304,7 @@ class $FramesTable extends Frames with TableInfo<$FramesTable, Frame> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES backgrounds (id) ON DELETE SET NULL',
+      'REFERENCES background_metadatas (id) ON DELETE SET NULL',
     ),
   );
   @override
@@ -2171,12 +2497,12 @@ class FramesCompanion extends UpdateCompanion<Frame> {
   }
 }
 
-class $FrameResolversTable extends FrameResolvers
-    with TableInfo<$FrameResolversTable, FrameResolver> {
+class $ScenePartResolversTable extends ScenePartResolvers
+    with TableInfo<$ScenePartResolversTable, ScenePartResolver> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $FrameResolversTable(this.attachedDatabase, [this._alias]);
+  $ScenePartResolversTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _scenePartIdMeta = const VerificationMeta(
     'scenePartId',
   );
@@ -2208,10 +2534,10 @@ class $FrameResolversTable extends FrameResolvers
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'frame_resolvers';
+  static const String $name = 'scene_part_resolvers';
   @override
   VerificationContext validateIntegrity(
-    Insertable<FrameResolver> instance, {
+    Insertable<ScenePartResolver> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2242,9 +2568,9 @@ class $FrameResolversTable extends FrameResolvers
   @override
   Set<GeneratedColumn> get $primaryKey => {scenePartId};
   @override
-  FrameResolver map(Map<String, dynamic> data, {String? tablePrefix}) {
+  ScenePartResolver map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return FrameResolver(
+    return ScenePartResolver(
       scenePartId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}scene_part_id'],
@@ -2257,15 +2583,16 @@ class $FrameResolversTable extends FrameResolvers
   }
 
   @override
-  $FrameResolversTable createAlias(String alias) {
-    return $FrameResolversTable(attachedDatabase, alias);
+  $ScenePartResolversTable createAlias(String alias) {
+    return $ScenePartResolversTable(attachedDatabase, alias);
   }
 }
 
-class FrameResolver extends DataClass implements Insertable<FrameResolver> {
+class ScenePartResolver extends DataClass
+    implements Insertable<ScenePartResolver> {
   final int scenePartId;
   final String resolverScript;
-  const FrameResolver({
+  const ScenePartResolver({
     required this.scenePartId,
     required this.resolverScript,
   });
@@ -2277,19 +2604,19 @@ class FrameResolver extends DataClass implements Insertable<FrameResolver> {
     return map;
   }
 
-  FrameResolversCompanion toCompanion(bool nullToAbsent) {
-    return FrameResolversCompanion(
+  ScenePartResolversCompanion toCompanion(bool nullToAbsent) {
+    return ScenePartResolversCompanion(
       scenePartId: Value(scenePartId),
       resolverScript: Value(resolverScript),
     );
   }
 
-  factory FrameResolver.fromJson(
+  factory ScenePartResolver.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return FrameResolver(
+    return ScenePartResolver(
       scenePartId: serializer.fromJson<int>(json['scenePartId']),
       resolverScript: serializer.fromJson<String>(json['resolverScript']),
     );
@@ -2303,13 +2630,13 @@ class FrameResolver extends DataClass implements Insertable<FrameResolver> {
     };
   }
 
-  FrameResolver copyWith({int? scenePartId, String? resolverScript}) =>
-      FrameResolver(
+  ScenePartResolver copyWith({int? scenePartId, String? resolverScript}) =>
+      ScenePartResolver(
         scenePartId: scenePartId ?? this.scenePartId,
         resolverScript: resolverScript ?? this.resolverScript,
       );
-  FrameResolver copyWithCompanion(FrameResolversCompanion data) {
-    return FrameResolver(
+  ScenePartResolver copyWithCompanion(ScenePartResolversCompanion data) {
+    return ScenePartResolver(
       scenePartId: data.scenePartId.present
           ? data.scenePartId.value
           : this.scenePartId,
@@ -2321,7 +2648,7 @@ class FrameResolver extends DataClass implements Insertable<FrameResolver> {
 
   @override
   String toString() {
-    return (StringBuffer('FrameResolver(')
+    return (StringBuffer('ScenePartResolver(')
           ..write('scenePartId: $scenePartId, ')
           ..write('resolverScript: $resolverScript')
           ..write(')'))
@@ -2333,23 +2660,23 @@ class FrameResolver extends DataClass implements Insertable<FrameResolver> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is FrameResolver &&
+      (other is ScenePartResolver &&
           other.scenePartId == this.scenePartId &&
           other.resolverScript == this.resolverScript);
 }
 
-class FrameResolversCompanion extends UpdateCompanion<FrameResolver> {
+class ScenePartResolversCompanion extends UpdateCompanion<ScenePartResolver> {
   final Value<int> scenePartId;
   final Value<String> resolverScript;
-  const FrameResolversCompanion({
+  const ScenePartResolversCompanion({
     this.scenePartId = const Value.absent(),
     this.resolverScript = const Value.absent(),
   });
-  FrameResolversCompanion.insert({
+  ScenePartResolversCompanion.insert({
     this.scenePartId = const Value.absent(),
     required String resolverScript,
   }) : resolverScript = Value(resolverScript);
-  static Insertable<FrameResolver> custom({
+  static Insertable<ScenePartResolver> custom({
     Expression<int>? scenePartId,
     Expression<String>? resolverScript,
   }) {
@@ -2359,11 +2686,11 @@ class FrameResolversCompanion extends UpdateCompanion<FrameResolver> {
     });
   }
 
-  FrameResolversCompanion copyWith({
+  ScenePartResolversCompanion copyWith({
     Value<int>? scenePartId,
     Value<String>? resolverScript,
   }) {
-    return FrameResolversCompanion(
+    return ScenePartResolversCompanion(
       scenePartId: scenePartId ?? this.scenePartId,
       resolverScript: resolverScript ?? this.resolverScript,
     );
@@ -2383,7 +2710,7 @@ class FrameResolversCompanion extends UpdateCompanion<FrameResolver> {
 
   @override
   String toString() {
-    return (StringBuffer('FrameResolversCompanion(')
+    return (StringBuffer('ScenePartResolversCompanion(')
           ..write('scenePartId: $scenePartId, ')
           ..write('resolverScript: $resolverScript')
           ..write(')'))
@@ -2391,11 +2718,12 @@ class FrameResolversCompanion extends UpdateCompanion<FrameResolver> {
   }
 }
 
-class $CustomTable extends Custom with TableInfo<$CustomTable, CustomData> {
+class $CustomScenePartsTable extends CustomSceneParts
+    with TableInfo<$CustomScenePartsTable, CustomScenePart> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $CustomTable(this.attachedDatabase, [this._alias]);
+  $CustomScenePartsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _scenePartIdMeta = const VerificationMeta(
     'scenePartId',
   );
@@ -2427,10 +2755,10 @@ class $CustomTable extends Custom with TableInfo<$CustomTable, CustomData> {
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'custom';
+  static const String $name = 'custom_scene_parts';
   @override
   VerificationContext validateIntegrity(
-    Insertable<CustomData> instance, {
+    Insertable<CustomScenePart> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2458,9 +2786,9 @@ class $CustomTable extends Custom with TableInfo<$CustomTable, CustomData> {
   @override
   Set<GeneratedColumn> get $primaryKey => {scenePartId};
   @override
-  CustomData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  CustomScenePart map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return CustomData(
+    return CustomScenePart(
       scenePartId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}scene_part_id'],
@@ -2473,15 +2801,15 @@ class $CustomTable extends Custom with TableInfo<$CustomTable, CustomData> {
   }
 
   @override
-  $CustomTable createAlias(String alias) {
-    return $CustomTable(attachedDatabase, alias);
+  $CustomScenePartsTable createAlias(String alias) {
+    return $CustomScenePartsTable(attachedDatabase, alias);
   }
 }
 
-class CustomData extends DataClass implements Insertable<CustomData> {
+class CustomScenePart extends DataClass implements Insertable<CustomScenePart> {
   final int scenePartId;
   final String eventId;
-  const CustomData({required this.scenePartId, required this.eventId});
+  const CustomScenePart({required this.scenePartId, required this.eventId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2490,19 +2818,19 @@ class CustomData extends DataClass implements Insertable<CustomData> {
     return map;
   }
 
-  CustomCompanion toCompanion(bool nullToAbsent) {
-    return CustomCompanion(
+  CustomScenePartsCompanion toCompanion(bool nullToAbsent) {
+    return CustomScenePartsCompanion(
       scenePartId: Value(scenePartId),
       eventId: Value(eventId),
     );
   }
 
-  factory CustomData.fromJson(
+  factory CustomScenePart.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return CustomData(
+    return CustomScenePart(
       scenePartId: serializer.fromJson<int>(json['scenePartId']),
       eventId: serializer.fromJson<String>(json['eventId']),
     );
@@ -2516,12 +2844,13 @@ class CustomData extends DataClass implements Insertable<CustomData> {
     };
   }
 
-  CustomData copyWith({int? scenePartId, String? eventId}) => CustomData(
-    scenePartId: scenePartId ?? this.scenePartId,
-    eventId: eventId ?? this.eventId,
-  );
-  CustomData copyWithCompanion(CustomCompanion data) {
-    return CustomData(
+  CustomScenePart copyWith({int? scenePartId, String? eventId}) =>
+      CustomScenePart(
+        scenePartId: scenePartId ?? this.scenePartId,
+        eventId: eventId ?? this.eventId,
+      );
+  CustomScenePart copyWithCompanion(CustomScenePartsCompanion data) {
+    return CustomScenePart(
       scenePartId: data.scenePartId.present
           ? data.scenePartId.value
           : this.scenePartId,
@@ -2531,7 +2860,7 @@ class CustomData extends DataClass implements Insertable<CustomData> {
 
   @override
   String toString() {
-    return (StringBuffer('CustomData(')
+    return (StringBuffer('CustomScenePart(')
           ..write('scenePartId: $scenePartId, ')
           ..write('eventId: $eventId')
           ..write(')'))
@@ -2543,23 +2872,23 @@ class CustomData extends DataClass implements Insertable<CustomData> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CustomData &&
+      (other is CustomScenePart &&
           other.scenePartId == this.scenePartId &&
           other.eventId == this.eventId);
 }
 
-class CustomCompanion extends UpdateCompanion<CustomData> {
+class CustomScenePartsCompanion extends UpdateCompanion<CustomScenePart> {
   final Value<int> scenePartId;
   final Value<String> eventId;
-  const CustomCompanion({
+  const CustomScenePartsCompanion({
     this.scenePartId = const Value.absent(),
     this.eventId = const Value.absent(),
   });
-  CustomCompanion.insert({
+  CustomScenePartsCompanion.insert({
     this.scenePartId = const Value.absent(),
     required String eventId,
   }) : eventId = Value(eventId);
-  static Insertable<CustomData> custom({
+  static Insertable<CustomScenePart> custom({
     Expression<int>? scenePartId,
     Expression<String>? eventId,
   }) {
@@ -2569,8 +2898,11 @@ class CustomCompanion extends UpdateCompanion<CustomData> {
     });
   }
 
-  CustomCompanion copyWith({Value<int>? scenePartId, Value<String>? eventId}) {
-    return CustomCompanion(
+  CustomScenePartsCompanion copyWith({
+    Value<int>? scenePartId,
+    Value<String>? eventId,
+  }) {
+    return CustomScenePartsCompanion(
       scenePartId: scenePartId ?? this.scenePartId,
       eventId: eventId ?? this.eventId,
     );
@@ -2590,7 +2922,7 @@ class CustomCompanion extends UpdateCompanion<CustomData> {
 
   @override
   String toString() {
-    return (StringBuffer('CustomCompanion(')
+    return (StringBuffer('CustomScenePartsCompanion(')
           ..write('scenePartId: $scenePartId, ')
           ..write('eventId: $eventId')
           ..write(')'))
@@ -2599,7 +2931,7 @@ class CustomCompanion extends UpdateCompanion<CustomData> {
 }
 
 class $DialogueBoxesTable extends DialogueBoxes
-    with TableInfo<$DialogueBoxesTable, DialogueBoxe> {
+    with TableInfo<$DialogueBoxesTable, DialogueBox> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2647,7 +2979,7 @@ class $DialogueBoxesTable extends DialogueBoxes
   static const String $name = 'dialogue_boxes';
   @override
   VerificationContext validateIntegrity(
-    Insertable<DialogueBoxe> instance, {
+    Insertable<DialogueBox> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2681,9 +3013,9 @@ class $DialogueBoxesTable extends DialogueBoxes
   @override
   Set<GeneratedColumn> get $primaryKey => {frameScenePartId};
   @override
-  DialogueBoxe map(Map<String, dynamic> data, {String? tablePrefix}) {
+  DialogueBox map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return DialogueBoxe(
+    return DialogueBox(
       frameScenePartId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}frame_scene_part_id'],
@@ -2705,11 +3037,11 @@ class $DialogueBoxesTable extends DialogueBoxes
   }
 }
 
-class DialogueBoxe extends DataClass implements Insertable<DialogueBoxe> {
+class DialogueBox extends DataClass implements Insertable<DialogueBox> {
   final int frameScenePartId;
   final String? name;
   final String dialogue;
-  const DialogueBoxe({
+  const DialogueBox({
     required this.frameScenePartId,
     this.name,
     required this.dialogue,
@@ -2733,12 +3065,12 @@ class DialogueBoxe extends DataClass implements Insertable<DialogueBoxe> {
     );
   }
 
-  factory DialogueBoxe.fromJson(
+  factory DialogueBox.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return DialogueBoxe(
+    return DialogueBox(
       frameScenePartId: serializer.fromJson<int>(json['frameScenePartId']),
       name: serializer.fromJson<String?>(json['name']),
       dialogue: serializer.fromJson<String>(json['dialogue']),
@@ -2754,17 +3086,17 @@ class DialogueBoxe extends DataClass implements Insertable<DialogueBoxe> {
     };
   }
 
-  DialogueBoxe copyWith({
+  DialogueBox copyWith({
     int? frameScenePartId,
     Value<String?> name = const Value.absent(),
     String? dialogue,
-  }) => DialogueBoxe(
+  }) => DialogueBox(
     frameScenePartId: frameScenePartId ?? this.frameScenePartId,
     name: name.present ? name.value : this.name,
     dialogue: dialogue ?? this.dialogue,
   );
-  DialogueBoxe copyWithCompanion(DialogueBoxesCompanion data) {
-    return DialogueBoxe(
+  DialogueBox copyWithCompanion(DialogueBoxesCompanion data) {
+    return DialogueBox(
       frameScenePartId: data.frameScenePartId.present
           ? data.frameScenePartId.value
           : this.frameScenePartId,
@@ -2775,7 +3107,7 @@ class DialogueBoxe extends DataClass implements Insertable<DialogueBoxe> {
 
   @override
   String toString() {
-    return (StringBuffer('DialogueBoxe(')
+    return (StringBuffer('DialogueBox(')
           ..write('frameScenePartId: $frameScenePartId, ')
           ..write('name: $name, ')
           ..write('dialogue: $dialogue')
@@ -2788,13 +3120,13 @@ class DialogueBoxe extends DataClass implements Insertable<DialogueBoxe> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is DialogueBoxe &&
+      (other is DialogueBox &&
           other.frameScenePartId == this.frameScenePartId &&
           other.name == this.name &&
           other.dialogue == this.dialogue);
 }
 
-class DialogueBoxesCompanion extends UpdateCompanion<DialogueBoxe> {
+class DialogueBoxesCompanion extends UpdateCompanion<DialogueBox> {
   final Value<int> frameScenePartId;
   final Value<String?> name;
   final Value<String> dialogue;
@@ -2808,7 +3140,7 @@ class DialogueBoxesCompanion extends UpdateCompanion<DialogueBoxe> {
     this.name = const Value.absent(),
     required String dialogue,
   }) : dialogue = Value(dialogue);
-  static Insertable<DialogueBoxe> custom({
+  static Insertable<DialogueBox> custom({
     Expression<int>? frameScenePartId,
     Expression<String>? name,
     Expression<String>? dialogue,
@@ -2896,11 +3228,11 @@ class $FramePosesTable extends FramePoses
   late final GeneratedColumn<int> poseId = GeneratedColumn<int>(
     'pose_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES poses (id) ON DELETE CASCADE',
+      'REFERENCES pose_metadatas (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _orderMeta = const VerificationMeta('order');
@@ -2945,8 +3277,6 @@ class $FramePosesTable extends FramePoses
         _poseIdMeta,
         poseId.isAcceptableOrUnknown(data['pose_id']!, _poseIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_poseIdMeta);
     }
     if (data.containsKey('order')) {
       context.handle(
@@ -2976,7 +3306,7 @@ class $FramePosesTable extends FramePoses
       poseId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}pose_id'],
-      )!,
+      ),
       order: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}order'],
@@ -2993,12 +3323,12 @@ class $FramePosesTable extends FramePoses
 class FramePose extends DataClass implements Insertable<FramePose> {
   final int id;
   final int frameScenePartId;
-  final int poseId;
+  final int? poseId;
   final double order;
   const FramePose({
     required this.id,
     required this.frameScenePartId,
-    required this.poseId,
+    this.poseId,
     required this.order,
   });
   @override
@@ -3006,7 +3336,9 @@ class FramePose extends DataClass implements Insertable<FramePose> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['frame_scene_part_id'] = Variable<int>(frameScenePartId);
-    map['pose_id'] = Variable<int>(poseId);
+    if (!nullToAbsent || poseId != null) {
+      map['pose_id'] = Variable<int>(poseId);
+    }
     map['order'] = Variable<double>(order);
     return map;
   }
@@ -3015,7 +3347,9 @@ class FramePose extends DataClass implements Insertable<FramePose> {
     return FramePosesCompanion(
       id: Value(id),
       frameScenePartId: Value(frameScenePartId),
-      poseId: Value(poseId),
+      poseId: poseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(poseId),
       order: Value(order),
     );
   }
@@ -3028,7 +3362,7 @@ class FramePose extends DataClass implements Insertable<FramePose> {
     return FramePose(
       id: serializer.fromJson<int>(json['id']),
       frameScenePartId: serializer.fromJson<int>(json['frameScenePartId']),
-      poseId: serializer.fromJson<int>(json['poseId']),
+      poseId: serializer.fromJson<int?>(json['poseId']),
       order: serializer.fromJson<double>(json['order']),
     );
   }
@@ -3038,7 +3372,7 @@ class FramePose extends DataClass implements Insertable<FramePose> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'frameScenePartId': serializer.toJson<int>(frameScenePartId),
-      'poseId': serializer.toJson<int>(poseId),
+      'poseId': serializer.toJson<int?>(poseId),
       'order': serializer.toJson<double>(order),
     };
   }
@@ -3046,12 +3380,12 @@ class FramePose extends DataClass implements Insertable<FramePose> {
   FramePose copyWith({
     int? id,
     int? frameScenePartId,
-    int? poseId,
+    Value<int?> poseId = const Value.absent(),
     double? order,
   }) => FramePose(
     id: id ?? this.id,
     frameScenePartId: frameScenePartId ?? this.frameScenePartId,
-    poseId: poseId ?? this.poseId,
+    poseId: poseId.present ? poseId.value : this.poseId,
     order: order ?? this.order,
   );
   FramePose copyWithCompanion(FramePosesCompanion data) {
@@ -3091,7 +3425,7 @@ class FramePose extends DataClass implements Insertable<FramePose> {
 class FramePosesCompanion extends UpdateCompanion<FramePose> {
   final Value<int> id;
   final Value<int> frameScenePartId;
-  final Value<int> poseId;
+  final Value<int?> poseId;
   final Value<double> order;
   const FramePosesCompanion({
     this.id = const Value.absent(),
@@ -3102,10 +3436,9 @@ class FramePosesCompanion extends UpdateCompanion<FramePose> {
   FramePosesCompanion.insert({
     this.id = const Value.absent(),
     required int frameScenePartId,
-    required int poseId,
+    this.poseId = const Value.absent(),
     required double order,
   }) : frameScenePartId = Value(frameScenePartId),
-       poseId = Value(poseId),
        order = Value(order);
   static Insertable<FramePose> custom({
     Expression<int>? id,
@@ -3124,7 +3457,7 @@ class FramePosesCompanion extends UpdateCompanion<FramePose> {
   FramePosesCompanion copyWith({
     Value<int>? id,
     Value<int>? frameScenePartId,
-    Value<int>? poseId,
+    Value<int?>? poseId,
     Value<double>? order,
   }) {
     return FramePosesCompanion(
@@ -3277,9 +3610,10 @@ class $SceneTimelineViewView
   $ScenePartsTable get sceneParts =>
       attachedDatabase.sceneParts.createAlias('t0');
   $FramesTable get frames => attachedDatabase.frames.createAlias('t1');
-  $FrameResolversTable get frameResolvers =>
-      attachedDatabase.frameResolvers.createAlias('t2');
-  $CustomTable get custom => attachedDatabase.custom.createAlias('t3');
+  $ScenePartResolversTable get scenePartResolvers =>
+      attachedDatabase.scenePartResolvers.createAlias('t2');
+  $CustomScenePartsTable get custom =>
+      attachedDatabase.customSceneParts.createAlias('t3');
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3372,7 +3706,7 @@ class $SceneTimelineViewView
     'resolver_script',
     aliasedName,
     true,
-    generatedAs: GeneratedAs(frameResolvers.resolverScript, false),
+    generatedAs: GeneratedAs(scenePartResolvers.resolverScript, false),
     type: DriftSqlType.string,
   );
   late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
@@ -3392,8 +3726,8 @@ class $SceneTimelineViewView
       (attachedDatabase.selectOnly(sceneParts)..addColumns($columns)).join([
         leftOuterJoin(frames, frames.scenePartId.equalsExp(sceneParts.id)),
         leftOuterJoin(
-          frameResolvers,
-          frameResolvers.scenePartId.equalsExp(sceneParts.id),
+          scenePartResolvers,
+          scenePartResolvers.scenePartId.equalsExp(sceneParts.id),
         ),
         leftOuterJoin(custom, custom.scenePartId.equalsExp(sceneParts.id)),
       ]);
@@ -3401,27 +3735,25 @@ class $SceneTimelineViewView
   Set<String> get readTables => const {
     'scene_parts',
     'frames',
-    'frame_resolvers',
-    'custom',
+    'scene_part_resolvers',
+    'custom_scene_parts',
   };
 }
 
 class FramePosesViewData extends DataClass {
   final int id;
   final int frameScenePartId;
-  final int poseId;
+  final int? poseId;
   final double order;
-  final int actorId;
+  final int groupId;
   final String name;
-  final Uint8List imageData;
   const FramePosesViewData({
     required this.id,
     required this.frameScenePartId,
-    required this.poseId,
+    this.poseId,
     required this.order,
-    required this.actorId,
+    required this.groupId,
     required this.name,
-    required this.imageData,
   });
   factory FramePosesViewData.fromJson(
     Map<String, dynamic> json, {
@@ -3431,11 +3763,10 @@ class FramePosesViewData extends DataClass {
     return FramePosesViewData(
       id: serializer.fromJson<int>(json['id']),
       frameScenePartId: serializer.fromJson<int>(json['frameScenePartId']),
-      poseId: serializer.fromJson<int>(json['poseId']),
+      poseId: serializer.fromJson<int?>(json['poseId']),
       order: serializer.fromJson<double>(json['order']),
-      actorId: serializer.fromJson<int>(json['actorId']),
+      groupId: serializer.fromJson<int>(json['groupId']),
       name: serializer.fromJson<String>(json['name']),
-      imageData: serializer.fromJson<Uint8List>(json['imageData']),
     );
   }
   @override
@@ -3444,30 +3775,27 @@ class FramePosesViewData extends DataClass {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'frameScenePartId': serializer.toJson<int>(frameScenePartId),
-      'poseId': serializer.toJson<int>(poseId),
+      'poseId': serializer.toJson<int?>(poseId),
       'order': serializer.toJson<double>(order),
-      'actorId': serializer.toJson<int>(actorId),
+      'groupId': serializer.toJson<int>(groupId),
       'name': serializer.toJson<String>(name),
-      'imageData': serializer.toJson<Uint8List>(imageData),
     };
   }
 
   FramePosesViewData copyWith({
     int? id,
     int? frameScenePartId,
-    int? poseId,
+    Value<int?> poseId = const Value.absent(),
     double? order,
-    int? actorId,
+    int? groupId,
     String? name,
-    Uint8List? imageData,
   }) => FramePosesViewData(
     id: id ?? this.id,
     frameScenePartId: frameScenePartId ?? this.frameScenePartId,
-    poseId: poseId ?? this.poseId,
+    poseId: poseId.present ? poseId.value : this.poseId,
     order: order ?? this.order,
-    actorId: actorId ?? this.actorId,
+    groupId: groupId ?? this.groupId,
     name: name ?? this.name,
-    imageData: imageData ?? this.imageData,
   );
   @override
   String toString() {
@@ -3476,23 +3804,15 @@ class FramePosesViewData extends DataClass {
           ..write('frameScenePartId: $frameScenePartId, ')
           ..write('poseId: $poseId, ')
           ..write('order: $order, ')
-          ..write('actorId: $actorId, ')
-          ..write('name: $name, ')
-          ..write('imageData: $imageData')
+          ..write('groupId: $groupId, ')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-    id,
-    frameScenePartId,
-    poseId,
-    order,
-    actorId,
-    name,
-    $driftBlobEquality.hash(imageData),
-  );
+  int get hashCode =>
+      Object.hash(id, frameScenePartId, poseId, order, groupId, name);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3501,9 +3821,8 @@ class FramePosesViewData extends DataClass {
           other.frameScenePartId == this.frameScenePartId &&
           other.poseId == this.poseId &&
           other.order == this.order &&
-          other.actorId == this.actorId &&
-          other.name == this.name &&
-          $driftBlobEquality.equals(other.imageData, this.imageData));
+          other.groupId == this.groupId &&
+          other.name == this.name);
 }
 
 class $FramePosesViewView
@@ -3515,16 +3834,16 @@ class $FramePosesViewView
   $FramePosesViewView(this.attachedDatabase, [this._alias]);
   $FramePosesTable get framePoses =>
       attachedDatabase.framePoses.createAlias('t0');
-  $PosesTable get poses => attachedDatabase.poses.createAlias('t1');
+  $PoseMetadatasTable get poses =>
+      attachedDatabase.poseMetadatas.createAlias('t1');
   @override
   List<GeneratedColumn> get $columns => [
     id,
     frameScenePartId,
     poseId,
     order,
-    actorId,
+    groupId,
     name,
-    imageData,
   ];
   @override
   String get aliasedName => _alias ?? entityName;
@@ -3549,22 +3868,18 @@ class $FramePosesViewView
       poseId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}pose_id'],
-      )!,
+      ),
       order: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}order'],
       )!,
-      actorId: attachedDatabase.typeMapping.read(
+      groupId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}actor_id'],
+        data['${effectivePrefix}group_id'],
       )!,
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
-      )!,
-      imageData: attachedDatabase.typeMapping.read(
-        DriftSqlType.blob,
-        data['${effectivePrefix}image_data'],
       )!,
     );
   }
@@ -3586,7 +3901,7 @@ class $FramePosesViewView
   late final GeneratedColumn<int> poseId = GeneratedColumn<int>(
     'pose_id',
     aliasedName,
-    false,
+    true,
     generatedAs: GeneratedAs(framePoses.poseId, false),
     type: DriftSqlType.int,
   );
@@ -3597,11 +3912,11 @@ class $FramePosesViewView
     generatedAs: GeneratedAs(framePoses.order, false),
     type: DriftSqlType.double,
   );
-  late final GeneratedColumn<int> actorId = GeneratedColumn<int>(
-    'actor_id',
+  late final GeneratedColumn<int> groupId = GeneratedColumn<int>(
+    'group_id',
     aliasedName,
     false,
-    generatedAs: GeneratedAs(poses.actorId, false),
+    generatedAs: GeneratedAs(poses.groupId, false),
     type: DriftSqlType.int,
   );
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -3610,13 +3925,6 @@ class $FramePosesViewView
     false,
     generatedAs: GeneratedAs(poses.name, false),
     type: DriftSqlType.string,
-  );
-  late final GeneratedColumn<Uint8List> imageData = GeneratedColumn<Uint8List>(
-    'image_data',
-    aliasedName,
-    false,
-    generatedAs: GeneratedAs(poses.imageData, false),
-    type: DriftSqlType.blob,
   );
   @override
   $FramePosesViewView createAlias(String alias) {
@@ -3629,23 +3937,31 @@ class $FramePosesViewView
         innerJoin(poses, poses.id.equalsExp(framePoses.poseId)),
       ]);
   @override
-  Set<String> get readTables => const {'frame_poses', 'poses'};
+  Set<String> get readTables => const {'frame_poses', 'pose_metadatas'};
 }
 
 abstract class _$SceneGroup extends GeneratedDatabase {
   _$SceneGroup(QueryExecutor e) : super(e);
   $SceneGroupManager get managers => $SceneGroupManager(this);
   late final $PlacesTable places = $PlacesTable(this);
-  late final $BackgroundsTable backgrounds = $BackgroundsTable(this);
+  late final $BackgroundMetadatasTable backgroundMetadatas =
+      $BackgroundMetadatasTable(this);
+  late final $BackgroundImagesTable backgroundImages = $BackgroundImagesTable(
+    this,
+  );
   late final $ActorsTable actors = $ActorsTable(this);
-  late final $PosesTable poses = $PosesTable(this);
+  late final $PoseMetadatasTable poseMetadatas = $PoseMetadatasTable(this);
+  late final $PoseImagesTable poseImages = $PoseImagesTable(this);
   late final $ChoicesTable choices = $ChoicesTable(this);
   late final $ChoiceOptionsTable choiceOptions = $ChoiceOptionsTable(this);
   late final $ScenesTable scenes = $ScenesTable(this);
   late final $ScenePartsTable sceneParts = $ScenePartsTable(this);
   late final $FramesTable frames = $FramesTable(this);
-  late final $FrameResolversTable frameResolvers = $FrameResolversTable(this);
-  late final $CustomTable custom = $CustomTable(this);
+  late final $ScenePartResolversTable scenePartResolvers =
+      $ScenePartResolversTable(this);
+  late final $CustomScenePartsTable customSceneParts = $CustomScenePartsTable(
+    this,
+  );
   late final $DialogueBoxesTable dialogueBoxes = $DialogueBoxesTable(this);
   late final $FramePosesTable framePoses = $FramePosesTable(this);
   late final $SceneTimelineViewView sceneTimelineView = $SceneTimelineViewView(
@@ -3662,16 +3978,18 @@ abstract class _$SceneGroup extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     places,
-    backgrounds,
+    backgroundMetadatas,
+    backgroundImages,
     actors,
-    poses,
+    poseMetadatas,
+    poseImages,
     choices,
     choiceOptions,
     scenes,
     sceneParts,
     frames,
-    frameResolvers,
-    custom,
+    scenePartResolvers,
+    customSceneParts,
     dialogueBoxes,
     framePoses,
     sceneTimelineView,
@@ -3685,14 +4003,28 @@ abstract class _$SceneGroup extends GeneratedDatabase {
         'places',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('backgrounds', kind: UpdateKind.delete)],
+      result: [TableUpdate('background_metadatas', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'background_metadatas',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('background_images', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'actors',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('poses', kind: UpdateKind.delete)],
+      result: [TableUpdate('pose_metadatas', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'pose_metadatas',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('pose_images', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -3717,7 +4049,7 @@ abstract class _$SceneGroup extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'backgrounds',
+        'background_metadatas',
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('frames', kind: UpdateKind.update)],
@@ -3727,14 +4059,14 @@ abstract class _$SceneGroup extends GeneratedDatabase {
         'scene_parts',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('frame_resolvers', kind: UpdateKind.delete)],
+      result: [TableUpdate('scene_part_resolvers', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'scene_parts',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('custom', kind: UpdateKind.delete)],
+      result: [TableUpdate('custom_scene_parts', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -3752,10 +4084,10 @@ abstract class _$SceneGroup extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'poses',
+        'pose_metadatas',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('frame_poses', kind: UpdateKind.delete)],
+      result: [TableUpdate('frame_poses', kind: UpdateKind.update)],
     ),
   ]);
 }
@@ -3769,19 +4101,25 @@ final class $$PlacesTableReferences
     extends BaseReferences<_$SceneGroup, $PlacesTable, Place> {
   $$PlacesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$BackgroundsTable, List<Background>>
-  _backgroundsRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
-    db.backgrounds,
-    aliasName: $_aliasNameGenerator(db.places.id, db.backgrounds.placeId),
-  );
+  static MultiTypedResultKey<
+    $BackgroundMetadatasTable,
+    List<BackgroundMetadata>
+  >
+  _backgroundMetadatasRefsTable(_$SceneGroup db) =>
+      MultiTypedResultKey.fromTable(
+        db.backgroundMetadatas,
+        aliasName: 'places__id__background_metadatas__group_id',
+      );
 
-  $$BackgroundsTableProcessedTableManager get backgroundsRefs {
-    final manager = $$BackgroundsTableTableManager(
+  $$BackgroundMetadatasTableProcessedTableManager get backgroundMetadatasRefs {
+    final manager = $$BackgroundMetadatasTableTableManager(
       $_db,
-      $_db.backgrounds,
-    ).filter((f) => f.placeId.id.sqlEquals($_itemColumn<int>('id')!));
+      $_db.backgroundMetadatas,
+    ).filter((f) => f.groupId.id.sqlEquals($_itemColumn<int>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_backgroundsRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundMetadatasRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3806,22 +4144,22 @@ class $$PlacesTableFilterComposer extends Composer<_$SceneGroup, $PlacesTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  Expression<bool> backgroundsRefs(
-    Expression<bool> Function($$BackgroundsTableFilterComposer f) f,
+  Expression<bool> backgroundMetadatasRefs(
+    Expression<bool> Function($$BackgroundMetadatasTableFilterComposer f) f,
   ) {
-    final $$BackgroundsTableFilterComposer composer = $composerBuilder(
+    final $$BackgroundMetadatasTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.backgrounds,
-      getReferencedColumn: (t) => t.placeId,
+      referencedTable: $db.backgroundMetadatas,
+      getReferencedColumn: (t) => t.groupId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$BackgroundsTableFilterComposer(
+          }) => $$BackgroundMetadatasTableFilterComposer(
             $db: $db,
-            $table: $db.backgrounds,
+            $table: $db.backgroundMetadatas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3867,28 +4205,29 @@ class $$PlacesTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  Expression<T> backgroundsRefs<T extends Object>(
-    Expression<T> Function($$BackgroundsTableAnnotationComposer a) f,
+  Expression<T> backgroundMetadatasRefs<T extends Object>(
+    Expression<T> Function($$BackgroundMetadatasTableAnnotationComposer a) f,
   ) {
-    final $$BackgroundsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.backgrounds,
-      getReferencedColumn: (t) => t.placeId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BackgroundsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.backgrounds,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
+    final $$BackgroundMetadatasTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.backgroundMetadatas,
+          getReferencedColumn: (t) => t.groupId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer,
-          ),
-    );
+              }) => $$BackgroundMetadatasTableAnnotationComposer(
+                $db: $db,
+                $table: $db.backgroundMetadatas,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -3906,7 +4245,7 @@ class $$PlacesTableTableManager
           $$PlacesTableUpdateCompanionBuilder,
           (Place, $$PlacesTableReferences),
           Place,
-          PrefetchHooks Function({bool backgroundsRefs})
+          PrefetchHooks Function({bool backgroundMetadatasRefs})
         > {
   $$PlacesTableTableManager(_$SceneGroup db, $PlacesTable table)
     : super(
@@ -3933,25 +4272,31 @@ class $$PlacesTableTableManager
                     (e.readTable(table), $$PlacesTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({backgroundsRefs = false}) {
+          prefetchHooksCallback: ({backgroundMetadatasRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (backgroundsRefs) db.backgrounds],
+              explicitlyWatchedTables: [
+                if (backgroundMetadatasRefs) db.backgroundMetadatas,
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
-                  if (backgroundsRefs)
-                    await $_getPrefetchedData<Place, $PlacesTable, Background>(
+                  if (backgroundMetadatasRefs)
+                    await $_getPrefetchedData<
+                      Place,
+                      $PlacesTable,
+                      BackgroundMetadata
+                    >(
                       currentTable: table,
                       referencedTable: $$PlacesTableReferences
-                          ._backgroundsRefsTable(db),
+                          ._backgroundMetadatasRefsTable(db),
                       managerFromTypedResult: (p0) => $$PlacesTableReferences(
                         db,
                         table,
                         p0,
-                      ).backgroundsRefs,
+                      ).backgroundMetadatasRefs,
                       referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.placeId == item.id),
+                          referencedItems.where((e) => e.groupId == item.id),
                       typedResults: items,
                     ),
                 ];
@@ -3974,42 +4319,68 @@ typedef $$PlacesTableProcessedTableManager =
       $$PlacesTableUpdateCompanionBuilder,
       (Place, $$PlacesTableReferences),
       Place,
-      PrefetchHooks Function({bool backgroundsRefs})
+      PrefetchHooks Function({bool backgroundMetadatasRefs})
     >;
-typedef $$BackgroundsTableCreateCompanionBuilder =
-    BackgroundsCompanion Function({
+typedef $$BackgroundMetadatasTableCreateCompanionBuilder =
+    BackgroundMetadatasCompanion Function({
       Value<int> id,
-      required int placeId,
+      required int groupId,
       required String name,
-      required Uint8List imageData,
     });
-typedef $$BackgroundsTableUpdateCompanionBuilder =
-    BackgroundsCompanion Function({
+typedef $$BackgroundMetadatasTableUpdateCompanionBuilder =
+    BackgroundMetadatasCompanion Function({
       Value<int> id,
-      Value<int> placeId,
+      Value<int> groupId,
       Value<String> name,
-      Value<Uint8List> imageData,
     });
 
-final class $$BackgroundsTableReferences
-    extends BaseReferences<_$SceneGroup, $BackgroundsTable, Background> {
-  $$BackgroundsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $PlacesTable _placeIdTable(_$SceneGroup db) => db.places.createAlias(
-    $_aliasNameGenerator(db.backgrounds.placeId, db.places.id),
+final class $$BackgroundMetadatasTableReferences
+    extends
+        BaseReferences<
+          _$SceneGroup,
+          $BackgroundMetadatasTable,
+          BackgroundMetadata
+        > {
+  $$BackgroundMetadatasTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
   );
 
-  $$PlacesTableProcessedTableManager get placeId {
-    final $_column = $_itemColumn<int>('place_id')!;
+  static $PlacesTable _groupIdTable(_$SceneGroup db) =>
+      db.places.createAlias('background_metadatas__group_id__places__id');
+
+  $$PlacesTableProcessedTableManager get groupId {
+    final $_column = $_itemColumn<int>('group_id')!;
 
     final manager = $$PlacesTableTableManager(
       $_db,
       $_db.places,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_placeIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_groupIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$BackgroundImagesTable, List<BackgroundImage>>
+  _backgroundImagesRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
+    db.backgroundImages,
+    aliasName: 'background_metadatas__id__background_images__metadata_id',
+  );
+
+  $$BackgroundImagesTableProcessedTableManager get backgroundImagesRefs {
+    final manager = $$BackgroundImagesTableTableManager(
+      $_db,
+      $_db.backgroundImages,
+    ).filter((f) => f.metadataId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundImagesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
@@ -4017,7 +4388,7 @@ final class $$BackgroundsTableReferences
     _$SceneGroup db,
   ) => MultiTypedResultKey.fromTable(
     db.frames,
-    aliasName: $_aliasNameGenerator(db.backgrounds.id, db.frames.backgroundId),
+    aliasName: 'background_metadatas__id__frames__background_id',
   );
 
   $$FramesTableProcessedTableManager get framesRefs {
@@ -4033,9 +4404,9 @@ final class $$BackgroundsTableReferences
   }
 }
 
-class $$BackgroundsTableFilterComposer
-    extends Composer<_$SceneGroup, $BackgroundsTable> {
-  $$BackgroundsTableFilterComposer({
+class $$BackgroundMetadatasTableFilterComposer
+    extends Composer<_$SceneGroup, $BackgroundMetadatasTable> {
+  $$BackgroundMetadatasTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4052,15 +4423,10 @@ class $$BackgroundsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<Uint8List> get imageData => $composableBuilder(
-    column: $table.imageData,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$PlacesTableFilterComposer get placeId {
+  $$PlacesTableFilterComposer get groupId {
     final $$PlacesTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.placeId,
+      getCurrentColumn: (t) => t.groupId,
       referencedTable: $db.places,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -4078,6 +4444,31 @@ class $$BackgroundsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> backgroundImagesRefs(
+    Expression<bool> Function($$BackgroundImagesTableFilterComposer f) f,
+  ) {
+    final $$BackgroundImagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundImages,
+      getReferencedColumn: (t) => t.metadataId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundImagesTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundImages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> framesRefs(
@@ -4106,9 +4497,9 @@ class $$BackgroundsTableFilterComposer
   }
 }
 
-class $$BackgroundsTableOrderingComposer
-    extends Composer<_$SceneGroup, $BackgroundsTable> {
-  $$BackgroundsTableOrderingComposer({
+class $$BackgroundMetadatasTableOrderingComposer
+    extends Composer<_$SceneGroup, $BackgroundMetadatasTable> {
+  $$BackgroundMetadatasTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4125,15 +4516,10 @@ class $$BackgroundsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<Uint8List> get imageData => $composableBuilder(
-    column: $table.imageData,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$PlacesTableOrderingComposer get placeId {
+  $$PlacesTableOrderingComposer get groupId {
     final $$PlacesTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.placeId,
+      getCurrentColumn: (t) => t.groupId,
       referencedTable: $db.places,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -4154,9 +4540,9 @@ class $$BackgroundsTableOrderingComposer
   }
 }
 
-class $$BackgroundsTableAnnotationComposer
-    extends Composer<_$SceneGroup, $BackgroundsTable> {
-  $$BackgroundsTableAnnotationComposer({
+class $$BackgroundMetadatasTableAnnotationComposer
+    extends Composer<_$SceneGroup, $BackgroundMetadatasTable> {
+  $$BackgroundMetadatasTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4169,13 +4555,10 @@ class $$BackgroundsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<Uint8List> get imageData =>
-      $composableBuilder(column: $table.imageData, builder: (column) => column);
-
-  $$PlacesTableAnnotationComposer get placeId {
+  $$PlacesTableAnnotationComposer get groupId {
     final $$PlacesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.placeId,
+      getCurrentColumn: (t) => t.groupId,
       referencedTable: $db.places,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -4193,6 +4576,31 @@ class $$BackgroundsTableAnnotationComposer
           ),
     );
     return composer;
+  }
+
+  Expression<T> backgroundImagesRefs<T extends Object>(
+    Expression<T> Function($$BackgroundImagesTableAnnotationComposer a) f,
+  ) {
+    final $$BackgroundImagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundImages,
+      getReferencedColumn: (t) => t.metadataId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundImagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.backgroundImages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<T> framesRefs<T extends Object>(
@@ -4221,68 +4629,397 @@ class $$BackgroundsTableAnnotationComposer
   }
 }
 
-class $$BackgroundsTableTableManager
+class $$BackgroundMetadatasTableTableManager
     extends
         RootTableManager<
           _$SceneGroup,
-          $BackgroundsTable,
-          Background,
-          $$BackgroundsTableFilterComposer,
-          $$BackgroundsTableOrderingComposer,
-          $$BackgroundsTableAnnotationComposer,
-          $$BackgroundsTableCreateCompanionBuilder,
-          $$BackgroundsTableUpdateCompanionBuilder,
-          (Background, $$BackgroundsTableReferences),
-          Background,
-          PrefetchHooks Function({bool placeId, bool framesRefs})
+          $BackgroundMetadatasTable,
+          BackgroundMetadata,
+          $$BackgroundMetadatasTableFilterComposer,
+          $$BackgroundMetadatasTableOrderingComposer,
+          $$BackgroundMetadatasTableAnnotationComposer,
+          $$BackgroundMetadatasTableCreateCompanionBuilder,
+          $$BackgroundMetadatasTableUpdateCompanionBuilder,
+          (BackgroundMetadata, $$BackgroundMetadatasTableReferences),
+          BackgroundMetadata,
+          PrefetchHooks Function({
+            bool groupId,
+            bool backgroundImagesRefs,
+            bool framesRefs,
+          })
         > {
-  $$BackgroundsTableTableManager(_$SceneGroup db, $BackgroundsTable table)
-    : super(
+  $$BackgroundMetadatasTableTableManager(
+    _$SceneGroup db,
+    $BackgroundMetadatasTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$BackgroundsTableFilterComposer($db: db, $table: table),
+              $$BackgroundMetadatasTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$BackgroundsTableOrderingComposer($db: db, $table: table),
+              $$BackgroundMetadatasTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
           createComputedFieldComposer: () =>
-              $$BackgroundsTableAnnotationComposer($db: db, $table: table),
+              $$BackgroundMetadatasTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<int> placeId = const Value.absent(),
+                Value<int> groupId = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<Uint8List> imageData = const Value.absent(),
-              }) => BackgroundsCompanion(
+              }) => BackgroundMetadatasCompanion(
                 id: id,
-                placeId: placeId,
+                groupId: groupId,
                 name: name,
-                imageData: imageData,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                required int placeId,
+                required int groupId,
                 required String name,
-                required Uint8List imageData,
-              }) => BackgroundsCompanion.insert(
+              }) => BackgroundMetadatasCompanion.insert(
                 id: id,
-                placeId: placeId,
+                groupId: groupId,
                 name: name,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BackgroundMetadatasTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                groupId = false,
+                backgroundImagesRefs = false,
+                framesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (backgroundImagesRefs) db.backgroundImages,
+                    if (framesRefs) db.frames,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (groupId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.groupId,
+                                    referencedTable:
+                                        $$BackgroundMetadatasTableReferences
+                                            ._groupIdTable(db),
+                                    referencedColumn:
+                                        $$BackgroundMetadatasTableReferences
+                                            ._groupIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (backgroundImagesRefs)
+                        await $_getPrefetchedData<
+                          BackgroundMetadata,
+                          $BackgroundMetadatasTable,
+                          BackgroundImage
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BackgroundMetadatasTableReferences
+                              ._backgroundImagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BackgroundMetadatasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).backgroundImagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.metadataId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (framesRefs)
+                        await $_getPrefetchedData<
+                          BackgroundMetadata,
+                          $BackgroundMetadatasTable,
+                          Frame
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BackgroundMetadatasTableReferences
+                              ._framesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BackgroundMetadatasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).framesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.backgroundId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$BackgroundMetadatasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SceneGroup,
+      $BackgroundMetadatasTable,
+      BackgroundMetadata,
+      $$BackgroundMetadatasTableFilterComposer,
+      $$BackgroundMetadatasTableOrderingComposer,
+      $$BackgroundMetadatasTableAnnotationComposer,
+      $$BackgroundMetadatasTableCreateCompanionBuilder,
+      $$BackgroundMetadatasTableUpdateCompanionBuilder,
+      (BackgroundMetadata, $$BackgroundMetadatasTableReferences),
+      BackgroundMetadata,
+      PrefetchHooks Function({
+        bool groupId,
+        bool backgroundImagesRefs,
+        bool framesRefs,
+      })
+    >;
+typedef $$BackgroundImagesTableCreateCompanionBuilder =
+    BackgroundImagesCompanion Function({
+      Value<int> metadataId,
+      required Uint8List imageData,
+    });
+typedef $$BackgroundImagesTableUpdateCompanionBuilder =
+    BackgroundImagesCompanion Function({
+      Value<int> metadataId,
+      Value<Uint8List> imageData,
+    });
+
+final class $$BackgroundImagesTableReferences
+    extends
+        BaseReferences<_$SceneGroup, $BackgroundImagesTable, BackgroundImage> {
+  $$BackgroundImagesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $BackgroundMetadatasTable _metadataIdTable(_$SceneGroup db) => db
+      .backgroundMetadatas
+      .createAlias('background_images__metadata_id__background_metadatas__id');
+
+  $$BackgroundMetadatasTableProcessedTableManager get metadataId {
+    final $_column = $_itemColumn<int>('metadata_id')!;
+
+    final manager = $$BackgroundMetadatasTableTableManager(
+      $_db,
+      $_db.backgroundMetadatas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_metadataIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BackgroundImagesTableFilterComposer
+    extends Composer<_$SceneGroup, $BackgroundImagesTable> {
+  $$BackgroundImagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<Uint8List> get imageData => $composableBuilder(
+    column: $table.imageData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BackgroundMetadatasTableFilterComposer get metadataId {
+    final $$BackgroundMetadatasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.metadataId,
+      referencedTable: $db.backgroundMetadatas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundMetadatasTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundMetadatas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BackgroundImagesTableOrderingComposer
+    extends Composer<_$SceneGroup, $BackgroundImagesTable> {
+  $$BackgroundImagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<Uint8List> get imageData => $composableBuilder(
+    column: $table.imageData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BackgroundMetadatasTableOrderingComposer get metadataId {
+    final $$BackgroundMetadatasTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.metadataId,
+          referencedTable: $db.backgroundMetadatas,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$BackgroundMetadatasTableOrderingComposer(
+                $db: $db,
+                $table: $db.backgroundMetadatas,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$BackgroundImagesTableAnnotationComposer
+    extends Composer<_$SceneGroup, $BackgroundImagesTable> {
+  $$BackgroundImagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<Uint8List> get imageData =>
+      $composableBuilder(column: $table.imageData, builder: (column) => column);
+
+  $$BackgroundMetadatasTableAnnotationComposer get metadataId {
+    final $$BackgroundMetadatasTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.metadataId,
+          referencedTable: $db.backgroundMetadatas,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$BackgroundMetadatasTableAnnotationComposer(
+                $db: $db,
+                $table: $db.backgroundMetadatas,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$BackgroundImagesTableTableManager
+    extends
+        RootTableManager<
+          _$SceneGroup,
+          $BackgroundImagesTable,
+          BackgroundImage,
+          $$BackgroundImagesTableFilterComposer,
+          $$BackgroundImagesTableOrderingComposer,
+          $$BackgroundImagesTableAnnotationComposer,
+          $$BackgroundImagesTableCreateCompanionBuilder,
+          $$BackgroundImagesTableUpdateCompanionBuilder,
+          (BackgroundImage, $$BackgroundImagesTableReferences),
+          BackgroundImage,
+          PrefetchHooks Function({bool metadataId})
+        > {
+  $$BackgroundImagesTableTableManager(
+    _$SceneGroup db,
+    $BackgroundImagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BackgroundImagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BackgroundImagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BackgroundImagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> metadataId = const Value.absent(),
+                Value<Uint8List> imageData = const Value.absent(),
+              }) => BackgroundImagesCompanion(
+                metadataId: metadataId,
+                imageData: imageData,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> metadataId = const Value.absent(),
+                required Uint8List imageData,
+              }) => BackgroundImagesCompanion.insert(
+                metadataId: metadataId,
                 imageData: imageData,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable(table),
-                  $$BackgroundsTableReferences(db, table, e),
+                  $$BackgroundImagesTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({placeId = false, framesRefs = false}) {
+          prefetchHooksCallback: ({metadataId = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (framesRefs) db.frames],
+              explicitlyWatchedTables: [],
               addJoins:
                   <
                     T extends TableManagerState<
@@ -4299,16 +5036,18 @@ class $$BackgroundsTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (placeId) {
+                    if (metadataId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.placeId,
-                                referencedTable: $$BackgroundsTableReferences
-                                    ._placeIdTable(db),
-                                referencedColumn: $$BackgroundsTableReferences
-                                    ._placeIdTable(db)
-                                    .id,
+                                currentColumn: table.metadataId,
+                                referencedTable:
+                                    $$BackgroundImagesTableReferences
+                                        ._metadataIdTable(db),
+                                referencedColumn:
+                                    $$BackgroundImagesTableReferences
+                                        ._metadataIdTable(db)
+                                        .id,
                               )
                               as T;
                     }
@@ -4316,29 +5055,7 @@ class $$BackgroundsTableTableManager
                     return state;
                   },
               getPrefetchedDataCallback: (items) async {
-                return [
-                  if (framesRefs)
-                    await $_getPrefetchedData<
-                      Background,
-                      $BackgroundsTable,
-                      Frame
-                    >(
-                      currentTable: table,
-                      referencedTable: $$BackgroundsTableReferences
-                          ._framesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$BackgroundsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).framesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.backgroundId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                return [];
               },
             );
           },
@@ -4346,19 +5063,19 @@ class $$BackgroundsTableTableManager
       );
 }
 
-typedef $$BackgroundsTableProcessedTableManager =
+typedef $$BackgroundImagesTableProcessedTableManager =
     ProcessedTableManager<
       _$SceneGroup,
-      $BackgroundsTable,
-      Background,
-      $$BackgroundsTableFilterComposer,
-      $$BackgroundsTableOrderingComposer,
-      $$BackgroundsTableAnnotationComposer,
-      $$BackgroundsTableCreateCompanionBuilder,
-      $$BackgroundsTableUpdateCompanionBuilder,
-      (Background, $$BackgroundsTableReferences),
-      Background,
-      PrefetchHooks Function({bool placeId, bool framesRefs})
+      $BackgroundImagesTable,
+      BackgroundImage,
+      $$BackgroundImagesTableFilterComposer,
+      $$BackgroundImagesTableOrderingComposer,
+      $$BackgroundImagesTableAnnotationComposer,
+      $$BackgroundImagesTableCreateCompanionBuilder,
+      $$BackgroundImagesTableUpdateCompanionBuilder,
+      (BackgroundImage, $$BackgroundImagesTableReferences),
+      BackgroundImage,
+      PrefetchHooks Function({bool metadataId})
     >;
 typedef $$ActorsTableCreateCompanionBuilder =
     ActorsCompanion Function({Value<int> id, required String name});
@@ -4369,20 +5086,19 @@ final class $$ActorsTableReferences
     extends BaseReferences<_$SceneGroup, $ActorsTable, Actor> {
   $$ActorsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$PosesTable, List<Pose>> _posesRefsTable(
-    _$SceneGroup db,
-  ) => MultiTypedResultKey.fromTable(
-    db.poses,
-    aliasName: $_aliasNameGenerator(db.actors.id, db.poses.actorId),
+  static MultiTypedResultKey<$PoseMetadatasTable, List<PoseMetadata>>
+  _poseMetadatasRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
+    db.poseMetadatas,
+    aliasName: 'actors__id__pose_metadatas__group_id',
   );
 
-  $$PosesTableProcessedTableManager get posesRefs {
-    final manager = $$PosesTableTableManager(
+  $$PoseMetadatasTableProcessedTableManager get poseMetadatasRefs {
+    final manager = $$PoseMetadatasTableTableManager(
       $_db,
-      $_db.poses,
-    ).filter((f) => f.actorId.id.sqlEquals($_itemColumn<int>('id')!));
+      $_db.poseMetadatas,
+    ).filter((f) => f.groupId.id.sqlEquals($_itemColumn<int>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_posesRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(_poseMetadatasRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4407,22 +5123,22 @@ class $$ActorsTableFilterComposer extends Composer<_$SceneGroup, $ActorsTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  Expression<bool> posesRefs(
-    Expression<bool> Function($$PosesTableFilterComposer f) f,
+  Expression<bool> poseMetadatasRefs(
+    Expression<bool> Function($$PoseMetadatasTableFilterComposer f) f,
   ) {
-    final $$PosesTableFilterComposer composer = $composerBuilder(
+    final $$PoseMetadatasTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.poses,
-      getReferencedColumn: (t) => t.actorId,
+      referencedTable: $db.poseMetadatas,
+      getReferencedColumn: (t) => t.groupId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PosesTableFilterComposer(
+          }) => $$PoseMetadatasTableFilterComposer(
             $db: $db,
-            $table: $db.poses,
+            $table: $db.poseMetadatas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4468,22 +5184,22 @@ class $$ActorsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  Expression<T> posesRefs<T extends Object>(
-    Expression<T> Function($$PosesTableAnnotationComposer a) f,
+  Expression<T> poseMetadatasRefs<T extends Object>(
+    Expression<T> Function($$PoseMetadatasTableAnnotationComposer a) f,
   ) {
-    final $$PosesTableAnnotationComposer composer = $composerBuilder(
+    final $$PoseMetadatasTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.poses,
-      getReferencedColumn: (t) => t.actorId,
+      referencedTable: $db.poseMetadatas,
+      getReferencedColumn: (t) => t.groupId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PosesTableAnnotationComposer(
+          }) => $$PoseMetadatasTableAnnotationComposer(
             $db: $db,
-            $table: $db.poses,
+            $table: $db.poseMetadatas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4507,7 +5223,7 @@ class $$ActorsTableTableManager
           $$ActorsTableUpdateCompanionBuilder,
           (Actor, $$ActorsTableReferences),
           Actor,
-          PrefetchHooks Function({bool posesRefs})
+          PrefetchHooks Function({bool poseMetadatasRefs})
         > {
   $$ActorsTableTableManager(_$SceneGroup db, $ActorsTable table)
     : super(
@@ -4534,23 +5250,31 @@ class $$ActorsTableTableManager
                     (e.readTable(table), $$ActorsTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({posesRefs = false}) {
+          prefetchHooksCallback: ({poseMetadatasRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (posesRefs) db.poses],
+              explicitlyWatchedTables: [
+                if (poseMetadatasRefs) db.poseMetadatas,
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
-                  if (posesRefs)
-                    await $_getPrefetchedData<Actor, $ActorsTable, Pose>(
+                  if (poseMetadatasRefs)
+                    await $_getPrefetchedData<
+                      Actor,
+                      $ActorsTable,
+                      PoseMetadata
+                    >(
                       currentTable: table,
-                      referencedTable: $$ActorsTableReferences._posesRefsTable(
+                      referencedTable: $$ActorsTableReferences
+                          ._poseMetadatasRefsTable(db),
+                      managerFromTypedResult: (p0) => $$ActorsTableReferences(
                         db,
-                      ),
-                      managerFromTypedResult: (p0) =>
-                          $$ActorsTableReferences(db, table, p0).posesRefs,
+                        table,
+                        p0,
+                      ).poseMetadatasRefs,
                       referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.actorId == item.id),
+                          referencedItems.where((e) => e.groupId == item.id),
                       typedResults: items,
                     ),
                 ];
@@ -4573,49 +5297,68 @@ typedef $$ActorsTableProcessedTableManager =
       $$ActorsTableUpdateCompanionBuilder,
       (Actor, $$ActorsTableReferences),
       Actor,
-      PrefetchHooks Function({bool posesRefs})
+      PrefetchHooks Function({bool poseMetadatasRefs})
     >;
-typedef $$PosesTableCreateCompanionBuilder =
-    PosesCompanion Function({
+typedef $$PoseMetadatasTableCreateCompanionBuilder =
+    PoseMetadatasCompanion Function({
       Value<int> id,
-      required int actorId,
+      required int groupId,
       required String name,
-      required Uint8List imageData,
     });
-typedef $$PosesTableUpdateCompanionBuilder =
-    PosesCompanion Function({
+typedef $$PoseMetadatasTableUpdateCompanionBuilder =
+    PoseMetadatasCompanion Function({
       Value<int> id,
-      Value<int> actorId,
+      Value<int> groupId,
       Value<String> name,
-      Value<Uint8List> imageData,
     });
 
-final class $$PosesTableReferences
-    extends BaseReferences<_$SceneGroup, $PosesTable, Pose> {
-  $$PosesTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $ActorsTable _actorIdTable(_$SceneGroup db) => db.actors.createAlias(
-    $_aliasNameGenerator(db.poses.actorId, db.actors.id),
+final class $$PoseMetadatasTableReferences
+    extends BaseReferences<_$SceneGroup, $PoseMetadatasTable, PoseMetadata> {
+  $$PoseMetadatasTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
   );
 
-  $$ActorsTableProcessedTableManager get actorId {
-    final $_column = $_itemColumn<int>('actor_id')!;
+  static $ActorsTable _groupIdTable(_$SceneGroup db) =>
+      db.actors.createAlias('pose_metadatas__group_id__actors__id');
+
+  $$ActorsTableProcessedTableManager get groupId {
+    final $_column = $_itemColumn<int>('group_id')!;
 
     final manager = $$ActorsTableTableManager(
       $_db,
       $_db.actors,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_actorIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_groupIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
 
+  static MultiTypedResultKey<$PoseImagesTable, List<PoseImage>>
+  _poseImagesRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
+    db.poseImages,
+    aliasName: 'pose_metadatas__id__pose_images__metadata_id',
+  );
+
+  $$PoseImagesTableProcessedTableManager get poseImagesRefs {
+    final manager = $$PoseImagesTableTableManager(
+      $_db,
+      $_db.poseImages,
+    ).filter((f) => f.metadataId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_poseImagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$FramePosesTable, List<FramePose>>
   _framePosesRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.framePoses,
-    aliasName: $_aliasNameGenerator(db.poses.id, db.framePoses.poseId),
+    aliasName: 'pose_metadatas__id__frame_poses__pose_id',
   );
 
   $$FramePosesTableProcessedTableManager get framePosesRefs {
@@ -4631,8 +5374,9 @@ final class $$PosesTableReferences
   }
 }
 
-class $$PosesTableFilterComposer extends Composer<_$SceneGroup, $PosesTable> {
-  $$PosesTableFilterComposer({
+class $$PoseMetadatasTableFilterComposer
+    extends Composer<_$SceneGroup, $PoseMetadatasTable> {
+  $$PoseMetadatasTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4649,15 +5393,10 @@ class $$PosesTableFilterComposer extends Composer<_$SceneGroup, $PosesTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<Uint8List> get imageData => $composableBuilder(
-    column: $table.imageData,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$ActorsTableFilterComposer get actorId {
+  $$ActorsTableFilterComposer get groupId {
     final $$ActorsTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.actorId,
+      getCurrentColumn: (t) => t.groupId,
       referencedTable: $db.actors,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -4675,6 +5414,31 @@ class $$PosesTableFilterComposer extends Composer<_$SceneGroup, $PosesTable> {
           ),
     );
     return composer;
+  }
+
+  Expression<bool> poseImagesRefs(
+    Expression<bool> Function($$PoseImagesTableFilterComposer f) f,
+  ) {
+    final $$PoseImagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.poseImages,
+      getReferencedColumn: (t) => t.metadataId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PoseImagesTableFilterComposer(
+            $db: $db,
+            $table: $db.poseImages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> framePosesRefs(
@@ -4703,8 +5467,9 @@ class $$PosesTableFilterComposer extends Composer<_$SceneGroup, $PosesTable> {
   }
 }
 
-class $$PosesTableOrderingComposer extends Composer<_$SceneGroup, $PosesTable> {
-  $$PosesTableOrderingComposer({
+class $$PoseMetadatasTableOrderingComposer
+    extends Composer<_$SceneGroup, $PoseMetadatasTable> {
+  $$PoseMetadatasTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4721,15 +5486,10 @@ class $$PosesTableOrderingComposer extends Composer<_$SceneGroup, $PosesTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<Uint8List> get imageData => $composableBuilder(
-    column: $table.imageData,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$ActorsTableOrderingComposer get actorId {
+  $$ActorsTableOrderingComposer get groupId {
     final $$ActorsTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.actorId,
+      getCurrentColumn: (t) => t.groupId,
       referencedTable: $db.actors,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -4750,9 +5510,9 @@ class $$PosesTableOrderingComposer extends Composer<_$SceneGroup, $PosesTable> {
   }
 }
 
-class $$PosesTableAnnotationComposer
-    extends Composer<_$SceneGroup, $PosesTable> {
-  $$PosesTableAnnotationComposer({
+class $$PoseMetadatasTableAnnotationComposer
+    extends Composer<_$SceneGroup, $PoseMetadatasTable> {
+  $$PoseMetadatasTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -4765,13 +5525,10 @@ class $$PosesTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<Uint8List> get imageData =>
-      $composableBuilder(column: $table.imageData, builder: (column) => column);
-
-  $$ActorsTableAnnotationComposer get actorId {
+  $$ActorsTableAnnotationComposer get groupId {
     final $$ActorsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.actorId,
+      getCurrentColumn: (t) => t.groupId,
       referencedTable: $db.actors,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -4789,6 +5546,31 @@ class $$PosesTableAnnotationComposer
           ),
     );
     return composer;
+  }
+
+  Expression<T> poseImagesRefs<T extends Object>(
+    Expression<T> Function($$PoseImagesTableAnnotationComposer a) f,
+  ) {
+    final $$PoseImagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.poseImages,
+      getReferencedColumn: (t) => t.metadataId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PoseImagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.poseImages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<T> framePosesRefs<T extends Object>(
@@ -4817,66 +5599,377 @@ class $$PosesTableAnnotationComposer
   }
 }
 
-class $$PosesTableTableManager
+class $$PoseMetadatasTableTableManager
     extends
         RootTableManager<
           _$SceneGroup,
-          $PosesTable,
-          Pose,
-          $$PosesTableFilterComposer,
-          $$PosesTableOrderingComposer,
-          $$PosesTableAnnotationComposer,
-          $$PosesTableCreateCompanionBuilder,
-          $$PosesTableUpdateCompanionBuilder,
-          (Pose, $$PosesTableReferences),
-          Pose,
-          PrefetchHooks Function({bool actorId, bool framePosesRefs})
+          $PoseMetadatasTable,
+          PoseMetadata,
+          $$PoseMetadatasTableFilterComposer,
+          $$PoseMetadatasTableOrderingComposer,
+          $$PoseMetadatasTableAnnotationComposer,
+          $$PoseMetadatasTableCreateCompanionBuilder,
+          $$PoseMetadatasTableUpdateCompanionBuilder,
+          (PoseMetadata, $$PoseMetadatasTableReferences),
+          PoseMetadata,
+          PrefetchHooks Function({
+            bool groupId,
+            bool poseImagesRefs,
+            bool framePosesRefs,
+          })
         > {
-  $$PosesTableTableManager(_$SceneGroup db, $PosesTable table)
+  $$PoseMetadatasTableTableManager(_$SceneGroup db, $PoseMetadatasTable table)
     : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$PosesTableFilterComposer($db: db, $table: table),
+              $$PoseMetadatasTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$PosesTableOrderingComposer($db: db, $table: table),
+              $$PoseMetadatasTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$PosesTableAnnotationComposer($db: db, $table: table),
+              $$PoseMetadatasTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
-                Value<int> actorId = const Value.absent(),
+                Value<int> groupId = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<Uint8List> imageData = const Value.absent(),
-              }) => PosesCompanion(
+              }) =>
+                  PoseMetadatasCompanion(id: id, groupId: groupId, name: name),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int groupId,
+                required String name,
+              }) => PoseMetadatasCompanion.insert(
                 id: id,
-                actorId: actorId,
+                groupId: groupId,
                 name: name,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PoseMetadatasTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                groupId = false,
+                poseImagesRefs = false,
+                framePosesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (poseImagesRefs) db.poseImages,
+                    if (framePosesRefs) db.framePoses,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (groupId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.groupId,
+                                    referencedTable:
+                                        $$PoseMetadatasTableReferences
+                                            ._groupIdTable(db),
+                                    referencedColumn:
+                                        $$PoseMetadatasTableReferences
+                                            ._groupIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (poseImagesRefs)
+                        await $_getPrefetchedData<
+                          PoseMetadata,
+                          $PoseMetadatasTable,
+                          PoseImage
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PoseMetadatasTableReferences
+                              ._poseImagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PoseMetadatasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).poseImagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.metadataId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (framePosesRefs)
+                        await $_getPrefetchedData<
+                          PoseMetadata,
+                          $PoseMetadatasTable,
+                          FramePose
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PoseMetadatasTableReferences
+                              ._framePosesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PoseMetadatasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).framePosesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.poseId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$PoseMetadatasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SceneGroup,
+      $PoseMetadatasTable,
+      PoseMetadata,
+      $$PoseMetadatasTableFilterComposer,
+      $$PoseMetadatasTableOrderingComposer,
+      $$PoseMetadatasTableAnnotationComposer,
+      $$PoseMetadatasTableCreateCompanionBuilder,
+      $$PoseMetadatasTableUpdateCompanionBuilder,
+      (PoseMetadata, $$PoseMetadatasTableReferences),
+      PoseMetadata,
+      PrefetchHooks Function({
+        bool groupId,
+        bool poseImagesRefs,
+        bool framePosesRefs,
+      })
+    >;
+typedef $$PoseImagesTableCreateCompanionBuilder =
+    PoseImagesCompanion Function({
+      Value<int> metadataId,
+      required Uint8List imageData,
+    });
+typedef $$PoseImagesTableUpdateCompanionBuilder =
+    PoseImagesCompanion Function({
+      Value<int> metadataId,
+      Value<Uint8List> imageData,
+    });
+
+final class $$PoseImagesTableReferences
+    extends BaseReferences<_$SceneGroup, $PoseImagesTable, PoseImage> {
+  $$PoseImagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PoseMetadatasTable _metadataIdTable(_$SceneGroup db) => db
+      .poseMetadatas
+      .createAlias('pose_images__metadata_id__pose_metadatas__id');
+
+  $$PoseMetadatasTableProcessedTableManager get metadataId {
+    final $_column = $_itemColumn<int>('metadata_id')!;
+
+    final manager = $$PoseMetadatasTableTableManager(
+      $_db,
+      $_db.poseMetadatas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_metadataIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PoseImagesTableFilterComposer
+    extends Composer<_$SceneGroup, $PoseImagesTable> {
+  $$PoseImagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<Uint8List> get imageData => $composableBuilder(
+    column: $table.imageData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PoseMetadatasTableFilterComposer get metadataId {
+    final $$PoseMetadatasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.metadataId,
+      referencedTable: $db.poseMetadatas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PoseMetadatasTableFilterComposer(
+            $db: $db,
+            $table: $db.poseMetadatas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PoseImagesTableOrderingComposer
+    extends Composer<_$SceneGroup, $PoseImagesTable> {
+  $$PoseImagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<Uint8List> get imageData => $composableBuilder(
+    column: $table.imageData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PoseMetadatasTableOrderingComposer get metadataId {
+    final $$PoseMetadatasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.metadataId,
+      referencedTable: $db.poseMetadatas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PoseMetadatasTableOrderingComposer(
+            $db: $db,
+            $table: $db.poseMetadatas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PoseImagesTableAnnotationComposer
+    extends Composer<_$SceneGroup, $PoseImagesTable> {
+  $$PoseImagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<Uint8List> get imageData =>
+      $composableBuilder(column: $table.imageData, builder: (column) => column);
+
+  $$PoseMetadatasTableAnnotationComposer get metadataId {
+    final $$PoseMetadatasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.metadataId,
+      referencedTable: $db.poseMetadatas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PoseMetadatasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.poseMetadatas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PoseImagesTableTableManager
+    extends
+        RootTableManager<
+          _$SceneGroup,
+          $PoseImagesTable,
+          PoseImage,
+          $$PoseImagesTableFilterComposer,
+          $$PoseImagesTableOrderingComposer,
+          $$PoseImagesTableAnnotationComposer,
+          $$PoseImagesTableCreateCompanionBuilder,
+          $$PoseImagesTableUpdateCompanionBuilder,
+          (PoseImage, $$PoseImagesTableReferences),
+          PoseImage,
+          PrefetchHooks Function({bool metadataId})
+        > {
+  $$PoseImagesTableTableManager(_$SceneGroup db, $PoseImagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PoseImagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PoseImagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PoseImagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> metadataId = const Value.absent(),
+                Value<Uint8List> imageData = const Value.absent(),
+              }) => PoseImagesCompanion(
+                metadataId: metadataId,
                 imageData: imageData,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
-                required int actorId,
-                required String name,
+                Value<int> metadataId = const Value.absent(),
                 required Uint8List imageData,
-              }) => PosesCompanion.insert(
-                id: id,
-                actorId: actorId,
-                name: name,
+              }) => PoseImagesCompanion.insert(
+                metadataId: metadataId,
                 imageData: imageData,
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$PosesTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable(table),
+                  $$PoseImagesTableReferences(db, table, e),
+                ),
               )
               .toList(),
-          prefetchHooksCallback: ({actorId = false, framePosesRefs = false}) {
+          prefetchHooksCallback: ({metadataId = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (framePosesRefs) db.framePoses],
+              explicitlyWatchedTables: [],
               addJoins:
                   <
                     T extends TableManagerState<
@@ -4893,15 +5986,15 @@ class $$PosesTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (actorId) {
+                    if (metadataId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.actorId,
-                                referencedTable: $$PosesTableReferences
-                                    ._actorIdTable(db),
-                                referencedColumn: $$PosesTableReferences
-                                    ._actorIdTable(db)
+                                currentColumn: table.metadataId,
+                                referencedTable: $$PoseImagesTableReferences
+                                    ._metadataIdTable(db),
+                                referencedColumn: $$PoseImagesTableReferences
+                                    ._metadataIdTable(db)
                                     .id,
                               )
                               as T;
@@ -4910,19 +6003,7 @@ class $$PosesTableTableManager
                     return state;
                   },
               getPrefetchedDataCallback: (items) async {
-                return [
-                  if (framePosesRefs)
-                    await $_getPrefetchedData<Pose, $PosesTable, FramePose>(
-                      currentTable: table,
-                      referencedTable: $$PosesTableReferences
-                          ._framePosesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$PosesTableReferences(db, table, p0).framePosesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.poseId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+                return [];
               },
             );
           },
@@ -4930,19 +6011,19 @@ class $$PosesTableTableManager
       );
 }
 
-typedef $$PosesTableProcessedTableManager =
+typedef $$PoseImagesTableProcessedTableManager =
     ProcessedTableManager<
       _$SceneGroup,
-      $PosesTable,
-      Pose,
-      $$PosesTableFilterComposer,
-      $$PosesTableOrderingComposer,
-      $$PosesTableAnnotationComposer,
-      $$PosesTableCreateCompanionBuilder,
-      $$PosesTableUpdateCompanionBuilder,
-      (Pose, $$PosesTableReferences),
-      Pose,
-      PrefetchHooks Function({bool actorId, bool framePosesRefs})
+      $PoseImagesTable,
+      PoseImage,
+      $$PoseImagesTableFilterComposer,
+      $$PoseImagesTableOrderingComposer,
+      $$PoseImagesTableAnnotationComposer,
+      $$PoseImagesTableCreateCompanionBuilder,
+      $$PoseImagesTableUpdateCompanionBuilder,
+      (PoseImage, $$PoseImagesTableReferences),
+      PoseImage,
+      PrefetchHooks Function({bool metadataId})
     >;
 typedef $$ChoicesTableCreateCompanionBuilder =
     ChoicesCompanion Function({Value<int> id, required String name});
@@ -4956,7 +6037,7 @@ final class $$ChoicesTableReferences
   static MultiTypedResultKey<$ChoiceOptionsTable, List<ChoiceOption>>
   _choiceOptionsRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.choiceOptions,
-    aliasName: $_aliasNameGenerator(db.choices.id, db.choiceOptions.choiceId),
+    aliasName: 'choices__id__choice_options__choice_id',
   );
 
   $$ChoiceOptionsTableProcessedTableManager get choiceOptionsRefs {
@@ -5193,9 +6274,7 @@ final class $$ChoiceOptionsTableReferences
   );
 
   static $ChoicesTable _choiceIdTable(_$SceneGroup db) =>
-      db.choices.createAlias(
-        $_aliasNameGenerator(db.choiceOptions.choiceId, db.choices.id),
-      );
+      db.choices.createAlias('choice_options__choice_id__choices__id');
 
   $$ChoicesTableProcessedTableManager get choiceId {
     final $_column = $_itemColumn<int>('choice_id')!;
@@ -5483,7 +6562,7 @@ final class $$ScenesTableReferences
   static MultiTypedResultKey<$ScenePartsTable, List<ScenePart>>
   _scenePartsRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.sceneParts,
-    aliasName: $_aliasNameGenerator(db.scenes.id, db.sceneParts.sceneId),
+    aliasName: 'scenes__id__scene_parts__scene_id',
   );
 
   $$ScenePartsTableProcessedTableManager get scenePartsRefs {
@@ -5703,9 +6782,8 @@ final class $$ScenePartsTableReferences
     extends BaseReferences<_$SceneGroup, $ScenePartsTable, ScenePart> {
   $$ScenePartsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $ScenesTable _sceneIdTable(_$SceneGroup db) => db.scenes.createAlias(
-    $_aliasNameGenerator(db.sceneParts.sceneId, db.scenes.id),
-  );
+  static $ScenesTable _sceneIdTable(_$SceneGroup db) =>
+      db.scenes.createAlias('scene_parts__scene_id__scenes__id');
 
   $$ScenesTableProcessedTableManager get sceneId {
     final $_column = $_itemColumn<int>('scene_id')!;
@@ -5725,7 +6803,7 @@ final class $$ScenePartsTableReferences
     _$SceneGroup db,
   ) => MultiTypedResultKey.fromTable(
     db.frames,
-    aliasName: $_aliasNameGenerator(db.sceneParts.id, db.frames.scenePartId),
+    aliasName: 'scene_parts__id__frames__scene_part_id',
   );
 
   $$FramesTableProcessedTableManager get framesRefs {
@@ -5740,41 +6818,42 @@ final class $$ScenePartsTableReferences
     );
   }
 
-  static MultiTypedResultKey<$FrameResolversTable, List<FrameResolver>>
-  _frameResolversRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
-    db.frameResolvers,
-    aliasName: $_aliasNameGenerator(
-      db.sceneParts.id,
-      db.frameResolvers.scenePartId,
-    ),
-  );
+  static MultiTypedResultKey<$ScenePartResolversTable, List<ScenePartResolver>>
+  _scenePartResolversRefsTable(_$SceneGroup db) =>
+      MultiTypedResultKey.fromTable(
+        db.scenePartResolvers,
+        aliasName: 'scene_parts__id__scene_part_resolvers__scene_part_id',
+      );
 
-  $$FrameResolversTableProcessedTableManager get frameResolversRefs {
-    final manager = $$FrameResolversTableTableManager(
+  $$ScenePartResolversTableProcessedTableManager get scenePartResolversRefs {
+    final manager = $$ScenePartResolversTableTableManager(
       $_db,
-      $_db.frameResolvers,
+      $_db.scenePartResolvers,
     ).filter((f) => f.scenePartId.id.sqlEquals($_itemColumn<int>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_frameResolversRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(
+      _scenePartResolversRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
-  static MultiTypedResultKey<$CustomTable, List<CustomData>> _customRefsTable(
-    _$SceneGroup db,
-  ) => MultiTypedResultKey.fromTable(
-    db.custom,
-    aliasName: $_aliasNameGenerator(db.sceneParts.id, db.custom.scenePartId),
+  static MultiTypedResultKey<$CustomScenePartsTable, List<CustomScenePart>>
+  _customScenePartsRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
+    db.customSceneParts,
+    aliasName: 'scene_parts__id__custom_scene_parts__scene_part_id',
   );
 
-  $$CustomTableProcessedTableManager get customRefs {
-    final manager = $$CustomTableTableManager(
+  $$CustomScenePartsTableProcessedTableManager get customScenePartsRefs {
+    final manager = $$CustomScenePartsTableTableManager(
       $_db,
-      $_db.custom,
+      $_db.customSceneParts,
     ).filter((f) => f.scenePartId.id.sqlEquals($_itemColumn<int>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_customRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(
+      _customScenePartsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -5853,22 +6932,22 @@ class $$ScenePartsTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> frameResolversRefs(
-    Expression<bool> Function($$FrameResolversTableFilterComposer f) f,
+  Expression<bool> scenePartResolversRefs(
+    Expression<bool> Function($$ScenePartResolversTableFilterComposer f) f,
   ) {
-    final $$FrameResolversTableFilterComposer composer = $composerBuilder(
+    final $$ScenePartResolversTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.frameResolvers,
+      referencedTable: $db.scenePartResolvers,
       getReferencedColumn: (t) => t.scenePartId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$FrameResolversTableFilterComposer(
+          }) => $$ScenePartResolversTableFilterComposer(
             $db: $db,
-            $table: $db.frameResolvers,
+            $table: $db.scenePartResolvers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5878,22 +6957,22 @@ class $$ScenePartsTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> customRefs(
-    Expression<bool> Function($$CustomTableFilterComposer f) f,
+  Expression<bool> customScenePartsRefs(
+    Expression<bool> Function($$CustomScenePartsTableFilterComposer f) f,
   ) {
-    final $$CustomTableFilterComposer composer = $composerBuilder(
+    final $$CustomScenePartsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.custom,
+      referencedTable: $db.customSceneParts,
       getReferencedColumn: (t) => t.scenePartId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$CustomTableFilterComposer(
+          }) => $$CustomScenePartsTableFilterComposer(
             $db: $db,
-            $table: $db.custom,
+            $table: $db.customSceneParts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6018,47 +7097,48 @@ class $$ScenePartsTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> frameResolversRefs<T extends Object>(
-    Expression<T> Function($$FrameResolversTableAnnotationComposer a) f,
+  Expression<T> scenePartResolversRefs<T extends Object>(
+    Expression<T> Function($$ScenePartResolversTableAnnotationComposer a) f,
   ) {
-    final $$FrameResolversTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.frameResolvers,
-      getReferencedColumn: (t) => t.scenePartId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$FrameResolversTableAnnotationComposer(
-            $db: $db,
-            $table: $db.frameResolvers,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
+    final $$ScenePartResolversTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scenePartResolvers,
+          getReferencedColumn: (t) => t.scenePartId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer,
-          ),
-    );
+              }) => $$ScenePartResolversTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scenePartResolvers,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
-  Expression<T> customRefs<T extends Object>(
-    Expression<T> Function($$CustomTableAnnotationComposer a) f,
+  Expression<T> customScenePartsRefs<T extends Object>(
+    Expression<T> Function($$CustomScenePartsTableAnnotationComposer a) f,
   ) {
-    final $$CustomTableAnnotationComposer composer = $composerBuilder(
+    final $$CustomScenePartsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.custom,
+      referencedTable: $db.customSceneParts,
       getReferencedColumn: (t) => t.scenePartId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$CustomTableAnnotationComposer(
+          }) => $$CustomScenePartsTableAnnotationComposer(
             $db: $db,
-            $table: $db.custom,
+            $table: $db.customSceneParts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6085,8 +7165,8 @@ class $$ScenePartsTableTableManager
           PrefetchHooks Function({
             bool sceneId,
             bool framesRefs,
-            bool frameResolversRefs,
-            bool customRefs,
+            bool scenePartResolversRefs,
+            bool customScenePartsRefs,
           })
         > {
   $$ScenePartsTableTableManager(_$SceneGroup db, $ScenePartsTable table)
@@ -6136,15 +7216,15 @@ class $$ScenePartsTableTableManager
               ({
                 sceneId = false,
                 framesRefs = false,
-                frameResolversRefs = false,
-                customRefs = false,
+                scenePartResolversRefs = false,
+                customScenePartsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (framesRefs) db.frames,
-                    if (frameResolversRefs) db.frameResolvers,
-                    if (customRefs) db.custom,
+                    if (scenePartResolversRefs) db.scenePartResolvers,
+                    if (customScenePartsRefs) db.customSceneParts,
                   ],
                   addJoins:
                       <
@@ -6202,42 +7282,42 @@ class $$ScenePartsTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (frameResolversRefs)
+                      if (scenePartResolversRefs)
                         await $_getPrefetchedData<
                           ScenePart,
                           $ScenePartsTable,
-                          FrameResolver
+                          ScenePartResolver
                         >(
                           currentTable: table,
                           referencedTable: $$ScenePartsTableReferences
-                              ._frameResolversRefsTable(db),
+                              ._scenePartResolversRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$ScenePartsTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).frameResolversRefs,
+                              ).scenePartResolversRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.scenePartId == item.id,
                               ),
                           typedResults: items,
                         ),
-                      if (customRefs)
+                      if (customScenePartsRefs)
                         await $_getPrefetchedData<
                           ScenePart,
                           $ScenePartsTable,
-                          CustomData
+                          CustomScenePart
                         >(
                           currentTable: table,
                           referencedTable: $$ScenePartsTableReferences
-                              ._customRefsTable(db),
+                              ._customScenePartsRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$ScenePartsTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).customRefs,
+                              ).customScenePartsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.scenePartId == item.id,
@@ -6267,8 +7347,8 @@ typedef $$ScenePartsTableProcessedTableManager =
       PrefetchHooks Function({
         bool sceneId,
         bool framesRefs,
-        bool frameResolversRefs,
-        bool customRefs,
+        bool scenePartResolversRefs,
+        bool customScenePartsRefs,
       })
     >;
 typedef $$FramesTableCreateCompanionBuilder =
@@ -6287,9 +7367,7 @@ final class $$FramesTableReferences
   $$FramesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) =>
-      db.sceneParts.createAlias(
-        $_aliasNameGenerator(db.frames.scenePartId, db.sceneParts.id),
-      );
+      db.sceneParts.createAlias('frames__scene_part_id__scene_parts__id');
 
   $$ScenePartsTableProcessedTableManager get scenePartId {
     final $_column = $_itemColumn<int>('scene_part_id')!;
@@ -6305,17 +7383,16 @@ final class $$FramesTableReferences
     );
   }
 
-  static $BackgroundsTable _backgroundIdTable(_$SceneGroup db) =>
-      db.backgrounds.createAlias(
-        $_aliasNameGenerator(db.frames.backgroundId, db.backgrounds.id),
-      );
+  static $BackgroundMetadatasTable _backgroundIdTable(_$SceneGroup db) => db
+      .backgroundMetadatas
+      .createAlias('frames__background_id__background_metadatas__id');
 
-  $$BackgroundsTableProcessedTableManager? get backgroundId {
+  $$BackgroundMetadatasTableProcessedTableManager? get backgroundId {
     final $_column = $_itemColumn<int>('background_id');
     if ($_column == null) return null;
-    final manager = $$BackgroundsTableTableManager(
+    final manager = $$BackgroundMetadatasTableTableManager(
       $_db,
-      $_db.backgrounds,
+      $_db.backgroundMetadatas,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_backgroundIdTable($_db));
     if (item == null) return manager;
@@ -6356,20 +7433,20 @@ class $$FramesTableFilterComposer extends Composer<_$SceneGroup, $FramesTable> {
     return composer;
   }
 
-  $$BackgroundsTableFilterComposer get backgroundId {
-    final $$BackgroundsTableFilterComposer composer = $composerBuilder(
+  $$BackgroundMetadatasTableFilterComposer get backgroundId {
+    final $$BackgroundMetadatasTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.backgroundId,
-      referencedTable: $db.backgrounds,
+      referencedTable: $db.backgroundMetadatas,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$BackgroundsTableFilterComposer(
+          }) => $$BackgroundMetadatasTableFilterComposer(
             $db: $db,
-            $table: $db.backgrounds,
+            $table: $db.backgroundMetadatas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6412,26 +7489,27 @@ class $$FramesTableOrderingComposer
     return composer;
   }
 
-  $$BackgroundsTableOrderingComposer get backgroundId {
-    final $$BackgroundsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.backgroundId,
-      referencedTable: $db.backgrounds,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BackgroundsTableOrderingComposer(
-            $db: $db,
-            $table: $db.backgrounds,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
+  $$BackgroundMetadatasTableOrderingComposer get backgroundId {
+    final $$BackgroundMetadatasTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.backgroundId,
+          referencedTable: $db.backgroundMetadatas,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer,
-          ),
-    );
+              }) => $$BackgroundMetadatasTableOrderingComposer(
+                $db: $db,
+                $table: $db.backgroundMetadatas,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return composer;
   }
 }
@@ -6468,26 +7546,27 @@ class $$FramesTableAnnotationComposer
     return composer;
   }
 
-  $$BackgroundsTableAnnotationComposer get backgroundId {
-    final $$BackgroundsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.backgroundId,
-      referencedTable: $db.backgrounds,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BackgroundsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.backgrounds,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
+  $$BackgroundMetadatasTableAnnotationComposer get backgroundId {
+    final $$BackgroundMetadatasTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.backgroundId,
+          referencedTable: $db.backgroundMetadatas,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer,
-          ),
-    );
+              }) => $$BackgroundMetadatasTableAnnotationComposer(
+                $db: $db,
+                $table: $db.backgroundMetadatas,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return composer;
   }
 }
@@ -6612,29 +7691,32 @@ typedef $$FramesTableProcessedTableManager =
       Frame,
       PrefetchHooks Function({bool scenePartId, bool backgroundId})
     >;
-typedef $$FrameResolversTableCreateCompanionBuilder =
-    FrameResolversCompanion Function({
+typedef $$ScenePartResolversTableCreateCompanionBuilder =
+    ScenePartResolversCompanion Function({
       Value<int> scenePartId,
       required String resolverScript,
     });
-typedef $$FrameResolversTableUpdateCompanionBuilder =
-    FrameResolversCompanion Function({
+typedef $$ScenePartResolversTableUpdateCompanionBuilder =
+    ScenePartResolversCompanion Function({
       Value<int> scenePartId,
       Value<String> resolverScript,
     });
 
-final class $$FrameResolversTableReferences
-    extends BaseReferences<_$SceneGroup, $FrameResolversTable, FrameResolver> {
-  $$FrameResolversTableReferences(
+final class $$ScenePartResolversTableReferences
+    extends
+        BaseReferences<
+          _$SceneGroup,
+          $ScenePartResolversTable,
+          ScenePartResolver
+        > {
+  $$ScenePartResolversTableReferences(
     super.$_db,
     super.$_table,
     super.$_typedResult,
   );
 
-  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) =>
-      db.sceneParts.createAlias(
-        $_aliasNameGenerator(db.frameResolvers.scenePartId, db.sceneParts.id),
-      );
+  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) => db.sceneParts
+      .createAlias('scene_part_resolvers__scene_part_id__scene_parts__id');
 
   $$ScenePartsTableProcessedTableManager get scenePartId {
     final $_column = $_itemColumn<int>('scene_part_id')!;
@@ -6651,9 +7733,9 @@ final class $$FrameResolversTableReferences
   }
 }
 
-class $$FrameResolversTableFilterComposer
-    extends Composer<_$SceneGroup, $FrameResolversTable> {
-  $$FrameResolversTableFilterComposer({
+class $$ScenePartResolversTableFilterComposer
+    extends Composer<_$SceneGroup, $ScenePartResolversTable> {
+  $$ScenePartResolversTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6689,9 +7771,9 @@ class $$FrameResolversTableFilterComposer
   }
 }
 
-class $$FrameResolversTableOrderingComposer
-    extends Composer<_$SceneGroup, $FrameResolversTable> {
-  $$FrameResolversTableOrderingComposer({
+class $$ScenePartResolversTableOrderingComposer
+    extends Composer<_$SceneGroup, $ScenePartResolversTable> {
+  $$ScenePartResolversTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6727,9 +7809,9 @@ class $$FrameResolversTableOrderingComposer
   }
 }
 
-class $$FrameResolversTableAnnotationComposer
-    extends Composer<_$SceneGroup, $FrameResolversTable> {
-  $$FrameResolversTableAnnotationComposer({
+class $$ScenePartResolversTableAnnotationComposer
+    extends Composer<_$SceneGroup, $ScenePartResolversTable> {
+  $$ScenePartResolversTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6765,37 +7847,42 @@ class $$FrameResolversTableAnnotationComposer
   }
 }
 
-class $$FrameResolversTableTableManager
+class $$ScenePartResolversTableTableManager
     extends
         RootTableManager<
           _$SceneGroup,
-          $FrameResolversTable,
-          FrameResolver,
-          $$FrameResolversTableFilterComposer,
-          $$FrameResolversTableOrderingComposer,
-          $$FrameResolversTableAnnotationComposer,
-          $$FrameResolversTableCreateCompanionBuilder,
-          $$FrameResolversTableUpdateCompanionBuilder,
-          (FrameResolver, $$FrameResolversTableReferences),
-          FrameResolver,
+          $ScenePartResolversTable,
+          ScenePartResolver,
+          $$ScenePartResolversTableFilterComposer,
+          $$ScenePartResolversTableOrderingComposer,
+          $$ScenePartResolversTableAnnotationComposer,
+          $$ScenePartResolversTableCreateCompanionBuilder,
+          $$ScenePartResolversTableUpdateCompanionBuilder,
+          (ScenePartResolver, $$ScenePartResolversTableReferences),
+          ScenePartResolver,
           PrefetchHooks Function({bool scenePartId})
         > {
-  $$FrameResolversTableTableManager(_$SceneGroup db, $FrameResolversTable table)
-    : super(
+  $$ScenePartResolversTableTableManager(
+    _$SceneGroup db,
+    $ScenePartResolversTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$FrameResolversTableFilterComposer($db: db, $table: table),
+              $$ScenePartResolversTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$FrameResolversTableOrderingComposer($db: db, $table: table),
+              $$ScenePartResolversTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$FrameResolversTableAnnotationComposer($db: db, $table: table),
+              $$ScenePartResolversTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<int> scenePartId = const Value.absent(),
                 Value<String> resolverScript = const Value.absent(),
-              }) => FrameResolversCompanion(
+              }) => ScenePartResolversCompanion(
                 scenePartId: scenePartId,
                 resolverScript: resolverScript,
               ),
@@ -6803,7 +7890,7 @@ class $$FrameResolversTableTableManager
               ({
                 Value<int> scenePartId = const Value.absent(),
                 required String resolverScript,
-              }) => FrameResolversCompanion.insert(
+              }) => ScenePartResolversCompanion.insert(
                 scenePartId: scenePartId,
                 resolverScript: resolverScript,
               ),
@@ -6811,7 +7898,7 @@ class $$FrameResolversTableTableManager
               .map(
                 (e) => (
                   e.readTable(table),
-                  $$FrameResolversTableReferences(db, table, e),
+                  $$ScenePartResolversTableReferences(db, table, e),
                 ),
               )
               .toList(),
@@ -6840,10 +7927,11 @@ class $$FrameResolversTableTableManager
                           state.withJoin(
                                 currentTable: table,
                                 currentColumn: table.scenePartId,
-                                referencedTable: $$FrameResolversTableReferences
-                                    ._scenePartIdTable(db),
+                                referencedTable:
+                                    $$ScenePartResolversTableReferences
+                                        ._scenePartIdTable(db),
                                 referencedColumn:
-                                    $$FrameResolversTableReferences
+                                    $$ScenePartResolversTableReferences
                                         ._scenePartIdTable(db)
                                         .id,
                               )
@@ -6861,33 +7949,42 @@ class $$FrameResolversTableTableManager
       );
 }
 
-typedef $$FrameResolversTableProcessedTableManager =
+typedef $$ScenePartResolversTableProcessedTableManager =
     ProcessedTableManager<
       _$SceneGroup,
-      $FrameResolversTable,
-      FrameResolver,
-      $$FrameResolversTableFilterComposer,
-      $$FrameResolversTableOrderingComposer,
-      $$FrameResolversTableAnnotationComposer,
-      $$FrameResolversTableCreateCompanionBuilder,
-      $$FrameResolversTableUpdateCompanionBuilder,
-      (FrameResolver, $$FrameResolversTableReferences),
-      FrameResolver,
+      $ScenePartResolversTable,
+      ScenePartResolver,
+      $$ScenePartResolversTableFilterComposer,
+      $$ScenePartResolversTableOrderingComposer,
+      $$ScenePartResolversTableAnnotationComposer,
+      $$ScenePartResolversTableCreateCompanionBuilder,
+      $$ScenePartResolversTableUpdateCompanionBuilder,
+      (ScenePartResolver, $$ScenePartResolversTableReferences),
+      ScenePartResolver,
       PrefetchHooks Function({bool scenePartId})
     >;
-typedef $$CustomTableCreateCompanionBuilder =
-    CustomCompanion Function({Value<int> scenePartId, required String eventId});
-typedef $$CustomTableUpdateCompanionBuilder =
-    CustomCompanion Function({Value<int> scenePartId, Value<String> eventId});
+typedef $$CustomScenePartsTableCreateCompanionBuilder =
+    CustomScenePartsCompanion Function({
+      Value<int> scenePartId,
+      required String eventId,
+    });
+typedef $$CustomScenePartsTableUpdateCompanionBuilder =
+    CustomScenePartsCompanion Function({
+      Value<int> scenePartId,
+      Value<String> eventId,
+    });
 
-final class $$CustomTableReferences
-    extends BaseReferences<_$SceneGroup, $CustomTable, CustomData> {
-  $$CustomTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$CustomScenePartsTableReferences
+    extends
+        BaseReferences<_$SceneGroup, $CustomScenePartsTable, CustomScenePart> {
+  $$CustomScenePartsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
 
-  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) =>
-      db.sceneParts.createAlias(
-        $_aliasNameGenerator(db.custom.scenePartId, db.sceneParts.id),
-      );
+  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) => db.sceneParts
+      .createAlias('custom_scene_parts__scene_part_id__scene_parts__id');
 
   $$ScenePartsTableProcessedTableManager get scenePartId {
     final $_column = $_itemColumn<int>('scene_part_id')!;
@@ -6904,8 +8001,9 @@ final class $$CustomTableReferences
   }
 }
 
-class $$CustomTableFilterComposer extends Composer<_$SceneGroup, $CustomTable> {
-  $$CustomTableFilterComposer({
+class $$CustomScenePartsTableFilterComposer
+    extends Composer<_$SceneGroup, $CustomScenePartsTable> {
+  $$CustomScenePartsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6941,9 +8039,9 @@ class $$CustomTableFilterComposer extends Composer<_$SceneGroup, $CustomTable> {
   }
 }
 
-class $$CustomTableOrderingComposer
-    extends Composer<_$SceneGroup, $CustomTable> {
-  $$CustomTableOrderingComposer({
+class $$CustomScenePartsTableOrderingComposer
+    extends Composer<_$SceneGroup, $CustomScenePartsTable> {
+  $$CustomScenePartsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -6979,9 +8077,9 @@ class $$CustomTableOrderingComposer
   }
 }
 
-class $$CustomTableAnnotationComposer
-    extends Composer<_$SceneGroup, $CustomTable> {
-  $$CustomTableAnnotationComposer({
+class $$CustomScenePartsTableAnnotationComposer
+    extends Composer<_$SceneGroup, $CustomScenePartsTable> {
+  $$CustomScenePartsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -7015,49 +8113,56 @@ class $$CustomTableAnnotationComposer
   }
 }
 
-class $$CustomTableTableManager
+class $$CustomScenePartsTableTableManager
     extends
         RootTableManager<
           _$SceneGroup,
-          $CustomTable,
-          CustomData,
-          $$CustomTableFilterComposer,
-          $$CustomTableOrderingComposer,
-          $$CustomTableAnnotationComposer,
-          $$CustomTableCreateCompanionBuilder,
-          $$CustomTableUpdateCompanionBuilder,
-          (CustomData, $$CustomTableReferences),
-          CustomData,
+          $CustomScenePartsTable,
+          CustomScenePart,
+          $$CustomScenePartsTableFilterComposer,
+          $$CustomScenePartsTableOrderingComposer,
+          $$CustomScenePartsTableAnnotationComposer,
+          $$CustomScenePartsTableCreateCompanionBuilder,
+          $$CustomScenePartsTableUpdateCompanionBuilder,
+          (CustomScenePart, $$CustomScenePartsTableReferences),
+          CustomScenePart,
           PrefetchHooks Function({bool scenePartId})
         > {
-  $$CustomTableTableManager(_$SceneGroup db, $CustomTable table)
-    : super(
+  $$CustomScenePartsTableTableManager(
+    _$SceneGroup db,
+    $CustomScenePartsTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$CustomTableFilterComposer($db: db, $table: table),
+              $$CustomScenePartsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$CustomTableOrderingComposer($db: db, $table: table),
+              $$CustomScenePartsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$CustomTableAnnotationComposer($db: db, $table: table),
+              $$CustomScenePartsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> scenePartId = const Value.absent(),
                 Value<String> eventId = const Value.absent(),
-              }) => CustomCompanion(scenePartId: scenePartId, eventId: eventId),
+              }) => CustomScenePartsCompanion(
+                scenePartId: scenePartId,
+                eventId: eventId,
+              ),
           createCompanionCallback:
               ({
                 Value<int> scenePartId = const Value.absent(),
                 required String eventId,
-              }) => CustomCompanion.insert(
+              }) => CustomScenePartsCompanion.insert(
                 scenePartId: scenePartId,
                 eventId: eventId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$CustomTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable(table),
+                  $$CustomScenePartsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback: ({scenePartId = false}) {
@@ -7085,11 +8190,13 @@ class $$CustomTableTableManager
                           state.withJoin(
                                 currentTable: table,
                                 currentColumn: table.scenePartId,
-                                referencedTable: $$CustomTableReferences
-                                    ._scenePartIdTable(db),
-                                referencedColumn: $$CustomTableReferences
-                                    ._scenePartIdTable(db)
-                                    .id,
+                                referencedTable:
+                                    $$CustomScenePartsTableReferences
+                                        ._scenePartIdTable(db),
+                                referencedColumn:
+                                    $$CustomScenePartsTableReferences
+                                        ._scenePartIdTable(db)
+                                        .id,
                               )
                               as T;
                     }
@@ -7105,18 +8212,18 @@ class $$CustomTableTableManager
       );
 }
 
-typedef $$CustomTableProcessedTableManager =
+typedef $$CustomScenePartsTableProcessedTableManager =
     ProcessedTableManager<
       _$SceneGroup,
-      $CustomTable,
-      CustomData,
-      $$CustomTableFilterComposer,
-      $$CustomTableOrderingComposer,
-      $$CustomTableAnnotationComposer,
-      $$CustomTableCreateCompanionBuilder,
-      $$CustomTableUpdateCompanionBuilder,
-      (CustomData, $$CustomTableReferences),
-      CustomData,
+      $CustomScenePartsTable,
+      CustomScenePart,
+      $$CustomScenePartsTableFilterComposer,
+      $$CustomScenePartsTableOrderingComposer,
+      $$CustomScenePartsTableAnnotationComposer,
+      $$CustomScenePartsTableCreateCompanionBuilder,
+      $$CustomScenePartsTableUpdateCompanionBuilder,
+      (CustomScenePart, $$CustomScenePartsTableReferences),
+      CustomScenePart,
       PrefetchHooks Function({bool scenePartId})
     >;
 typedef $$DialogueBoxesTableCreateCompanionBuilder =
@@ -7193,17 +8300,17 @@ class $$DialogueBoxesTableTableManager
         RootTableManager<
           _$SceneGroup,
           $DialogueBoxesTable,
-          DialogueBoxe,
+          DialogueBox,
           $$DialogueBoxesTableFilterComposer,
           $$DialogueBoxesTableOrderingComposer,
           $$DialogueBoxesTableAnnotationComposer,
           $$DialogueBoxesTableCreateCompanionBuilder,
           $$DialogueBoxesTableUpdateCompanionBuilder,
           (
-            DialogueBoxe,
-            BaseReferences<_$SceneGroup, $DialogueBoxesTable, DialogueBoxe>,
+            DialogueBox,
+            BaseReferences<_$SceneGroup, $DialogueBoxesTable, DialogueBox>,
           ),
-          DialogueBoxe,
+          DialogueBox,
           PrefetchHooks Function()
         > {
   $$DialogueBoxesTableTableManager(_$SceneGroup db, $DialogueBoxesTable table)
@@ -7249,31 +8356,31 @@ typedef $$DialogueBoxesTableProcessedTableManager =
     ProcessedTableManager<
       _$SceneGroup,
       $DialogueBoxesTable,
-      DialogueBoxe,
+      DialogueBox,
       $$DialogueBoxesTableFilterComposer,
       $$DialogueBoxesTableOrderingComposer,
       $$DialogueBoxesTableAnnotationComposer,
       $$DialogueBoxesTableCreateCompanionBuilder,
       $$DialogueBoxesTableUpdateCompanionBuilder,
       (
-        DialogueBoxe,
-        BaseReferences<_$SceneGroup, $DialogueBoxesTable, DialogueBoxe>,
+        DialogueBox,
+        BaseReferences<_$SceneGroup, $DialogueBoxesTable, DialogueBox>,
       ),
-      DialogueBoxe,
+      DialogueBox,
       PrefetchHooks Function()
     >;
 typedef $$FramePosesTableCreateCompanionBuilder =
     FramePosesCompanion Function({
       Value<int> id,
       required int frameScenePartId,
-      required int poseId,
+      Value<int?> poseId,
       required double order,
     });
 typedef $$FramePosesTableUpdateCompanionBuilder =
     FramePosesCompanion Function({
       Value<int> id,
       Value<int> frameScenePartId,
-      Value<int> poseId,
+      Value<int?> poseId,
       Value<double> order,
     });
 
@@ -7281,16 +8388,15 @@ final class $$FramePosesTableReferences
     extends BaseReferences<_$SceneGroup, $FramePosesTable, FramePose> {
   $$FramePosesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $PosesTable _poseIdTable(_$SceneGroup db) => db.poses.createAlias(
-    $_aliasNameGenerator(db.framePoses.poseId, db.poses.id),
-  );
+  static $PoseMetadatasTable _poseIdTable(_$SceneGroup db) =>
+      db.poseMetadatas.createAlias('frame_poses__pose_id__pose_metadatas__id');
 
-  $$PosesTableProcessedTableManager get poseId {
-    final $_column = $_itemColumn<int>('pose_id')!;
-
-    final manager = $$PosesTableTableManager(
+  $$PoseMetadatasTableProcessedTableManager? get poseId {
+    final $_column = $_itemColumn<int>('pose_id');
+    if ($_column == null) return null;
+    final manager = $$PoseMetadatasTableTableManager(
       $_db,
-      $_db.poses,
+      $_db.poseMetadatas,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_poseIdTable($_db));
     if (item == null) return manager;
@@ -7319,20 +8425,20 @@ class $$FramePosesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  $$PosesTableFilterComposer get poseId {
-    final $$PosesTableFilterComposer composer = $composerBuilder(
+  $$PoseMetadatasTableFilterComposer get poseId {
+    final $$PoseMetadatasTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.poseId,
-      referencedTable: $db.poses,
+      referencedTable: $db.poseMetadatas,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PosesTableFilterComposer(
+          }) => $$PoseMetadatasTableFilterComposer(
             $db: $db,
-            $table: $db.poses,
+            $table: $db.poseMetadatas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7362,20 +8468,20 @@ class $$FramePosesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  $$PosesTableOrderingComposer get poseId {
-    final $$PosesTableOrderingComposer composer = $composerBuilder(
+  $$PoseMetadatasTableOrderingComposer get poseId {
+    final $$PoseMetadatasTableOrderingComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.poseId,
-      referencedTable: $db.poses,
+      referencedTable: $db.poseMetadatas,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PosesTableOrderingComposer(
+          }) => $$PoseMetadatasTableOrderingComposer(
             $db: $db,
-            $table: $db.poses,
+            $table: $db.poseMetadatas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7401,20 +8507,20 @@ class $$FramePosesTableAnnotationComposer
   GeneratedColumn<double> get order =>
       $composableBuilder(column: $table.order, builder: (column) => column);
 
-  $$PosesTableAnnotationComposer get poseId {
-    final $$PosesTableAnnotationComposer composer = $composerBuilder(
+  $$PoseMetadatasTableAnnotationComposer get poseId {
+    final $$PoseMetadatasTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.poseId,
-      referencedTable: $db.poses,
+      referencedTable: $db.poseMetadatas,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$PosesTableAnnotationComposer(
+          }) => $$PoseMetadatasTableAnnotationComposer(
             $db: $db,
-            $table: $db.poses,
+            $table: $db.poseMetadatas,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7455,7 +8561,7 @@ class $$FramePosesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int> frameScenePartId = const Value.absent(),
-                Value<int> poseId = const Value.absent(),
+                Value<int?> poseId = const Value.absent(),
                 Value<double> order = const Value.absent(),
               }) => FramePosesCompanion(
                 id: id,
@@ -7467,7 +8573,7 @@ class $$FramePosesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required int frameScenePartId,
-                required int poseId,
+                Value<int?> poseId = const Value.absent(),
                 required double order,
               }) => FramePosesCompanion.insert(
                 id: id,
@@ -7548,12 +8654,16 @@ class $SceneGroupManager {
   $SceneGroupManager(this._db);
   $$PlacesTableTableManager get places =>
       $$PlacesTableTableManager(_db, _db.places);
-  $$BackgroundsTableTableManager get backgrounds =>
-      $$BackgroundsTableTableManager(_db, _db.backgrounds);
+  $$BackgroundMetadatasTableTableManager get backgroundMetadatas =>
+      $$BackgroundMetadatasTableTableManager(_db, _db.backgroundMetadatas);
+  $$BackgroundImagesTableTableManager get backgroundImages =>
+      $$BackgroundImagesTableTableManager(_db, _db.backgroundImages);
   $$ActorsTableTableManager get actors =>
       $$ActorsTableTableManager(_db, _db.actors);
-  $$PosesTableTableManager get poses =>
-      $$PosesTableTableManager(_db, _db.poses);
+  $$PoseMetadatasTableTableManager get poseMetadatas =>
+      $$PoseMetadatasTableTableManager(_db, _db.poseMetadatas);
+  $$PoseImagesTableTableManager get poseImages =>
+      $$PoseImagesTableTableManager(_db, _db.poseImages);
   $$ChoicesTableTableManager get choices =>
       $$ChoicesTableTableManager(_db, _db.choices);
   $$ChoiceOptionsTableTableManager get choiceOptions =>
@@ -7564,10 +8674,10 @@ class $SceneGroupManager {
       $$ScenePartsTableTableManager(_db, _db.sceneParts);
   $$FramesTableTableManager get frames =>
       $$FramesTableTableManager(_db, _db.frames);
-  $$FrameResolversTableTableManager get frameResolvers =>
-      $$FrameResolversTableTableManager(_db, _db.frameResolvers);
-  $$CustomTableTableManager get custom =>
-      $$CustomTableTableManager(_db, _db.custom);
+  $$ScenePartResolversTableTableManager get scenePartResolvers =>
+      $$ScenePartResolversTableTableManager(_db, _db.scenePartResolvers);
+  $$CustomScenePartsTableTableManager get customSceneParts =>
+      $$CustomScenePartsTableTableManager(_db, _db.customSceneParts);
   $$DialogueBoxesTableTableManager get dialogueBoxes =>
       $$DialogueBoxesTableTableManager(_db, _db.dialogueBoxes);
   $$FramePosesTableTableManager get framePoses =>

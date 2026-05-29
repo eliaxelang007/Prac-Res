@@ -19,14 +19,26 @@ class NovelEditorPage extends StatelessWidget {
             Expanded(
               flex: 3,
               child: Padding(
-                padding: EdgeInsets.all(DesignValues.small),
-                child: NovelSceneSelector(),
+                padding: EdgeInsets.all(DesignValues.verySmall),
+                child: SizedBox.expand(child: NovelSceneSelector()),
               ),
             ),
             VerticalDivider(),
-            Expanded(flex: 9, child: NovelSceneViewer()),
+            Expanded(
+              flex: 9,
+              child: Padding(
+                padding: EdgeInsets.all(DesignValues.verySmall),
+                child: NovelSceneViewer(),
+              ),
+            ),
             VerticalDivider(),
-            Expanded(flex: 3, child: NovelInspector()),
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: EdgeInsets.all(DesignValues.verySmall),
+                child: NovelInspector(),
+              ),
+            ),
           ],
         ),
       ),

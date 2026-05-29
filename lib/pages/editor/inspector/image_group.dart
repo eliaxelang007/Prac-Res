@@ -1,334 +1,383 @@
-// import "package:flutter/material.dart";
-// import 'package:drift/drift.dart' hide Column;
-// import 'package:flutter_hooks/flutter_hooks.dart';
-// import 'package:prac_res/data/data.dart';
-// import 'package:prac_res/pages/design_values.dart';
-// import 'package:prac_res/pages/open.dart';
+import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/material.dart' hide Table;
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:hooks_riverpod/misc.dart';
+import 'package:junction/junction.dart';
+import 'package:prac_res/data/data.dart';
+import 'package:prac_res/pages/design_values.dart';
+import 'package:prac_res/pages/editor/scene_selector.dart';
+import 'package:prac_res/pages/editor/scene_viewer.dart';
+import 'package:prac_res/pages/frame/frame.dart';
+import 'package:prac_res/pages/open.dart';
 
-// class NovelImageCollectionGroupInspector<
-//   ImageCollectionTable extends HasResultSet,
-//   ImageCollection
-// >
-//     extends HookWidget {
-//   final ResultSetImplementation<ImageCollectionTable, ImageCollection>
-//   collection;
-//   final Widget title;
-//   final Widget addParentLabel;
-//   final Widget emptySelectionLabel;
+final groupsProvider =
+    StreamProvider.family<List<Group>, EquatableTableInfo<GroupTable, Group>>((
+      ref,
+      equatableWrapper,
+    ) {
+      return equatableWrapper.wrapped.select().watch();
+    });
 
-//   final int? currentSelectionId;
-//   final ValueChanged<int> onSelectionChanged;
+final metadatasProvider =
+    StreamProvider.family<
+      List<ImageMetadata>,
+      (EquatableTableInfo<ImageMetadataTable, ImageMetadata>, int?)
+    >((ref, identifiers) {
+      final (imageMetadataTableWrapper, groupId) = identifiers;
 
-//   const NovelImageCollectionGroupInspector({
-//     super.key,
-//     required this.collection,
-//     required this.title,
-//     required this.addParentLabel,
-//     required this.emptySelectionLabel,
-//     required this.currentSelectionId,
-//     required this.onSelectionChanged,
-//   });
+      if (groupId == null) {
+        return Stream.value([]);
+      }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final designValues = Theme.of(context).extension<DesignValues>()!;
+      return (imageMetadataTableWrapper.wrapped.select()
+            ..where((row) => row.groupId.equals(groupId)))
+          .watch();
+    });
 
-//     final selectedPlaceId = useState<int?>(null);
+final metadataProvider =
+    StreamProvider.family<
+      ImageMetadata?,
+      (EquatableTableInfo<ImageMetadataTable, ImageMetadata>, int?)
+    >((ref, identifiers) {
+      final (imageMetadataTableWrapper, metadataId) = identifiers;
 
-//     return AlertDialog(
-//       title: title,
-//       content: SizedBox(
-//         width: 800,
-//         height: 500,
-//         child: Row(
-//           crossAxisAlignment: CrossAxisAlignment.stretch,
-//           children: [
-//             Expanded(
-//               flex: 1,
-//               child: NovelImageCollectionInspector(
-//                 collection: collection,
-//                 selectedPlaceId: selectedPlaceId,
-//                 addParentLabel: addParentLabel,
-//                 designValues: designValues,
-//               ),
-//             ),
-//             const VerticalDivider(width: 1),
-//             Expanded(
-//               flex: 3,
-//               child: selectedPlaceId.value == null
-//                   ? Center(child: emptySelectionLabel)
-//                   : NovelImagesInspector(
-//                       collection: collection,
-//                       placeId: selectedPlaceId.value!,
-//                       currentSelectionId: currentSelectionId,
-//                       designValues: designValues,
-//                       onSelectionChanged: (id) {
-//                         onSelectionChanged(id);
-//                         Navigator.of(context).pop();
-//                       },
-//                     ),
-//             ),
-//           ],
-//         ),
-//       ),
-//       actions: [
-//         TextButton(
-//           onPressed: () => Navigator.of(context).pop(),
-//           child: const Text("Cancel"),
-//         ),
-//       ],
-//     );
-//   }
-// }
+      if (metadataId == null) {
+        return Stream.value(null);
+      }
 
-// class NovelImageCollectionInspector<
-//   ImageCollectionTable extends HasResultSet,
-//   ImageCollection
-// >
-//     extends HookWidget {
-//   final ResultSetImplementation<ImageCollectionTable, ImageCollection>
-//   collection;
-//   final ValueNotifier<int?> selectedPlaceId;
-//   final Widget addParentLabel;
-//   final DesignValues designValues;
+      return (imageMetadataTableWrapper.wrapped.select()
+            ..where((metadataEntry) => metadataEntry.id.equals(metadataId)))
+          .watchSingleOrNull();
+    });
 
-//   const NovelImageCollectionInspector({
-//     super.key,
-//     required this.collection,
-//     required this.selectedPlaceId,
-//     required this.addParentLabel,
-//     required this.designValues,
-//   });
+class NovelImageSelectorPreview<G extends Group, M extends ImageMetadata>
+    extends StatelessWidget {
+  final ProviderListenable<TableInfo<GroupTable, G>> imageGroupTable;
+  final ProviderListenable<TableInfo<ImageMetadataTable, M>> imageMetadataTable;
+  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageDataTable;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     // Reactively watch the database! No more manual state updates.
-//     final placeStream = useStream(collection.select().watch());
-//     final placeList = placeStream.data ?? [];
+  final int? selectedImageId;
+  final void Function(int?) onImageSelected;
 
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.stretch,
-//       children: [
-//         Expanded(
-//           child: ListView.builder(
-//             itemCount: placeList.length,
-//             itemBuilder: (context, index) {
-//               final place = placeList[index];
-//               final isSelected = place.id == selectedPlaceId.value;
+  const NovelImageSelectorPreview({
+    super.key,
+    required this.imageGroupTable,
+    required this.imageMetadataTable,
+    required this.imageDataTable,
+    required this.selectedImageId,
+    required this.onImageSelected,
+  });
 
-//               return ListTile(
-//                 selected: isSelected,
-//                 selectedTileColor: Theme.of(
-//                   context,
-//                 ).primaryColor.withOpacity(0.1),
-//                 title: Text(place.name),
-//                 onTap: () => selectedPlaceId.value = place.id,
-//                 trailing: IconButton(
-//                   icon: const Icon(Icons.delete_outline, size: 20),
-//                   onPressed: () async {
-//                     // Drift automatically handles cascading deletes!
-//                     await db.places.deleteWhere((t) => t.id.equals(place.id));
-//                     if (isSelected) {
-//                       selectedPlaceId.value = null;
-//                     }
-//                   },
-//                 ),
-//               );
-//             },
-//           ),
-//         ),
-//         const Divider(height: 1),
-//         TextButton.icon(
-//           style: TextButton.styleFrom(
-//             padding: EdgeInsets.all(designValues.medium),
-//             shape: const RoundedRectangleBorder(),
-//           ),
-//           icon: const Icon(Icons.add),
-//           label: addParentLabel,
-//           onPressed: () async {
-//             final placeName = await showDialog<String>(
-//               context: context,
-//               builder: (context) =>
-//                   const NovelNewNameDialog(title: "New Parent"),
-//             );
+  @override
+  Widget build(BuildContext context) {
+    return NovelCard(
+      onTap: () => showDialog(
+        context: context,
+        builder: (context) => NovelQueryBuilder(
+          provider: (ref) => metadataProvider((
+            EquatableTableInfo(ref.watch(imageMetadataTable)),
+            selectedImageId,
+          )),
+          builder: (context, ref, metadata) {
+            return HookBuilder(
+              builder: (context) {
+                final maybeMetadataGroupId = metadata?.groupId;
 
-//             if (placeName != null && placeName.isNotEmpty) {
-//               // Simply insert into the database. The stream will auto-refresh the UI!
-//               await db
-//                   .into(db.places)
-//                   .insert(PlacesCompanion.insert(name: placeName));
-//             }
-//           },
-//         ),
-//       ],
-//     );
-//   }
-// }
+                final selectedImageGroup = useState<int?>(maybeMetadataGroupId);
 
-// class NovelImagesInspector<
-//   ImageCollectionTable extends HasResultSet,
-//   ImageCollection
-// >
-//     extends HookWidget {
-//   final ResultSetImplementation<ImageCollectionTable, ImageCollection>
-//   collection;
-//   final int placeId;
-//   final int? currentSelectionId;
-//   final DesignValues designValues;
-//   final ValueChanged<int> onSelectionChanged;
+                // We need this so that changes propagate because we're in a Dialog!
+                final selectedImageIdNotifier = useState<int?>(selectedImageId);
 
-//   const NovelImagesInspector({
-//     super.key,
-//     required this.collection,
-//     required this.placeId,
-//     required this.currentSelectionId,
-//     required this.designValues,
-//     required this.onSelectionChanged,
-//   });
+                return NovelImageSelectorLayout(
+                  imageGroupSelector: NovelImageGroupSelector(
+                    imageGroupTable: imageGroupTable,
+                    selectedGroupState: selectedImageGroup,
+                  ),
+                  imageSelector: NovelImageSelector(
+                    imageMetadataTable: imageMetadataTable,
+                    imageDataTable: imageDataTable,
+                    selectedImageGroup: selectedImageGroup.value,
+                    selectedImageId: selectedImageIdNotifier.value,
+                    onImageSelected: (newImageId) {
+                      selectedImageIdNotifier.value = newImageId;
+                      onImageSelected(newImageId);
+                    },
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+      child: NovelImage(
+        imageTable: imageDataTable,
+        maybeImageId: selectedImageId,
+      ),
+    );
+  }
+}
 
-//   @override
-//   Widget build(BuildContext context) {
-//     // Watch the children for the currently selected parent
-//     final backgroundStream = useStream(db.watchBackgroundsForPlace(placeId));
-//     final childList = backgroundStream.data ?? [];
+class NovelImageSelectorLayout extends StatelessWidget {
+  final Widget imageGroupSelector;
+  final Widget imageSelector;
 
-//     return GridView.builder(
-//       padding: EdgeInsets.all(designValues.small),
-//       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-//         crossAxisCount: 3,
-//         crossAxisSpacing: designValues.small,
-//         mainAxisSpacing: designValues.small,
-//         childAspectRatio: 0.85,
-//       ),
-//       itemCount: childList.length + 1,
-//       itemBuilder: (context, index) {
-//         if (index == childList.length) {
-//           return NovelAddChildButton(
-//             onAdd: () async {
-//               final imageBytes = await pickImage();
-//               if (imageBytes == null) return;
+  const NovelImageSelectorLayout({
+    super.key,
+    required this.imageGroupSelector,
+    required this.imageSelector,
+  });
 
-//               final customName = await NovelNewNameDialog.show(
-//                 context,
-//                 title: "Name this Image",
-//               );
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text("Select A Background"),
+      content: SizedBox(
+        width: 800,
+        height: 500,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: EdgeInsets.all(DesignValues.verySmall),
+                child: imageGroupSelector,
+              ),
+            ),
+            VerticalDivider(),
+            Expanded(
+              flex: 11,
+              child: Padding(
+                padding: EdgeInsets.all(DesignValues.verySmall),
+                child: imageSelector,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-//               if (customName != null && customName.isNotEmpty) {
-//                 // Execute a database transaction to insert both the background and its image blob
-//                 await db.transaction(() async {
-//                   final newBackgroundId = await db
-//                       .into(db.backgrounds)
-//                       .insert(
-//                         BackgroundsCompanion.insert(
-//                           placeId: placeId,
-//                           name: customName,
-//                         ),
-//                       );
+class NovelImageGroupSelector<G extends Group> extends StatelessWidget {
+  final ProviderListenable<TableInfo<GroupTable, G>> imageGroupTable;
+  final ValueNotifier<int?> selectedGroupState;
 
-//                   await db
-//                       .into(db.backgroundImages)
-//                       .insert(
-//                         BackgroundImagesCompanion.insert(
-//                           backgroundId: newBackgroundId,
-//                           imageData: imageBytes,
-//                         ),
-//                       );
-//                 });
-//               }
-//             },
-//           );
-//         }
+  const NovelImageGroupSelector({
+    super.key,
+    required this.imageGroupTable,
+    required this.selectedGroupState,
+  });
 
-//         final item = childList[index];
-//         final isCurrentlyApplied = currentSelectionId == item.background.id;
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.expand(
+      child: NovelGroupSelector(
+        title: Text("Image Group"),
+        onChanged: (selectedGroup) {
+          selectedGroupState.value = selectedGroup;
+        },
+        groupTableProvider: imageGroupTable,
+        selectedGroup: selectedGroupState.value,
+      ),
+    );
+  }
+}
 
-//         return Column(
-//           crossAxisAlignment: CrossAxisAlignment.stretch,
-//           children: [
-//             Expanded(
-//               child: Stack(
-//                 fit: StackFit.expand,
-//                 children: [
-//                   InkWell(
-//                     onTap: () => onSelectionChanged(item.background.id),
-//                     child: Container(
-//                       clipBehavior: Clip.antiAlias,
-//                       decoration: BoxDecoration(
-//                         borderRadius: BorderRadius.circular(designValues.small),
-//                         border: Border.all(
-//                           color: isCurrentlyApplied
-//                               ? Theme.of(context).primaryColor
-//                               : Colors.transparent,
-//                           width: 3,
-//                         ),
-//                       ),
-//                       child: Image.memory(item.image.imageData),
-//                     ),
-//                   ),
-//                   Positioned(
-//                     top: 0,
-//                     right: 0,
-//                     child: IconButton(
-//                       icon: const Icon(Icons.cancel, color: Colors.redAccent),
-//                       onPressed: () async {
-//                         // Cascade delete will remove the image data automatically
-//                         await db.backgrounds.deleteWhere(
-//                           (t) => t.id.equals(item.background.id),
-//                         );
-//                       },
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//             SizedBox(height: designValues.verySmall),
-//             TextFormField(
-//               key: ValueKey(item.background.id),
-//               initialValue: item.background.name,
-//               textAlign: TextAlign.center,
-//               style: Theme.of(context).textTheme.bodySmall,
-//               decoration: const InputDecoration(
-//                 isDense: true,
-//                 contentPadding: EdgeInsets.zero,
-//                 border: InputBorder.none,
-//               ),
-//               onChanged: (newValue) async {
-//                 if (newValue.isNotEmpty) {
-//                   // Update the database instantly
-//                   await (db.update(db.backgrounds)
-//                         ..where((t) => t.id.equals(item.background.id)))
-//                       .write(BackgroundsCompanion(name: Value(newValue)));
-//                 }
-//               },
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-// }
+class NovelImageSelector<M extends ImageMetadata> extends StatelessWidget {
+  final ProviderListenable<TableInfo<ImageMetadataTable, M>> imageMetadataTable;
+  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageDataTable;
+  final int? selectedImageGroup;
+  final int? selectedImageId;
+  final void Function(int?) onImageSelected;
 
-// class NovelAddChildButton extends StatelessWidget {
-//   final VoidCallback onAdd;
+  const NovelImageSelector({
+    super.key,
+    required this.imageMetadataTable,
+    required this.imageDataTable,
+    required this.selectedImageGroup,
+    required this.selectedImageId,
+    required this.onImageSelected,
+  });
 
-//   const NovelAddChildButton({super.key, required this.onAdd});
+  @override
+  Widget build(BuildContext context) {
+    final imageGroupId = selectedImageGroup;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final designValues = Theme.of(context).extension<DesignValues>()!;
+    return NovelQueryBuilder(
+      provider: (ref) => metadatasProvider((
+        EquatableTableInfo(ref.watch(imageMetadataTable)),
+        imageGroupId,
+      )),
+      builder: (context, ref, metadatas) {
+        return GridView.count(
+          crossAxisCount: 4,
+          children: [
+            for (final metadata in metadatas)
+              NovelImageSelectable(
+                selectedImageId: selectedImageId,
+                metadata: metadata,
+                onImageSelected: onImageSelected,
+                imageDataTable: imageDataTable,
+                imageMetadataTable: imageMetadataTable,
+              ),
 
-//     return InkWell(
-//       onTap: onAdd,
-//       child: Container(
-//         decoration: BoxDecoration(
-//           border: Border.all(
-//             color: Theme.of(context).dividerColor,
-//             style: BorderStyle.solid,
-//           ),
-//           borderRadius: BorderRadius.circular(designValues.small),
-//         ),
-//         child: const Center(child: Icon(Icons.add_rounded, size: 32)),
-//       ),
-//     );
-//   }
-// }
+            if (imageGroupId != null)
+              Center(
+                child: IconButton(
+                  onPressed: () async {
+                    final selectedImage =
+                        await WebReadHandle.showOpenFileDialog(
+                          accept: [
+                            XTypeGroup(
+                              extensions: <String>['jpg', 'jpeg', 'png'],
+                            ),
+                          ],
+                        );
+
+                    if (selectedImage.isEmpty) return;
+
+                    final imageBytes =
+                        (await selectedImage.first.read()).value.bytes;
+
+                    final customName = await NovelNewNameDialog.show(
+                      context,
+                      title: "Name this Image",
+                    );
+
+                    if (customName == null) return;
+
+                    // SAFETY: I'm kind of iffy about this one because of a potential database to table mismatch,
+                    // but AI says I should do it in a transaction, and I agree.
+                    final sceneGroup = ref.read(sceneGroupProvider);
+
+                    await sceneGroup.transaction(() async {
+                      final newMetadataId = await sceneGroup
+                          .into(ref.read(imageMetadataTable))
+                          .insert(
+                            ImageMetadataCompanion.insert(
+                              groupId: imageGroupId,
+                              name: customName,
+                            ),
+                          );
+
+                      await sceneGroup
+                          .into(ref.read(imageDataTable))
+                          .insert(
+                            BackgroundImagesCompanion.insert(
+                              metadataId: Value(newMetadataId),
+                              imageData: imageBytes,
+                            ),
+                          );
+                    });
+                  },
+                  icon: Icon(Icons.add_rounded),
+                ),
+              ),
+          ].map((widget) => AspectRatio(aspectRatio: 1, child: widget)).toList(),
+        );
+      },
+    );
+  }
+}
+
+class NovelImageSelectable<M extends ImageMetadata> extends StatelessWidget {
+  const NovelImageSelectable({
+    super.key,
+    required this.selectedImageId,
+    required this.metadata,
+    required this.onImageSelected,
+    required this.imageDataTable,
+    required this.imageMetadataTable,
+  });
+
+  final int? selectedImageId;
+  final ImageMetadata metadata;
+  final void Function(int?) onImageSelected;
+  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageDataTable;
+  final ProviderListenable<TableInfo<ImageMetadataTable, M>> imageMetadataTable;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          flex: 4,
+          child: NovelCard(
+            isSelected: selectedImageId == metadata.id,
+            onTap: () => onImageSelected(metadata.id),
+            child: NovelImage(
+              imageTable: imageDataTable,
+              maybeImageId: metadata.id,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: DesignValues.verySmall),
+            child: Consumer(
+              builder: (context, ref, child) {
+                return NovelEditableText(
+                  sourceText: metadata.name,
+                  builder: (controller, focusNode) => TextField(
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.zero,
+                      border: OutlineInputBorder(),
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                    textAlignVertical: TextAlignVertical.center,
+                    controller: controller,
+                    onChanged: (newName) async {
+                      final metadataTable = ref.read(imageMetadataTable);
+
+                      await (metadataTable.update()..where(
+                            (metadataEntry) =>
+                                metadataEntry.id.equals(metadata.id),
+                          ))
+                          .write(ImageMetadataCompanion(name: Value(newName)));
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class NovelEditableText extends StatelessWidget {
+  final String sourceText;
+  final Widget Function(TextEditingController controller, FocusNode focusNode)
+  builder;
+
+  const NovelEditableText({
+    super.key,
+    required this.builder,
+    this.sourceText = "",
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return HookBuilder(
+      builder: (context) {
+        final controller = useTextEditingController(text: sourceText);
+        final focusNode = useFocusNode();
+
+        // Safety precaution. Just in case!
+        useValueChanged<String, Null>(sourceText, (_, __) {
+          if (sourceText != controller.text && !focusNode.hasFocus) {
+            controller.text = sourceText;
+          }
+
+          return null;
+        });
+
+        return builder(controller, focusNode);
+      },
+    );
+  }
+}
