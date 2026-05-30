@@ -2,8 +2,8 @@ import 'package:flutter/material.dart' hide Table;
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:hooks_riverpod/misc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:junction/junction.dart';
 
 import 'package:prac_res/data/data.dart';

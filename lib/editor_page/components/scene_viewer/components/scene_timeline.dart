@@ -97,27 +97,30 @@ class NovelSceneTimeline extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 footer: AspectRatio(
                   aspectRatio: 1,
-                  child: IconButton(
-                    onPressed: () async {
-                      final selectedSceneId = ref.read(
-                        NovelSceneSelector.selectedSceneIdProvider,
-                      );
+                  child: Center(
+                    child: IconButton(
+                      onPressed: () async {
+                        final selectedSceneId = ref.read(
+                          NovelSceneSelector.selectedSceneIdProvider,
+                        );
 
-                      if (selectedSceneId == null) return;
+                        if (selectedSceneId == null) return;
 
-                      final sceneGroup = ref.read(
-                        NovelSceneGroupEditorPage.sceneGroupProvider,
-                      );
+                        final sceneGroup = ref.read(
+                          NovelSceneGroupEditorPage.sceneGroupProvider,
+                        );
 
-                      await sceneGroup.sceneParts.insert().insert(
-                        ScenePartsCompanion.insert(
-                          sceneId: selectedSceneId,
-                          order: (sceneParts.lastOrNull?.part.order ?? -1) + 1,
-                          partType: "frame",
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.add_rounded),
+                        await sceneGroup.sceneParts.insert().insert(
+                          ScenePartsCompanion.insert(
+                            sceneId: selectedSceneId,
+                            order:
+                                (sceneParts.lastOrNull?.part.order ?? -1) + 1,
+                            partType: "frame",
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add_rounded),
+                    ),
                   ),
                 ),
                 itemCount: scenePartCount,

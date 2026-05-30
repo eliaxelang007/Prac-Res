@@ -3,7 +3,7 @@ import 'package:flutter/material.dart' hide Table;
 import 'package:drift/drift.dart' hide Column;
 import 'package:handy/handy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hooks_riverpod/misc.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 
 import 'package:prac_res/data/data.dart';
