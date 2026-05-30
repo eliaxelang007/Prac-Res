@@ -1,48 +1,34 @@
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_riverpod/misc.dart';
+
 import 'package:prac_res/data/data.dart';
-import 'package:prac_res/pages/design_values.dart';
-import 'package:prac_res/pages/editor/inspector/image_group.dart';
-import 'package:prac_res/pages/frame/frame.dart';
-import 'package:prac_res/pages/open.dart';
-
-final dialogueBoxProvider =
-    StreamProvider.family<
-      DialogueBox?,
-      (EquatableTableInfo<DialogueBoxes, DialogueBox>, int)
-    >((ref, identifiers) {
-      final (dialogBoxTableWrapper, frameScenePartId) = identifiers;
-
-      return (dialogBoxTableWrapper.wrapped.select()..where(
-            (dialogBoxEntry) =>
-                dialogBoxEntry.frameScenePartId.equals(frameScenePartId),
-          ))
-          .watchSingleOrNull();
-    });
+import 'package:prac_res/components/editable_text.dart';
+import 'package:prac_res/components/design_values.dart';
+import 'package:prac_res/components/dialogs/deletion_dialog.dart';
+import 'package:prac_res/components/database/query_builder.dart';
+import 'package:prac_res/editor_page/components/scene_viewer/components/frame.dart';
 
 class NovelDialogueInspector extends StatelessWidget {
-  final ProviderListenable<$DialogueBoxesTable> dialogBoxTableProvider;
+  final ProviderListenable<$DialogueBoxesTable> dialogueBoxesTableProvider;
   final int frameScenePartId;
 
   const NovelDialogueInspector({
     super.key,
-    required this.dialogBoxTableProvider,
+    required this.dialogueBoxesTableProvider,
     required this.frameScenePartId,
   });
 
   @override
   Widget build(BuildContext context) {
     return NovelQueryBuilder(
-      provider: (ref) => dialogueBoxProvider((
-        EquatableTableInfo(ref.watch(dialogBoxTableProvider)),
-        frameScenePartId,
-      )),
-      builder: (context, ref, dialogBox) {
-        final hasDialogueBox = dialogBox != null;
+      query: (ref) =>
+          ref.watch(NovelDialogueArea.dialogueProvider(frameScenePartId)),
+      builder: (context, ref, dialogueBox) {
+        final hasDialogueBox = dialogueBox != null;
 
-        final name = dialogBox?.name;
+        final name = dialogueBox?.name;
         final hasNameBox = name != null;
 
         return Column(
@@ -52,10 +38,10 @@ class NovelDialogueInspector extends StatelessWidget {
               title: const Text("Dialogue Box"),
               value: hasDialogueBox,
               onChanged: (enabled) async {
-                final dialogBoxTable = ref.read(dialogBoxTableProvider);
+                final dialogueBoxTable = ref.read(dialogueBoxesTableProvider);
 
                 if (enabled) {
-                  await dialogBoxTable.insert().insert(
+                  await dialogueBoxTable.insert().insert(
                     DialogueBoxesCompanion.insert(
                       dialogue: "",
                       frameScenePartId: Value(frameScenePartId),
@@ -69,7 +55,7 @@ class NovelDialogueInspector extends StatelessWidget {
 
                 if (!confirmation) return;
 
-                await (dialogBoxTable.delete()..where(
+                await (dialogueBoxTable.delete()..where(
                       (dialogueBoxEntry) => dialogueBoxEntry.frameScenePartId
                           .equals(frameScenePartId),
                     ))
@@ -87,11 +73,11 @@ class NovelDialogueInspector extends StatelessWidget {
                         title: Text("Name Box"),
                         value: hasNameBox,
                         onChanged: (enabled) async {
-                          final dialogBoxTable = ref.read(
-                            dialogBoxTableProvider,
+                          final dialogueBoxTable = ref.read(
+                            dialogueBoxesTableProvider,
                           );
 
-                          final updateQuery = dialogBoxTable.update()
+                          final updateQuery = dialogueBoxTable.update()
                             ..where(
                               (dialogueBoxEntry) => dialogueBoxEntry
                                   .frameScenePartId
@@ -134,7 +120,9 @@ class NovelDialogueInspector extends StatelessWidget {
                                 hintText: "Enter name...",
                               ),
                               onChanged: (value) async {
-                                await (ref.read(dialogBoxTableProvider).update()
+                                await (ref
+                                        .read(dialogueBoxesTableProvider)
+                                        .update()
                                       ..where(
                                         (dialogueBoxEntry) => dialogueBoxEntry
                                             .frameScenePartId
@@ -157,7 +145,7 @@ class NovelDialogueInspector extends StatelessWidget {
                       ),
                       SizedBox(height: DesignValues.verySmall),
                       NovelEditableText(
-                        sourceText: dialogBox.dialogue,
+                        sourceText: dialogueBox.dialogue,
                         builder: (controller, focusNode) {
                           return TextField(
                             focusNode: focusNode,
@@ -168,7 +156,9 @@ class NovelDialogueInspector extends StatelessWidget {
                               hintText: "Enter dialogue...",
                             ),
                             onChanged: (value) async {
-                              await (ref.read(dialogBoxTableProvider).update()
+                              await (ref
+                                      .read(dialogueBoxesTableProvider)
+                                      .update()
                                     ..where(
                                       (dialogueBoxEntry) => dialogueBoxEntry
                                           .frameScenePartId
@@ -190,12 +180,6 @@ class NovelDialogueInspector extends StatelessWidget {
             ],
           ],
         );
-
-        // return NovelCard(
-        //   child: Column(
-        //     children: [Switch(value: true, onChanged: (newValue) {})],
-        //   ),
-        // );
       },
     );
   }

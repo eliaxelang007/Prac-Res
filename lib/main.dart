@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prac_res/pages/open.dart';
-import 'package:drift/drift.dart';
 
 import 'package:stack_trace/stack_trace.dart';
+import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:prac_res/open_page.dart';
 
 class App extends StatelessWidget {
   const App({super.key});

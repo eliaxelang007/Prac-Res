@@ -1,15 +1,19 @@
-import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart' hide Table;
+
+import 'package:drift/drift.dart' hide Column;
 import 'package:handy/handy.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hooks_riverpod/misc.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
+
 import 'package:prac_res/data/data.dart';
-import 'package:prac_res/pages/design_values.dart';
-import 'package:prac_res/pages/editor/scene_viewer.dart';
-import 'package:prac_res/pages/frame/animated_list.dart';
-import 'package:prac_res/pages/loading.dart';
-import 'package:prac_res/pages/open.dart';
+import 'package:prac_res/components/database/query_builder.dart';
+import 'package:prac_res/components/icon_buttons/fitted_icon.dart';
+import 'package:prac_res/components/lists/animated_list.dart';
+import 'package:prac_res/components/design_values.dart';
+import 'package:prac_res/editor_page/editor_page.dart';
+
+/* frame.dart */
 
 class NovelFrame extends StatelessWidget {
   const NovelFrame({super.key, required this.frame});
@@ -27,15 +31,7 @@ class NovelFrame extends StatelessWidget {
       children: [
         Positioned.fill(child: ColoredBox(color: Colors.white)),
 
-        Positioned.fill(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 500),
-            child: SizedBox.expand(
-              key: ValueKey(backgroundId),
-              child: NovelBackground(backgroundId: backgroundId),
-            ),
-          ),
-        ),
+        Positioned.fill(child: AnimatedBackground(backgroundId: backgroundId)),
 
         Positioned.fill(
           child: FittedBox(
@@ -44,7 +40,7 @@ class NovelFrame extends StatelessWidget {
               width: commonPhoneResolution.width,
               height: commonPhoneResolution.height,
               child: NovelFrameSafeArea(
-                poses: AnimatedNovelPoses(scenePartId: scenePartId),
+                poses: NovelPoses(scenePartId: scenePartId),
                 dialogue: NovelDialogueArea(scenePartId: scenePartId),
               ),
             ),
@@ -52,90 +48,6 @@ class NovelFrame extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-final imageProvider =
-    StreamProvider.family<
-      ImageData,
-      (EquatableTableInfo<ImageDataTable, ImageData>, int)
-    >((ref, ids) {
-      final (imageDataTableWrapper, imageId) = ids;
-
-      return (imageDataTableWrapper.wrapped.select()
-            ..where((poseImage) => poseImage.metadataId.equals(imageId)))
-          .watchSingle();
-    });
-
-class NovelPose extends StatelessWidget {
-  final int? poseId;
-
-  const NovelPose({super.key, required this.poseId});
-
-  static final poseImageTableProvider = Provider<$PoseImagesTable>((ref) {
-    final sceneGroup = ref.watch(sceneGroupProvider);
-    return sceneGroup.poseImages;
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return NovelImage(imageTable: poseImageTableProvider, maybeImageId: poseId);
-  }
-}
-
-class NovelBackground extends StatelessWidget {
-  final int? backgroundId;
-
-  const NovelBackground({super.key, required this.backgroundId});
-
-  static final backgroundImageTableProvider = Provider<$BackgroundImagesTable>((
-    ref,
-  ) {
-    final sceneGroup = ref.watch(sceneGroupProvider);
-    return sceneGroup.backgroundImages;
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return NovelImage(
-      imageTable: backgroundImageTableProvider,
-      maybeImageId: backgroundId,
-    );
-  }
-}
-
-class NovelImage extends StatelessWidget {
-  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageTable;
-  final int? maybeImageId;
-  final BoxFit? fit;
-
-  const NovelImage({
-    super.key,
-    required this.imageTable,
-    required this.maybeImageId,
-    this.fit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final imageId = maybeImageId;
-
-    return (imageId != null)
-        ? NovelQueryBuilder(
-            provider: (ref) => imageProvider((
-              EquatableTableInfo(ref.watch(imageTable)),
-              imageId,
-            )),
-            builder: (context, ref, data) => Image.memory(
-              key: ValueKey(data.metadataId),
-              data.imageData,
-              fit: fit,
-            ),
-          )
-        : NovelFittedIcon(
-            icon: Icon(Icons.image_not_supported_rounded),
-            sizePercentage: 0.5,
-          );
   }
 }
 
@@ -181,13 +93,71 @@ class NovelFrameSafeArea extends StatelessWidget {
   }
 }
 
-class AnimatedNovelPoses extends StatelessWidget {
+/* backgrounds.dart */
+
+class NovelBackground extends StatelessWidget {
+  final int? backgroundId;
+
+  const NovelBackground({super.key, required this.backgroundId});
+
+  static final backgroundImageTableProvider = Provider<$BackgroundImagesTable>((
+    ref,
+  ) {
+    final sceneGroup = ref.watch(NovelSceneGroupEditorPage.sceneGroupProvider);
+    return sceneGroup.backgroundImages;
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelImage(
+      imageTable: backgroundImageTableProvider,
+      maybeImageId: backgroundId,
+    );
+  }
+}
+
+class AnimatedBackground extends StatelessWidget {
+  const AnimatedBackground({super.key, required this.backgroundId});
+
+  final int? backgroundId;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 500),
+      child: SizedBox.expand(
+        key: ValueKey(backgroundId),
+        child: NovelBackground(backgroundId: backgroundId),
+      ),
+    );
+  }
+}
+
+/* poses.dart */
+
+class NovelPose extends StatelessWidget {
+  final int? poseId;
+
+  const NovelPose({super.key, required this.poseId});
+
+  static final poseImageTableProvider = Provider<$PoseImagesTable>((ref) {
+    final sceneGroup = ref.watch(NovelSceneGroupEditorPage.sceneGroupProvider);
+    return sceneGroup.poseImages;
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelImage(imageTable: poseImageTableProvider, maybeImageId: poseId);
+  }
+}
+
+class NovelPoses extends StatelessWidget {
   final Duration popInDuration;
   final Duration popOutDuration;
   final Duration switchPoseDuration;
   final int scenePartId;
 
-  const AnimatedNovelPoses({
+  const NovelPoses({
     super.key,
     required this.scenePartId,
     this.popInDuration = const Duration(milliseconds: 400),
@@ -197,7 +167,9 @@ class AnimatedNovelPoses extends StatelessWidget {
 
   static final framePoseProvider =
       StreamProvider.family<List<FramePosesViewData>, int>((ref, scenePartId) {
-        final sceneGroup = ref.watch(sceneGroupProvider);
+        final sceneGroup = ref.watch(
+          NovelSceneGroupEditorPage.sceneGroupProvider,
+        );
 
         return (sceneGroup.framePosesView.select()
               ..where(
@@ -212,7 +184,7 @@ class AnimatedNovelPoses extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NovelQueryBuilder(
-      provider: (_) => framePoseProvider(scenePartId),
+      query: (ref) => ref.watch(framePoseProvider(scenePartId)),
       builder: (context, ref, framePoses) => Center(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -254,30 +226,39 @@ class AnimatedNovelPoses extends StatelessWidget {
   }
 }
 
+/* dialogue.dart */
+
 class NovelDialogueArea extends StatelessWidget {
   final int scenePartId;
 
   const NovelDialogueArea({super.key, required this.scenePartId});
 
+  static final dialogueBoxesTableProvider = Provider<$DialogueBoxesTable>((
+    ref,
+  ) {
+    final sceneGroup = ref.watch(NovelSceneGroupEditorPage.sceneGroupProvider);
+    return sceneGroup.dialogueBoxes;
+  });
+
   static final dialogueProvider = StreamProvider.family<DialogueBox?, int>((
     ref,
-    scenePartId,
+    frameScenePartId,
   ) {
-    final sceneGroup = ref.watch(sceneGroupProvider);
-
-    return (sceneGroup.dialogueBoxes.select()
-          ..where((b) => b.frameScenePartId.equals(scenePartId)))
+    return (ref.watch(dialogueBoxesTableProvider).select()..where(
+          (dialogueBoxEntry) =>
+              dialogueBoxEntry.frameScenePartId.equals(frameScenePartId),
+        ))
         .watchSingleOrNull();
   });
 
   @override
   Widget build(BuildContext context) {
     return NovelQueryBuilder(
-      provider: (_) => dialogueProvider(scenePartId),
-      builder: (context, ref, dialog) {
-        if (dialog != null) {
-          final name = dialog.name;
-          final dialogue = dialog.dialogue;
+      query: (ref) => ref.watch(dialogueProvider(scenePartId)),
+      builder: (context, ref, dialogueBox) {
+        if (dialogueBox != null) {
+          final name = dialogueBox.name;
+          final dialogue = dialogueBox.dialogue;
 
           return Column(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -320,6 +301,26 @@ class NovelDialogueArea extends StatelessWidget {
   }
 }
 
+class NovelDialogueBox extends StatelessWidget {
+  final Widget dialogue;
+
+  const NovelDialogueBox({required this.dialogue, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(DesignValues.small),
+      child: ColoredBox(
+        color: Colors.blueGrey,
+        child: Padding(
+          padding: EdgeInsets.all(DesignValues.semiSmall),
+          child: dialogue,
+        ),
+      ),
+    );
+  }
+}
+
 class NovelNameBox extends StatelessWidget {
   const NovelNameBox({required this.name, super.key});
 
@@ -343,66 +344,53 @@ class NovelNameBox extends StatelessWidget {
   }
 }
 
-class NovelDialogueBox extends StatelessWidget {
-  final Widget dialogue;
+/* image.dart */
 
-  const NovelDialogueBox({required this.dialogue, super.key});
+class NovelImage extends StatelessWidget {
+  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageTable;
+  final int? maybeImageId;
+  final BoxFit? fit;
 
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(DesignValues.small),
-      child: ColoredBox(
-        color: Colors.blueGrey,
-        child: Padding(
-          padding: EdgeInsets.all(DesignValues.semiSmall),
-          child: dialogue,
-        ),
-      ),
-    );
-  }
-}
+  static final imageProvider =
+      StreamProvider.family<
+        ImageData,
+        (EquatableTableInfo<ImageDataTable, ImageData>, int)
+      >((ref, ids) {
+        final (imageDataTableWrapper, imageId) = ids;
 
-class NovelError extends StatelessWidget {
-  final Object exception;
-  final StackTrace stack;
+        return (imageDataTableWrapper.wrapped.select()
+              ..where((poseImage) => poseImage.metadataId.equals(imageId)))
+            .watchSingle();
+      });
 
-  const NovelError({required this.exception, required this.stack, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    debugPrintStack(stackTrace: stack);
-
-    return Center(child: ErrorWidget(exception));
-  }
-}
-
-class NovelQueryBuilder<QueryResult> extends StatelessWidget {
-  final ProviderListenable<AsyncValue<QueryResult>> Function(WidgetRef)
-  provider;
-  final Widget Function(BuildContext, WidgetRef, QueryResult) builder;
-  final bool skipLoadingOnReload;
-
-  const NovelQueryBuilder({
+  const NovelImage({
     super.key,
-    required this.provider,
-    required this.builder,
-    this.skipLoadingOnReload = true,
+    required this.imageTable,
+    required this.maybeImageId,
+    this.fit,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final result = ref.watch(provider(ref));
+    final imageId = maybeImageId;
 
-        return result.when(
-          skipLoadingOnReload: skipLoadingOnReload,
-          data: (data) => builder(context, ref, data),
-          loading: () => NovelLoading(),
-          error: (error, stack) => NovelError(exception: error, stack: stack),
-        );
-      },
-    );
+    return (imageId != null)
+        ? NovelQueryBuilder(
+            query: (ref) => ref.watch(
+              imageProvider((
+                EquatableTableInfo(ref.watch(imageTable)),
+                imageId,
+              )),
+            ),
+            builder: (context, ref, data) => Image.memory(
+              key: ValueKey(data.metadataId),
+              data.imageData,
+              fit: fit,
+            ),
+          )
+        : NovelFittedIcon(
+            icon: Icon(Icons.image_not_supported_rounded),
+            sizePercentage: 0.5,
+          );
   }
 }

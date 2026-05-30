@@ -3,57 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:prac_res/data/data.dart';
-import 'package:prac_res/pages/editor/inspector/image_group.dart';
-import 'package:prac_res/pages/editor/scene_viewer.dart';
-import 'package:prac_res/pages/editor/scrolling.dart';
-import 'package:prac_res/pages/frame/frame.dart';
-import 'package:prac_res/pages/open.dart';
-
-class SelectedSceneIdProvider extends Notifier<int?> {
-  @override
-  int? build() => null;
-
-  void set(int? id) {
-    state = id;
-    ref.read(selectedScenePartIdProvider.notifier).set(null);
-  }
-}
-
-final selectedSceneIdProvider = NotifierProvider<SelectedSceneIdProvider, int?>(
-  SelectedSceneIdProvider.new,
-);
-
-class NovelSceneSelector extends StatelessWidget {
-  const NovelSceneSelector({super.key});
-
-  static final scenesTableProvider = Provider<$ScenesTable>((ref) {
-    final sceneGroup = ref.watch(sceneGroupProvider);
-
-    return sceneGroup.scenes;
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        return NovelGroupSelector(
-          title: Text("Scenes"),
-          onChanged: (selection) {
-            ref.read(selectedSceneIdProvider.notifier).set(selection);
-          },
-          groupTableProvider: scenesTableProvider,
-          selectedGroup: ref.watch(selectedSceneIdProvider),
-        );
-      },
-    );
-  }
-}
+import 'package:prac_res/components/dialogs/deletion_dialog.dart';
+import 'package:prac_res/components/editable_text.dart';
+import 'package:prac_res/components/dialogs/new_name_dialog.dart';
+import 'package:prac_res/components/lists/scrolling.dart';
+import 'package:prac_res/components/database/query_builder.dart';
 
 class NovelGroupSelector<G extends Group> extends StatelessWidget {
   final Widget title;
   final ProviderListenable<TableInfo<GroupTable, G>> groupTableProvider;
   final void Function(int?) onChanged;
   final int? selectedGroup;
+
+  static final groupsProvider =
+      StreamProvider.family<List<Group>, EquatableTableInfo<GroupTable, Group>>(
+        (ref, equatableWrapper) {
+          return equatableWrapper.wrapped.select().watch();
+        },
+      );
 
   const NovelGroupSelector({
     super.key,
@@ -71,11 +38,10 @@ class NovelGroupSelector<G extends Group> extends StatelessWidget {
       onChanged: onChanged,
       groupValue: selectedGroup,
       child: NovelQueryBuilder(
-        provider: (ref) =>
-            groupsProvider(EquatableTableInfo(ref.watch(groupTableProvider))),
+        query: (ref) => ref.watch(
+          groupsProvider(EquatableTableInfo(ref.watch(groupTableProvider))),
+        ),
         builder: (context, ref, groups) {
-          // final table = ref.watch(groupTableProvider);
-
           return SingleChildScrollbarView(
             scrollDirection: Axis.vertical,
             child: Column(

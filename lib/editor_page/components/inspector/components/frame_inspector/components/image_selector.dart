@@ -1,55 +1,20 @@
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart' hide Table;
+
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/misc.dart';
 import 'package:junction/junction.dart';
+
 import 'package:prac_res/data/data.dart';
-import 'package:prac_res/pages/design_values.dart';
-import 'package:prac_res/pages/editor/scene_selector.dart';
-import 'package:prac_res/pages/editor/scene_viewer.dart';
-import 'package:prac_res/pages/frame/frame.dart';
-import 'package:prac_res/pages/open.dart';
-
-final groupsProvider =
-    StreamProvider.family<List<Group>, EquatableTableInfo<GroupTable, Group>>((
-      ref,
-      equatableWrapper,
-    ) {
-      return equatableWrapper.wrapped.select().watch();
-    });
-
-final metadatasProvider =
-    StreamProvider.family<
-      List<ImageMetadata>,
-      (EquatableTableInfo<ImageMetadataTable, ImageMetadata>, int?)
-    >((ref, identifiers) {
-      final (imageMetadataTableWrapper, groupId) = identifiers;
-
-      if (groupId == null) {
-        return Stream.value([]);
-      }
-
-      return (imageMetadataTableWrapper.wrapped.select()
-            ..where((row) => row.groupId.equals(groupId)))
-          .watch();
-    });
-
-final metadataProvider =
-    StreamProvider.family<
-      ImageMetadata?,
-      (EquatableTableInfo<ImageMetadataTable, ImageMetadata>, int?)
-    >((ref, identifiers) {
-      final (imageMetadataTableWrapper, metadataId) = identifiers;
-
-      if (metadataId == null) {
-        return Stream.value(null);
-      }
-
-      return (imageMetadataTableWrapper.wrapped.select()
-            ..where((metadataEntry) => metadataEntry.id.equals(metadataId)))
-          .watchSingleOrNull();
-    });
+import 'package:prac_res/components/card.dart';
+import 'package:prac_res/components/editable_text.dart';
+import 'package:prac_res/components/design_values.dart';
+import 'package:prac_res/components/database/group_selector.dart';
+import 'package:prac_res/components/database/query_builder.dart';
+import 'package:prac_res/components/dialogs/new_name_dialog.dart';
+import 'package:prac_res/editor_page/components/scene_viewer/components/frame.dart';
+import 'package:prac_res/editor_page/editor_page.dart';
 
 class NovelImageSelectorPreview<G extends Group, M extends ImageMetadata>
     extends StatelessWidget {
@@ -69,16 +34,34 @@ class NovelImageSelectorPreview<G extends Group, M extends ImageMetadata>
     required this.onImageSelected,
   });
 
+  static final metadataProvider =
+      StreamProvider.family<
+        ImageMetadata?,
+        (EquatableTableInfo<ImageMetadataTable, ImageMetadata>, int?)
+      >((ref, identifiers) {
+        final (imageMetadataTableWrapper, metadataId) = identifiers;
+
+        if (metadataId == null) {
+          return Stream.value(null);
+        }
+
+        return (imageMetadataTableWrapper.wrapped.select()
+              ..where((metadataEntry) => metadataEntry.id.equals(metadataId)))
+            .watchSingleOrNull();
+      });
+
   @override
   Widget build(BuildContext context) {
     return NovelCard(
       onTap: () => showDialog(
         context: context,
         builder: (context) => NovelQueryBuilder(
-          provider: (ref) => metadataProvider((
-            EquatableTableInfo(ref.watch(imageMetadataTable)),
-            selectedImageId,
-          )),
+          query: (ref) => ref.watch(
+            metadataProvider((
+              EquatableTableInfo(ref.watch(imageMetadataTable)),
+              selectedImageId,
+            )),
+          ),
           builder: (context, ref, metadata) {
             return HookBuilder(
               builder: (context) {
@@ -200,15 +183,33 @@ class NovelImageSelector<M extends ImageMetadata> extends StatelessWidget {
     required this.onImageSelected,
   });
 
+  static final metadataGroupProvider =
+      StreamProvider.family<
+        List<ImageMetadata>,
+        (EquatableTableInfo<ImageMetadataTable, ImageMetadata>, int?)
+      >((ref, identifiers) {
+        final (imageMetadataTableWrapper, groupId) = identifiers;
+
+        if (groupId == null) {
+          return Stream.value([]);
+        }
+
+        return (imageMetadataTableWrapper.wrapped.select()
+              ..where((row) => row.groupId.equals(groupId)))
+            .watch();
+      });
+
   @override
   Widget build(BuildContext context) {
     final imageGroupId = selectedImageGroup;
 
     return NovelQueryBuilder(
-      provider: (ref) => metadatasProvider((
-        EquatableTableInfo(ref.watch(imageMetadataTable)),
-        imageGroupId,
-      )),
+      query: (ref) => ref.watch(
+        metadataGroupProvider((
+          EquatableTableInfo(ref.watch(imageMetadataTable)),
+          imageGroupId,
+        )),
+      ),
       builder: (context, ref, metadatas) {
         return GridView.count(
           crossAxisCount: 4,
@@ -249,7 +250,9 @@ class NovelImageSelector<M extends ImageMetadata> extends StatelessWidget {
 
                     // SAFETY: I'm kind of iffy about this one because of a potential database to table mismatch,
                     // but AI says I should do it in a transaction, and I agree.
-                    final sceneGroup = ref.read(sceneGroupProvider);
+                    final sceneGroup = ref.read(
+                      NovelSceneGroupEditorPage.sceneGroupProvider,
+                    );
 
                     await sceneGroup.transaction(() async {
                       final newMetadataId = await sceneGroup
@@ -345,39 +348,6 @@ class NovelImageSelectable<M extends ImageMetadata> extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class NovelEditableText extends StatelessWidget {
-  final String sourceText;
-  final Widget Function(TextEditingController controller, FocusNode focusNode)
-  builder;
-
-  const NovelEditableText({
-    super.key,
-    required this.builder,
-    this.sourceText = "",
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return HookBuilder(
-      builder: (context) {
-        final controller = useTextEditingController(text: sourceText);
-        final focusNode = useFocusNode();
-
-        // Safety precaution. Just in case!
-        useValueChanged<String, Null>(sourceText, (_, __) {
-          if (sourceText != controller.text && !focusNode.hasFocus) {
-            controller.text = sourceText;
-          }
-
-          return null;
-        });
-
-        return builder(controller, focusNode);
-      },
     );
   }
 }
