@@ -162,7 +162,7 @@ class NovelPoses extends StatelessWidget {
     required this.scenePartId,
     this.popInDuration = const Duration(milliseconds: 400),
     this.popOutDuration = const Duration(milliseconds: 500),
-    this.switchPoseDuration = const Duration(milliseconds: 300),
+    this.switchPoseDuration = const Duration(milliseconds: 500),
   });
 
   static final framePoseProvider =
@@ -183,6 +183,9 @@ class NovelPoses extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final betweenSize = DesignValues.semiLarge;
+    final slots = 3;
+
     return NovelQueryBuilder(
       query: (ref) => ref.watch(framePoseProvider(scenePartId)),
       builder: (context, ref, framePoses) => Center(
@@ -210,14 +213,19 @@ class NovelPoses extends StatelessWidget {
                   AnimatedSwitcher(
                     key: ValueKey(framePose.groupId),
                     duration: switchPoseDuration,
-                    child: SizedBox(
+                    child: Align(
                       key: ValueKey(framePose.poseId),
-                      width: constraints.maxWidth / 3,
-                      height: constraints.maxHeight,
-                      child: NovelPose(poseId: framePose.poseId),
+                      alignment: Alignment.bottomCenter,
+                      child: SizedBox(
+                        width:
+                            (constraints.maxWidth - betweenSize * (slots - 1)) /
+                            slots,
+                        height: constraints.maxHeight,
+                        child: NovelPose(poseId: framePose.poseId),
+                      ),
                     ),
                   ),
-              ].inBetween((_) => SizedBox(width: DesignValues.large)).toList(),
+              ].inBetween((_) => SizedBox(width: betweenSize)).toList(),
             );
           },
         ),
@@ -233,21 +241,18 @@ class NovelDialogueArea extends StatelessWidget {
 
   const NovelDialogueArea({super.key, required this.scenePartId});
 
-  static final dialogueBoxesTableProvider = Provider<$DialogueBoxesTable>((
-    ref,
-  ) {
-    final sceneGroup = ref.watch(NovelSceneGroupEditorPage.sceneGroupProvider);
-    return sceneGroup.dialogueBoxes;
-  });
-
   static final dialogueProvider = StreamProvider.family<DialogueBox?, int>((
     ref,
     frameScenePartId,
   ) {
-    return (ref.watch(dialogueBoxesTableProvider).select()..where(
-          (dialogueBoxEntry) =>
-              dialogueBoxEntry.frameScenePartId.equals(frameScenePartId),
-        ))
+    return (ref
+            .watch(NovelSceneGroupEditorPage.sceneGroupProvider)
+            .dialogueBoxes
+            .select()
+          ..where(
+            (dialogueBoxEntry) =>
+                dialogueBoxEntry.frameScenePartId.equals(frameScenePartId),
+          ))
         .watchSingleOrNull();
   });
 

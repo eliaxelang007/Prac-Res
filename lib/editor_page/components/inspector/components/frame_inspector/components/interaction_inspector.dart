@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:drift/drift.dart' hide Column;
-import 'package:flutter_riverpod/misc.dart';
 
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/components/editable_text.dart';
@@ -9,16 +8,23 @@ import 'package:prac_res/components/design_values.dart';
 import 'package:prac_res/components/dialogs/deletion_dialog.dart';
 import 'package:prac_res/components/database/query_builder.dart';
 import 'package:prac_res/editor_page/components/scene_viewer/components/frame.dart';
+import 'package:prac_res/editor_page/editor_page.dart';
 
-class NovelDialogueInspector extends StatelessWidget {
-  final ProviderListenable<$DialogueBoxesTable> dialogueBoxesTableProvider;
+class NovelInteractionInspector extends StatelessWidget {
   final int frameScenePartId;
 
-  const NovelDialogueInspector({
-    super.key,
-    required this.dialogueBoxesTableProvider,
-    required this.frameScenePartId,
-  });
+  const NovelInteractionInspector({super.key, required this.frameScenePartId});
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelDialogueInspector(frameScenePartId: frameScenePartId);
+  }
+}
+
+class NovelDialogueInspector extends StatelessWidget {
+  const NovelDialogueInspector({super.key, required this.frameScenePartId});
+
+  final int frameScenePartId;
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +44,13 @@ class NovelDialogueInspector extends StatelessWidget {
               title: const Text("Dialogue Box"),
               value: hasDialogueBox,
               onChanged: (enabled) async {
-                final dialogueBoxTable = ref.read(dialogueBoxesTableProvider);
+                final dialogueBoxTable = ref
+                    .read(NovelSceneGroupEditorPage.sceneGroupProvider)
+                    .dialogueBoxes;
 
                 if (enabled) {
                   await dialogueBoxTable.insert().insert(
+                    mode: InsertMode.insertOrIgnore,
                     DialogueBoxesCompanion.insert(
                       dialogue: "",
                       frameScenePartId: Value(frameScenePartId),
@@ -73,9 +82,11 @@ class NovelDialogueInspector extends StatelessWidget {
                         title: Text("Name Box"),
                         value: hasNameBox,
                         onChanged: (enabled) async {
-                          final dialogueBoxTable = ref.read(
-                            dialogueBoxesTableProvider,
-                          );
+                          final dialogueBoxTable = ref
+                              .read(
+                                NovelSceneGroupEditorPage.sceneGroupProvider,
+                              )
+                              .dialogueBoxes;
 
                           final updateQuery = dialogueBoxTable.update()
                             ..where(
@@ -121,7 +132,11 @@ class NovelDialogueInspector extends StatelessWidget {
                               ),
                               onChanged: (value) async {
                                 await (ref
-                                        .read(dialogueBoxesTableProvider)
+                                        .read(
+                                          NovelSceneGroupEditorPage
+                                              .sceneGroupProvider,
+                                        )
+                                        .dialogueBoxes
                                         .update()
                                       ..where(
                                         (dialogueBoxEntry) => dialogueBoxEntry
@@ -157,7 +172,11 @@ class NovelDialogueInspector extends StatelessWidget {
                             ),
                             onChanged: (value) async {
                               await (ref
-                                      .read(dialogueBoxesTableProvider)
+                                      .read(
+                                        NovelSceneGroupEditorPage
+                                            .sceneGroupProvider,
+                                      )
+                                      .dialogueBoxes
                                       .update()
                                     ..where(
                                       (dialogueBoxEntry) => dialogueBoxEntry

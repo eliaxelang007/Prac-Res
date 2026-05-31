@@ -1,37 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:prac_res/components/icon_buttons/fitted_icon.dart';
 import 'package:prac_res/components/design_values.dart';
 
 class NovelOutlinedButton extends StatelessWidget {
   final void Function()? onPressed;
-  final Widget icon;
-  final double iconSizePercentage;
+  final Widget child;
   final ButtonStyle? style;
 
   const NovelOutlinedButton({
     required this.onPressed,
-    required this.icon,
-    this.iconSizePercentage = DesignValues.semiLargePercent,
+    required this.child,
     this.style,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style:
-            style ??
-            OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignValues.medium),
-              ),
-              padding: EdgeInsets.all(DesignValues.semiSmall),
+    return OutlinedButton(
+      onPressed: onPressed,
+      style:
+          style ??
+          OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(DesignValues.medium),
             ),
-        child: NovelFittedIcon(icon: icon, sizePercentage: iconSizePercentage),
-      ),
+            padding: EdgeInsets.all(DesignValues.semiSmall),
+          ),
+      child: child,
     );
   }
 }

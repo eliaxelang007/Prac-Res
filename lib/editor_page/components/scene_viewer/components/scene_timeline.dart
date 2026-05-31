@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:prac_res/components/database/reorderable_list.dart';
 
 import 'package:prac_res/data/data.dart';
 
@@ -56,34 +58,16 @@ class NovelSceneTimeline extends StatelessWidget {
       builder: (context, ref, sceneParts) {
         if (sceneParts == null) return SizedBox.shrink();
 
-        final scenePartCount = sceneParts.length;
-
         return HookBuilder(
           builder: (context) {
             final controller = useScrollController();
 
             return Scrollbar(
               controller: controller,
-              child: ReorderableListView.builder(
+              child: NovelReorderableListView(
                 scrollController: controller,
-                onReorderItem: (oldIndex, newIndex) async {
-                  final double newOrder;
-
-                  if ((newIndex + 1) == scenePartCount) {
-                    newOrder = (sceneParts.lastOrNull?.part.order ?? -1) + 1;
-                  } else if (newIndex == 0) {
-                    newOrder = (sceneParts.firstOrNull?.part.order ?? 1) + -1;
-                  } else {
-                    final leftIndex =
-                        newIndex - ((oldIndex > newIndex) ? 1 : 0);
-                    final rightIndex = leftIndex + 1;
-
-                    final beforeOrder = sceneParts[leftIndex].part.order;
-                    final afterOrder = sceneParts[rightIndex].part.order;
-
-                    newOrder = (beforeOrder + afterOrder) / 2;
-                  }
-
+                scrollDirection: Axis.horizontal,
+                onReorder: (oldIndex, newOrder) async {
                   final sceneGroup = ref.read(
                     NovelSceneGroupEditorPage.sceneGroupProvider,
                   );
@@ -94,44 +78,45 @@ class NovelSceneTimeline extends StatelessWidget {
                       ))
                       .write(ScenePartsCompanion(order: Value(newOrder)));
                 },
-                scrollDirection: Axis.horizontal,
-                footer: AspectRatio(
-                  aspectRatio: 1,
-                  child: Center(
-                    child: IconButton(
-                      onPressed: () async {
-                        final selectedSceneId = ref.read(
-                          NovelSceneSelector.selectedSceneIdProvider,
-                        );
+                onAdd: (newOrder) async {
+                  final selectedSceneId = ref.read(
+                    NovelSceneSelector.selectedSceneIdProvider,
+                  );
 
-                        if (selectedSceneId == null) return;
+                  if (selectedSceneId == null) return;
 
-                        final sceneGroup = ref.read(
-                          NovelSceneGroupEditorPage.sceneGroupProvider,
-                        );
+                  final sceneGroup = ref.read(
+                    NovelSceneGroupEditorPage.sceneGroupProvider,
+                  );
 
-                        await sceneGroup.sceneParts.insert().insert(
+                  await sceneGroup.transaction(() async {
+                    final newScenePartId = await sceneGroup.sceneParts
+                        .insert()
+                        .insert(
                           ScenePartsCompanion.insert(
                             sceneId: selectedSceneId,
-                            order:
-                                (sceneParts.lastOrNull?.part.order ?? -1) + 1,
+                            order: newOrder,
                             partType: "frame",
                           ),
                         );
-                      },
-                      icon: const Icon(Icons.add_rounded),
-                    ),
-                  ),
-                ),
-                itemCount: scenePartCount,
-                itemBuilder: (context, index) {
-                  final scenePart = sceneParts[index];
 
-                  return NovelSceneTimelineItem(
-                    key: ValueKey(scenePart.part.id),
-                    scenePart: scenePart,
-                  );
+                    await sceneGroup.frames.insert().insert(
+                      FramesCompanion.insert(
+                        scenePartId: Value(newScenePartId),
+                      ),
+                    );
+                  });
                 },
+                values: sceneParts,
+                getOrder: (scenePart) => scenePart?.part.order,
+                wrapAddButton: (addButton) => AspectRatio(
+                  aspectRatio: 1,
+                  child: Center(child: addButton),
+                ),
+                itemBuilder: (context, scenePart) => NovelSceneTimelineItem(
+                  key: ValueKey(scenePart.part.id),
+                  scenePart: scenePart,
+                ),
               ),
             );
           },
@@ -173,7 +158,11 @@ class NovelSceneTimelineItem extends StatelessWidget {
                         )
                         .set(isSelected ? null : scenePartId);
                   },
-                  child: NovelScenePartPreview(specifics: scenePart.specifics),
+                  child: SizedBox.expand(
+                    child: NovelScenePartPreview(
+                      specifics: scenePart.specifics,
+                    ),
+                  ),
                 ),
               ),
               Positioned.fill(

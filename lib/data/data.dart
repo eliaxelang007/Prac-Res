@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/wasm.dart';
+import 'package:handy/handy.dart';
 
 part 'data.g.dart';
-
-/* -- Data Shapes -- */
 
 abstract interface class GroupTable extends Table {
   Column<int> get id;
@@ -150,6 +149,59 @@ abstract interface class ImageDataTable extends Table {
 abstract interface class ImageData {
   int get metadataId;
   Uint8List get imageData;
+}
+
+class ImageDataCompanion<T extends ImageData> extends UpdateCompanion<T> {
+  final Value<int> metadataId;
+  final Value<Uint8List> imageData;
+  const ImageDataCompanion({
+    this.metadataId = const Value.absent(),
+    this.imageData = const Value.absent(),
+  });
+  ImageDataCompanion.insert({
+    this.metadataId = const Value.absent(),
+    required Uint8List imageData,
+  }) : imageData = Value(imageData);
+  static Insertable<T> custom<T>({
+    Expression<int>? metadataId,
+    Expression<Uint8List>? imageData,
+  }) {
+    return RawValuesInsertable({
+      'metadata_id': ?metadataId,
+      'image_data': ?imageData,
+    });
+  }
+
+  ImageDataCompanion<T> copyWith({
+    Value<int>? metadataId,
+    Value<Uint8List>? imageData,
+  }) {
+    return ImageDataCompanion(
+      metadataId: metadataId ?? this.metadataId,
+      imageData: imageData ?? this.imageData,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (metadataId.present) {
+      map['metadata_id'] = Variable<int>(metadataId.value);
+    }
+    if (imageData.present) {
+      map['image_data'] = Variable<Uint8List>(imageData.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImageDataCompanion(')
+          ..write('metadataId: $metadataId, ')
+          ..write('imageData: $imageData')
+          ..write(')'))
+        .toString();
+  }
 }
 
 class EquatableTableInfo<TableDsl extends Table, TableRow> {
@@ -305,6 +357,17 @@ class Scenes extends GroupTable {
   late final name = text()();
 }
 
+enum ScenePartType {
+  frame,
+  resolver,
+  custom;
+
+  @override
+  String toString() {
+    return HandyEnum.staticToShortString(super.toString()).capitalize();
+  }
+}
+
 class SceneParts extends Table {
   late final id = integer().autoIncrement()();
   late final sceneId = integer().references(
@@ -314,11 +377,16 @@ class SceneParts extends Table {
   )();
   late final order = real()();
   late final TextColumn partType = text().check(
-    partType.isIn(["frame", "resolver", "custom"]),
+    partType.isIn(ScenePartType.values.map((value) => value.name)),
   )();
 }
 
-class Frames extends Table {
+abstract interface class ScenePartSpecificsTable extends Table {
+  Column<int> get scenePartId;
+}
+
+class Frames extends ScenePartSpecificsTable {
+  @override
   late final scenePartId = integer().references(
     SceneParts,
     #id,
@@ -334,20 +402,22 @@ class Frames extends Table {
   Set<Column> get primaryKey => {scenePartId};
 }
 
-class ScenePartResolvers extends Table {
+class ScenePartResolvers extends ScenePartSpecificsTable {
+  @override
   late final scenePartId = integer().references(
     SceneParts,
     #id,
     onDelete: KeyAction.cascade,
   )();
 
-  late final resolverScript = text()();
+  late final dartResolverScript = text()();
 
   @override
   Set<Column> get primaryKey => {scenePartId};
 }
 
-class CustomSceneParts extends Table {
+class CustomSceneParts extends ScenePartSpecificsTable {
+  @override
   late final scenePartId = integer().references(
     SceneParts,
     #id,
@@ -402,7 +472,7 @@ abstract class FramePosesView extends View {
         poses.groupId,
         poses.name,
       ]).from(framePoses).join([
-        innerJoin(poses, poses.id.equalsExp(framePoses.poseId)),
+        leftOuterJoin(poses, poses.id.equalsExp(framePoses.poseId)),
       ]);
 }
 
@@ -420,7 +490,7 @@ abstract class SceneTimelineView extends View {
         sceneParts.order,
         sceneParts.partType,
         frames.backgroundId,
-        scenePartResolvers.resolverScript,
+        scenePartResolvers.dartResolverScript,
         custom.eventId,
       ]).from(sceneParts).join([
         leftOuterJoin(frames, frames.scenePartId.equalsExp(sceneParts.id)),
@@ -460,7 +530,7 @@ class SceneTimelineItem {
           ScenePartResolver(
             scenePartId: id,
             // SAFETY: This bang operator is safe because we know this is a resolver!
-            resolverScript: entry.resolverScript!,
+            dartResolverScript: entry.dartResolverScript!,
           ),
         ),
 

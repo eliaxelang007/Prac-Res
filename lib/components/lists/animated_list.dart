@@ -77,6 +77,10 @@ class ImplicitlyAnimatedList extends StatelessWidget {
             }
           }
 
+          for (int i = 0; i < children.length; i++) {
+            previousChildren[i] = children[i];
+          }
+
           return null;
         }, [children]);
 

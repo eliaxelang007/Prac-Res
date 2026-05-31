@@ -16,17 +16,24 @@ import 'package:prac_res/components/dialogs/new_name_dialog.dart';
 import 'package:prac_res/editor_page/components/scene_viewer/components/frame.dart';
 import 'package:prac_res/editor_page/editor_page.dart';
 
-class NovelImageSelectorPreview<G extends Group, M extends ImageMetadata>
+class NovelImageSelectorPreview<
+  G extends Group,
+  M extends ImageMetadata,
+  D extends ImageData
+>
     extends StatelessWidget {
   final ProviderListenable<TableInfo<GroupTable, G>> imageGroupTable;
   final ProviderListenable<TableInfo<ImageMetadataTable, M>> imageMetadataTable;
-  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageDataTable;
+  final ProviderListenable<TableInfo<ImageDataTable, D>> imageDataTable;
 
   final int? selectedImageId;
   final void Function(int?) onImageSelected;
 
+  final Widget title;
+
   const NovelImageSelectorPreview({
     super.key,
+    required this.title,
     required this.imageGroupTable,
     required this.imageMetadataTable,
     required this.imageDataTable,
@@ -52,50 +59,60 @@ class NovelImageSelectorPreview<G extends Group, M extends ImageMetadata>
 
   @override
   Widget build(BuildContext context) {
-    return NovelCard(
-      onTap: () => showDialog(
-        context: context,
-        builder: (context) => NovelQueryBuilder(
-          query: (ref) => ref.watch(
-            metadataProvider((
-              EquatableTableInfo(ref.watch(imageMetadataTable)),
-              selectedImageId,
-            )),
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: NovelCard(
+        onTap: () => showDialog(
+          context: context,
+          builder: (context) => NovelQueryBuilder(
+            query: (ref) => ref.watch(
+              metadataProvider((
+                EquatableTableInfo(ref.watch(imageMetadataTable)),
+                selectedImageId,
+              )),
+            ),
+            builder: (context, ref, metadata) {
+              return HookBuilder(
+                builder: (context) {
+                  final maybeMetadataGroupId = metadata?.groupId;
+
+                  final selectedImageGroup = useState<int?>(
+                    maybeMetadataGroupId,
+                  );
+
+                  // We need this so that changes propagate because we're in a Dialog!
+                  final selectedImageIdNotifier = useState<int?>(
+                    selectedImageId,
+                  );
+
+                  return NovelImageSelectorLayout(
+                    title: title,
+                    imageGroupSelector: NovelImageGroupSelector(
+                      imageGroupTable: imageGroupTable,
+                      selectedGroupState: selectedImageGroup,
+                    ),
+                    imageSelector: NovelImageSelector(
+                      imageMetadataTable: imageMetadataTable,
+                      imageDataTable: imageDataTable,
+                      selectedImageGroup: selectedImageGroup.value,
+                      selectedImageId: selectedImageIdNotifier.value,
+                      onImageSelected: (newImageId) {
+                        selectedImageIdNotifier.value = newImageId;
+                        onImageSelected(newImageId);
+                      },
+                    ),
+                  );
+                },
+              );
+            },
           ),
-          builder: (context, ref, metadata) {
-            return HookBuilder(
-              builder: (context) {
-                final maybeMetadataGroupId = metadata?.groupId;
-
-                final selectedImageGroup = useState<int?>(maybeMetadataGroupId);
-
-                // We need this so that changes propagate because we're in a Dialog!
-                final selectedImageIdNotifier = useState<int?>(selectedImageId);
-
-                return NovelImageSelectorLayout(
-                  imageGroupSelector: NovelImageGroupSelector(
-                    imageGroupTable: imageGroupTable,
-                    selectedGroupState: selectedImageGroup,
-                  ),
-                  imageSelector: NovelImageSelector(
-                    imageMetadataTable: imageMetadataTable,
-                    imageDataTable: imageDataTable,
-                    selectedImageGroup: selectedImageGroup.value,
-                    selectedImageId: selectedImageIdNotifier.value,
-                    onImageSelected: (newImageId) {
-                      selectedImageIdNotifier.value = newImageId;
-                      onImageSelected(newImageId);
-                    },
-                  ),
-                );
-              },
-            );
-          },
         ),
-      ),
-      child: NovelImage(
-        imageTable: imageDataTable,
-        maybeImageId: selectedImageId,
+        child: SizedBox.expand(
+          child: NovelImage(
+            imageTable: imageDataTable,
+            maybeImageId: selectedImageId,
+          ),
+        ),
       ),
     );
   }
@@ -104,17 +121,19 @@ class NovelImageSelectorPreview<G extends Group, M extends ImageMetadata>
 class NovelImageSelectorLayout extends StatelessWidget {
   final Widget imageGroupSelector;
   final Widget imageSelector;
+  final Widget title;
 
   const NovelImageSelectorLayout({
     super.key,
     required this.imageGroupSelector,
     required this.imageSelector,
+    required this.title,
   });
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Select A Background"),
+      title: title,
       content: SizedBox(
         width: 800,
         height: 500,
@@ -167,9 +186,10 @@ class NovelImageGroupSelector<G extends Group> extends StatelessWidget {
   }
 }
 
-class NovelImageSelector<M extends ImageMetadata> extends StatelessWidget {
+class NovelImageSelector<M extends ImageMetadata, D extends ImageData>
+    extends StatelessWidget {
   final ProviderListenable<TableInfo<ImageMetadataTable, M>> imageMetadataTable;
-  final ProviderListenable<TableInfo<ImageDataTable, ImageData>> imageDataTable;
+  final ProviderListenable<TableInfo<ImageDataTable, D>> imageDataTable;
   final int? selectedImageGroup;
   final int? selectedImageId;
   final void Function(int?) onImageSelected;
@@ -267,7 +287,7 @@ class NovelImageSelector<M extends ImageMetadata> extends StatelessWidget {
                       await sceneGroup
                           .into(ref.read(imageDataTable))
                           .insert(
-                            BackgroundImagesCompanion.insert(
+                            ImageDataCompanion.insert(
                               metadataId: Value(newMetadataId),
                               imageData: imageBytes,
                             ),
@@ -309,9 +329,11 @@ class NovelImageSelectable<M extends ImageMetadata> extends StatelessWidget {
           child: NovelCard(
             isSelected: selectedImageId == metadata.id,
             onTap: () => onImageSelected(metadata.id),
-            child: NovelImage(
-              imageTable: imageDataTable,
-              maybeImageId: metadata.id,
+            child: SizedBox.expand(
+              child: NovelImage(
+                imageTable: imageDataTable,
+                maybeImageId: metadata.id,
+              ),
             ),
           ),
         ),

@@ -2022,7 +2022,7 @@ class $ScenePartsTable extends SceneParts
     'part_type',
     aliasedName,
     false,
-    check: () => partType.isIn(["frame", "resolver", "custom"]),
+    check: () => partType.isIn(ScenePartType.values.map((value) => value.name)),
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
@@ -2517,19 +2517,19 @@ class $ScenePartResolversTable extends ScenePartResolvers
       'REFERENCES scene_parts (id) ON DELETE CASCADE',
     ),
   );
-  static const VerificationMeta _resolverScriptMeta = const VerificationMeta(
-    'resolverScript',
-  );
+  static const VerificationMeta _dartResolverScriptMeta =
+      const VerificationMeta('dartResolverScript');
   @override
-  late final GeneratedColumn<String> resolverScript = GeneratedColumn<String>(
-    'resolver_script',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+  late final GeneratedColumn<String> dartResolverScript =
+      GeneratedColumn<String>(
+        'dart_resolver_script',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
   @override
-  List<GeneratedColumn> get $columns => [scenePartId, resolverScript];
+  List<GeneratedColumn> get $columns => [scenePartId, dartResolverScript];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2551,16 +2551,16 @@ class $ScenePartResolversTable extends ScenePartResolvers
         ),
       );
     }
-    if (data.containsKey('resolver_script')) {
+    if (data.containsKey('dart_resolver_script')) {
       context.handle(
-        _resolverScriptMeta,
-        resolverScript.isAcceptableOrUnknown(
-          data['resolver_script']!,
-          _resolverScriptMeta,
+        _dartResolverScriptMeta,
+        dartResolverScript.isAcceptableOrUnknown(
+          data['dart_resolver_script']!,
+          _dartResolverScriptMeta,
         ),
       );
     } else if (isInserting) {
-      context.missing(_resolverScriptMeta);
+      context.missing(_dartResolverScriptMeta);
     }
     return context;
   }
@@ -2575,9 +2575,9 @@ class $ScenePartResolversTable extends ScenePartResolvers
         DriftSqlType.int,
         data['${effectivePrefix}scene_part_id'],
       )!,
-      resolverScript: attachedDatabase.typeMapping.read(
+      dartResolverScript: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}resolver_script'],
+        data['${effectivePrefix}dart_resolver_script'],
       )!,
     );
   }
@@ -2591,23 +2591,23 @@ class $ScenePartResolversTable extends ScenePartResolvers
 class ScenePartResolver extends DataClass
     implements Insertable<ScenePartResolver> {
   final int scenePartId;
-  final String resolverScript;
+  final String dartResolverScript;
   const ScenePartResolver({
     required this.scenePartId,
-    required this.resolverScript,
+    required this.dartResolverScript,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['scene_part_id'] = Variable<int>(scenePartId);
-    map['resolver_script'] = Variable<String>(resolverScript);
+    map['dart_resolver_script'] = Variable<String>(dartResolverScript);
     return map;
   }
 
   ScenePartResolversCompanion toCompanion(bool nullToAbsent) {
     return ScenePartResolversCompanion(
       scenePartId: Value(scenePartId),
-      resolverScript: Value(resolverScript),
+      dartResolverScript: Value(dartResolverScript),
     );
   }
 
@@ -2618,7 +2618,9 @@ class ScenePartResolver extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ScenePartResolver(
       scenePartId: serializer.fromJson<int>(json['scenePartId']),
-      resolverScript: serializer.fromJson<String>(json['resolverScript']),
+      dartResolverScript: serializer.fromJson<String>(
+        json['dartResolverScript'],
+      ),
     );
   }
   @override
@@ -2626,23 +2628,23 @@ class ScenePartResolver extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'scenePartId': serializer.toJson<int>(scenePartId),
-      'resolverScript': serializer.toJson<String>(resolverScript),
+      'dartResolverScript': serializer.toJson<String>(dartResolverScript),
     };
   }
 
-  ScenePartResolver copyWith({int? scenePartId, String? resolverScript}) =>
+  ScenePartResolver copyWith({int? scenePartId, String? dartResolverScript}) =>
       ScenePartResolver(
         scenePartId: scenePartId ?? this.scenePartId,
-        resolverScript: resolverScript ?? this.resolverScript,
+        dartResolverScript: dartResolverScript ?? this.dartResolverScript,
       );
   ScenePartResolver copyWithCompanion(ScenePartResolversCompanion data) {
     return ScenePartResolver(
       scenePartId: data.scenePartId.present
           ? data.scenePartId.value
           : this.scenePartId,
-      resolverScript: data.resolverScript.present
-          ? data.resolverScript.value
-          : this.resolverScript,
+      dartResolverScript: data.dartResolverScript.present
+          ? data.dartResolverScript.value
+          : this.dartResolverScript,
     );
   }
 
@@ -2650,49 +2652,50 @@ class ScenePartResolver extends DataClass
   String toString() {
     return (StringBuffer('ScenePartResolver(')
           ..write('scenePartId: $scenePartId, ')
-          ..write('resolverScript: $resolverScript')
+          ..write('dartResolverScript: $dartResolverScript')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(scenePartId, resolverScript);
+  int get hashCode => Object.hash(scenePartId, dartResolverScript);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ScenePartResolver &&
           other.scenePartId == this.scenePartId &&
-          other.resolverScript == this.resolverScript);
+          other.dartResolverScript == this.dartResolverScript);
 }
 
 class ScenePartResolversCompanion extends UpdateCompanion<ScenePartResolver> {
   final Value<int> scenePartId;
-  final Value<String> resolverScript;
+  final Value<String> dartResolverScript;
   const ScenePartResolversCompanion({
     this.scenePartId = const Value.absent(),
-    this.resolverScript = const Value.absent(),
+    this.dartResolverScript = const Value.absent(),
   });
   ScenePartResolversCompanion.insert({
     this.scenePartId = const Value.absent(),
-    required String resolverScript,
-  }) : resolverScript = Value(resolverScript);
+    required String dartResolverScript,
+  }) : dartResolverScript = Value(dartResolverScript);
   static Insertable<ScenePartResolver> custom({
     Expression<int>? scenePartId,
-    Expression<String>? resolverScript,
+    Expression<String>? dartResolverScript,
   }) {
     return RawValuesInsertable({
       if (scenePartId != null) 'scene_part_id': scenePartId,
-      if (resolverScript != null) 'resolver_script': resolverScript,
+      if (dartResolverScript != null)
+        'dart_resolver_script': dartResolverScript,
     });
   }
 
   ScenePartResolversCompanion copyWith({
     Value<int>? scenePartId,
-    Value<String>? resolverScript,
+    Value<String>? dartResolverScript,
   }) {
     return ScenePartResolversCompanion(
       scenePartId: scenePartId ?? this.scenePartId,
-      resolverScript: resolverScript ?? this.resolverScript,
+      dartResolverScript: dartResolverScript ?? this.dartResolverScript,
     );
   }
 
@@ -2702,8 +2705,8 @@ class ScenePartResolversCompanion extends UpdateCompanion<ScenePartResolver> {
     if (scenePartId.present) {
       map['scene_part_id'] = Variable<int>(scenePartId.value);
     }
-    if (resolverScript.present) {
-      map['resolver_script'] = Variable<String>(resolverScript.value);
+    if (dartResolverScript.present) {
+      map['dart_resolver_script'] = Variable<String>(dartResolverScript.value);
     }
     return map;
   }
@@ -2712,7 +2715,7 @@ class ScenePartResolversCompanion extends UpdateCompanion<ScenePartResolver> {
   String toString() {
     return (StringBuffer('ScenePartResolversCompanion(')
           ..write('scenePartId: $scenePartId, ')
-          ..write('resolverScript: $resolverScript')
+          ..write('dartResolverScript: $dartResolverScript')
           ..write(')'))
         .toString();
   }
@@ -3504,7 +3507,7 @@ class SceneTimelineViewData extends DataClass {
   final double order;
   final String partType;
   final int? backgroundId;
-  final String? resolverScript;
+  final String? dartResolverScript;
   final String? eventId;
   const SceneTimelineViewData({
     required this.id,
@@ -3512,7 +3515,7 @@ class SceneTimelineViewData extends DataClass {
     required this.order,
     required this.partType,
     this.backgroundId,
-    this.resolverScript,
+    this.dartResolverScript,
     this.eventId,
   });
   factory SceneTimelineViewData.fromJson(
@@ -3526,7 +3529,9 @@ class SceneTimelineViewData extends DataClass {
       order: serializer.fromJson<double>(json['order']),
       partType: serializer.fromJson<String>(json['partType']),
       backgroundId: serializer.fromJson<int?>(json['backgroundId']),
-      resolverScript: serializer.fromJson<String?>(json['resolverScript']),
+      dartResolverScript: serializer.fromJson<String?>(
+        json['dartResolverScript'],
+      ),
       eventId: serializer.fromJson<String?>(json['eventId']),
     );
   }
@@ -3539,7 +3544,7 @@ class SceneTimelineViewData extends DataClass {
       'order': serializer.toJson<double>(order),
       'partType': serializer.toJson<String>(partType),
       'backgroundId': serializer.toJson<int?>(backgroundId),
-      'resolverScript': serializer.toJson<String?>(resolverScript),
+      'dartResolverScript': serializer.toJson<String?>(dartResolverScript),
       'eventId': serializer.toJson<String?>(eventId),
     };
   }
@@ -3550,7 +3555,7 @@ class SceneTimelineViewData extends DataClass {
     double? order,
     String? partType,
     Value<int?> backgroundId = const Value.absent(),
-    Value<String?> resolverScript = const Value.absent(),
+    Value<String?> dartResolverScript = const Value.absent(),
     Value<String?> eventId = const Value.absent(),
   }) => SceneTimelineViewData(
     id: id ?? this.id,
@@ -3558,9 +3563,9 @@ class SceneTimelineViewData extends DataClass {
     order: order ?? this.order,
     partType: partType ?? this.partType,
     backgroundId: backgroundId.present ? backgroundId.value : this.backgroundId,
-    resolverScript: resolverScript.present
-        ? resolverScript.value
-        : this.resolverScript,
+    dartResolverScript: dartResolverScript.present
+        ? dartResolverScript.value
+        : this.dartResolverScript,
     eventId: eventId.present ? eventId.value : this.eventId,
   );
   @override
@@ -3571,7 +3576,7 @@ class SceneTimelineViewData extends DataClass {
           ..write('order: $order, ')
           ..write('partType: $partType, ')
           ..write('backgroundId: $backgroundId, ')
-          ..write('resolverScript: $resolverScript, ')
+          ..write('dartResolverScript: $dartResolverScript, ')
           ..write('eventId: $eventId')
           ..write(')'))
         .toString();
@@ -3584,7 +3589,7 @@ class SceneTimelineViewData extends DataClass {
     order,
     partType,
     backgroundId,
-    resolverScript,
+    dartResolverScript,
     eventId,
   );
   @override
@@ -3596,7 +3601,7 @@ class SceneTimelineViewData extends DataClass {
           other.order == this.order &&
           other.partType == this.partType &&
           other.backgroundId == this.backgroundId &&
-          other.resolverScript == this.resolverScript &&
+          other.dartResolverScript == this.dartResolverScript &&
           other.eventId == this.eventId);
 }
 
@@ -3621,7 +3626,7 @@ class $SceneTimelineViewView
     order,
     partType,
     backgroundId,
-    resolverScript,
+    dartResolverScript,
     eventId,
   ];
   @override
@@ -3656,9 +3661,9 @@ class $SceneTimelineViewView
         DriftSqlType.int,
         data['${effectivePrefix}background_id'],
       ),
-      resolverScript: attachedDatabase.typeMapping.read(
+      dartResolverScript: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}resolver_script'],
+        data['${effectivePrefix}dart_resolver_script'],
       ),
       eventId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -3702,13 +3707,14 @@ class $SceneTimelineViewView
     generatedAs: GeneratedAs(frames.backgroundId, false),
     type: DriftSqlType.int,
   );
-  late final GeneratedColumn<String> resolverScript = GeneratedColumn<String>(
-    'resolver_script',
-    aliasedName,
-    true,
-    generatedAs: GeneratedAs(scenePartResolvers.resolverScript, false),
-    type: DriftSqlType.string,
-  );
+  late final GeneratedColumn<String> dartResolverScript =
+      GeneratedColumn<String>(
+        'dart_resolver_script',
+        aliasedName,
+        true,
+        generatedAs: GeneratedAs(scenePartResolvers.dartResolverScript, false),
+        type: DriftSqlType.string,
+      );
   late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
     'event_id',
     aliasedName,
@@ -3745,15 +3751,15 @@ class FramePosesViewData extends DataClass {
   final int frameScenePartId;
   final int? poseId;
   final double order;
-  final int groupId;
-  final String name;
+  final int? groupId;
+  final String? name;
   const FramePosesViewData({
     required this.id,
     required this.frameScenePartId,
     this.poseId,
     required this.order,
-    required this.groupId,
-    required this.name,
+    this.groupId,
+    this.name,
   });
   factory FramePosesViewData.fromJson(
     Map<String, dynamic> json, {
@@ -3765,8 +3771,8 @@ class FramePosesViewData extends DataClass {
       frameScenePartId: serializer.fromJson<int>(json['frameScenePartId']),
       poseId: serializer.fromJson<int?>(json['poseId']),
       order: serializer.fromJson<double>(json['order']),
-      groupId: serializer.fromJson<int>(json['groupId']),
-      name: serializer.fromJson<String>(json['name']),
+      groupId: serializer.fromJson<int?>(json['groupId']),
+      name: serializer.fromJson<String?>(json['name']),
     );
   }
   @override
@@ -3777,8 +3783,8 @@ class FramePosesViewData extends DataClass {
       'frameScenePartId': serializer.toJson<int>(frameScenePartId),
       'poseId': serializer.toJson<int?>(poseId),
       'order': serializer.toJson<double>(order),
-      'groupId': serializer.toJson<int>(groupId),
-      'name': serializer.toJson<String>(name),
+      'groupId': serializer.toJson<int?>(groupId),
+      'name': serializer.toJson<String?>(name),
     };
   }
 
@@ -3787,15 +3793,15 @@ class FramePosesViewData extends DataClass {
     int? frameScenePartId,
     Value<int?> poseId = const Value.absent(),
     double? order,
-    int? groupId,
-    String? name,
+    Value<int?> groupId = const Value.absent(),
+    Value<String?> name = const Value.absent(),
   }) => FramePosesViewData(
     id: id ?? this.id,
     frameScenePartId: frameScenePartId ?? this.frameScenePartId,
     poseId: poseId.present ? poseId.value : this.poseId,
     order: order ?? this.order,
-    groupId: groupId ?? this.groupId,
-    name: name ?? this.name,
+    groupId: groupId.present ? groupId.value : this.groupId,
+    name: name.present ? name.value : this.name,
   );
   @override
   String toString() {
@@ -3876,11 +3882,11 @@ class $FramePosesViewView
       groupId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}group_id'],
-      )!,
+      ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
-      )!,
+      ),
     );
   }
 
@@ -3915,14 +3921,14 @@ class $FramePosesViewView
   late final GeneratedColumn<int> groupId = GeneratedColumn<int>(
     'group_id',
     aliasedName,
-    false,
+    true,
     generatedAs: GeneratedAs(poses.groupId, false),
     type: DriftSqlType.int,
   );
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
     'name',
     aliasedName,
-    false,
+    true,
     generatedAs: GeneratedAs(poses.name, false),
     type: DriftSqlType.string,
   );
@@ -3934,7 +3940,7 @@ class $FramePosesViewView
   @override
   Query? get query =>
       (attachedDatabase.selectOnly(framePoses)..addColumns($columns)).join([
-        innerJoin(poses, poses.id.equalsExp(framePoses.poseId)),
+        leftOuterJoin(poses, poses.id.equalsExp(framePoses.poseId)),
       ]);
   @override
   Set<String> get readTables => const {'frame_poses', 'pose_metadatas'};
@@ -4108,7 +4114,10 @@ final class $$PlacesTableReferences
   _backgroundMetadatasRefsTable(_$SceneGroup db) =>
       MultiTypedResultKey.fromTable(
         db.backgroundMetadatas,
-        aliasName: 'places__id__background_metadatas__group_id',
+        aliasName: $_aliasNameGenerator(
+          db.places.id,
+          db.backgroundMetadatas.groupId,
+        ),
       );
 
   $$BackgroundMetadatasTableProcessedTableManager get backgroundMetadatasRefs {
@@ -4347,8 +4356,9 @@ final class $$BackgroundMetadatasTableReferences
     super.$_typedResult,
   );
 
-  static $PlacesTable _groupIdTable(_$SceneGroup db) =>
-      db.places.createAlias('background_metadatas__group_id__places__id');
+  static $PlacesTable _groupIdTable(_$SceneGroup db) => db.places.createAlias(
+    $_aliasNameGenerator(db.backgroundMetadatas.groupId, db.places.id),
+  );
 
   $$PlacesTableProcessedTableManager get groupId {
     final $_column = $_itemColumn<int>('group_id')!;
@@ -4367,7 +4377,10 @@ final class $$BackgroundMetadatasTableReferences
   static MultiTypedResultKey<$BackgroundImagesTable, List<BackgroundImage>>
   _backgroundImagesRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.backgroundImages,
-    aliasName: 'background_metadatas__id__background_images__metadata_id',
+    aliasName: $_aliasNameGenerator(
+      db.backgroundMetadatas.id,
+      db.backgroundImages.metadataId,
+    ),
   );
 
   $$BackgroundImagesTableProcessedTableManager get backgroundImagesRefs {
@@ -4388,7 +4401,10 @@ final class $$BackgroundMetadatasTableReferences
     _$SceneGroup db,
   ) => MultiTypedResultKey.fromTable(
     db.frames,
-    aliasName: 'background_metadatas__id__frames__background_id',
+    aliasName: $_aliasNameGenerator(
+      db.backgroundMetadatas.id,
+      db.frames.backgroundId,
+    ),
   );
 
   $$FramesTableProcessedTableManager get framesRefs {
@@ -4831,9 +4847,13 @@ final class $$BackgroundImagesTableReferences
     super.$_typedResult,
   );
 
-  static $BackgroundMetadatasTable _metadataIdTable(_$SceneGroup db) => db
-      .backgroundMetadatas
-      .createAlias('background_images__metadata_id__background_metadatas__id');
+  static $BackgroundMetadatasTable _metadataIdTable(_$SceneGroup db) =>
+      db.backgroundMetadatas.createAlias(
+        $_aliasNameGenerator(
+          db.backgroundImages.metadataId,
+          db.backgroundMetadatas.id,
+        ),
+      );
 
   $$BackgroundMetadatasTableProcessedTableManager get metadataId {
     final $_column = $_itemColumn<int>('metadata_id')!;
@@ -5089,7 +5109,7 @@ final class $$ActorsTableReferences
   static MultiTypedResultKey<$PoseMetadatasTable, List<PoseMetadata>>
   _poseMetadatasRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.poseMetadatas,
-    aliasName: 'actors__id__pose_metadatas__group_id',
+    aliasName: $_aliasNameGenerator(db.actors.id, db.poseMetadatas.groupId),
   );
 
   $$PoseMetadatasTableProcessedTableManager get poseMetadatasRefs {
@@ -5320,8 +5340,9 @@ final class $$PoseMetadatasTableReferences
     super.$_typedResult,
   );
 
-  static $ActorsTable _groupIdTable(_$SceneGroup db) =>
-      db.actors.createAlias('pose_metadatas__group_id__actors__id');
+  static $ActorsTable _groupIdTable(_$SceneGroup db) => db.actors.createAlias(
+    $_aliasNameGenerator(db.poseMetadatas.groupId, db.actors.id),
+  );
 
   $$ActorsTableProcessedTableManager get groupId {
     final $_column = $_itemColumn<int>('group_id')!;
@@ -5340,7 +5361,10 @@ final class $$PoseMetadatasTableReferences
   static MultiTypedResultKey<$PoseImagesTable, List<PoseImage>>
   _poseImagesRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.poseImages,
-    aliasName: 'pose_metadatas__id__pose_images__metadata_id',
+    aliasName: $_aliasNameGenerator(
+      db.poseMetadatas.id,
+      db.poseImages.metadataId,
+    ),
   );
 
   $$PoseImagesTableProcessedTableManager get poseImagesRefs {
@@ -5358,7 +5382,7 @@ final class $$PoseMetadatasTableReferences
   static MultiTypedResultKey<$FramePosesTable, List<FramePose>>
   _framePosesRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.framePoses,
-    aliasName: 'pose_metadatas__id__frame_poses__pose_id',
+    aliasName: $_aliasNameGenerator(db.poseMetadatas.id, db.framePoses.poseId),
   );
 
   $$FramePosesTableProcessedTableManager get framePosesRefs {
@@ -5785,9 +5809,10 @@ final class $$PoseImagesTableReferences
     extends BaseReferences<_$SceneGroup, $PoseImagesTable, PoseImage> {
   $$PoseImagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $PoseMetadatasTable _metadataIdTable(_$SceneGroup db) => db
-      .poseMetadatas
-      .createAlias('pose_images__metadata_id__pose_metadatas__id');
+  static $PoseMetadatasTable _metadataIdTable(_$SceneGroup db) =>
+      db.poseMetadatas.createAlias(
+        $_aliasNameGenerator(db.poseImages.metadataId, db.poseMetadatas.id),
+      );
 
   $$PoseMetadatasTableProcessedTableManager get metadataId {
     final $_column = $_itemColumn<int>('metadata_id')!;
@@ -6037,7 +6062,7 @@ final class $$ChoicesTableReferences
   static MultiTypedResultKey<$ChoiceOptionsTable, List<ChoiceOption>>
   _choiceOptionsRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.choiceOptions,
-    aliasName: 'choices__id__choice_options__choice_id',
+    aliasName: $_aliasNameGenerator(db.choices.id, db.choiceOptions.choiceId),
   );
 
   $$ChoiceOptionsTableProcessedTableManager get choiceOptionsRefs {
@@ -6274,7 +6299,9 @@ final class $$ChoiceOptionsTableReferences
   );
 
   static $ChoicesTable _choiceIdTable(_$SceneGroup db) =>
-      db.choices.createAlias('choice_options__choice_id__choices__id');
+      db.choices.createAlias(
+        $_aliasNameGenerator(db.choiceOptions.choiceId, db.choices.id),
+      );
 
   $$ChoicesTableProcessedTableManager get choiceId {
     final $_column = $_itemColumn<int>('choice_id')!;
@@ -6562,7 +6589,7 @@ final class $$ScenesTableReferences
   static MultiTypedResultKey<$ScenePartsTable, List<ScenePart>>
   _scenePartsRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.sceneParts,
-    aliasName: 'scenes__id__scene_parts__scene_id',
+    aliasName: $_aliasNameGenerator(db.scenes.id, db.sceneParts.sceneId),
   );
 
   $$ScenePartsTableProcessedTableManager get scenePartsRefs {
@@ -6782,8 +6809,9 @@ final class $$ScenePartsTableReferences
     extends BaseReferences<_$SceneGroup, $ScenePartsTable, ScenePart> {
   $$ScenePartsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $ScenesTable _sceneIdTable(_$SceneGroup db) =>
-      db.scenes.createAlias('scene_parts__scene_id__scenes__id');
+  static $ScenesTable _sceneIdTable(_$SceneGroup db) => db.scenes.createAlias(
+    $_aliasNameGenerator(db.sceneParts.sceneId, db.scenes.id),
+  );
 
   $$ScenesTableProcessedTableManager get sceneId {
     final $_column = $_itemColumn<int>('scene_id')!;
@@ -6803,7 +6831,7 @@ final class $$ScenePartsTableReferences
     _$SceneGroup db,
   ) => MultiTypedResultKey.fromTable(
     db.frames,
-    aliasName: 'scene_parts__id__frames__scene_part_id',
+    aliasName: $_aliasNameGenerator(db.sceneParts.id, db.frames.scenePartId),
   );
 
   $$FramesTableProcessedTableManager get framesRefs {
@@ -6822,7 +6850,10 @@ final class $$ScenePartsTableReferences
   _scenePartResolversRefsTable(_$SceneGroup db) =>
       MultiTypedResultKey.fromTable(
         db.scenePartResolvers,
-        aliasName: 'scene_parts__id__scene_part_resolvers__scene_part_id',
+        aliasName: $_aliasNameGenerator(
+          db.sceneParts.id,
+          db.scenePartResolvers.scenePartId,
+        ),
       );
 
   $$ScenePartResolversTableProcessedTableManager get scenePartResolversRefs {
@@ -6842,7 +6873,10 @@ final class $$ScenePartsTableReferences
   static MultiTypedResultKey<$CustomScenePartsTable, List<CustomScenePart>>
   _customScenePartsRefsTable(_$SceneGroup db) => MultiTypedResultKey.fromTable(
     db.customSceneParts,
-    aliasName: 'scene_parts__id__custom_scene_parts__scene_part_id',
+    aliasName: $_aliasNameGenerator(
+      db.sceneParts.id,
+      db.customSceneParts.scenePartId,
+    ),
   );
 
   $$CustomScenePartsTableProcessedTableManager get customScenePartsRefs {
@@ -7367,7 +7401,9 @@ final class $$FramesTableReferences
   $$FramesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) =>
-      db.sceneParts.createAlias('frames__scene_part_id__scene_parts__id');
+      db.sceneParts.createAlias(
+        $_aliasNameGenerator(db.frames.scenePartId, db.sceneParts.id),
+      );
 
   $$ScenePartsTableProcessedTableManager get scenePartId {
     final $_column = $_itemColumn<int>('scene_part_id')!;
@@ -7383,9 +7419,10 @@ final class $$FramesTableReferences
     );
   }
 
-  static $BackgroundMetadatasTable _backgroundIdTable(_$SceneGroup db) => db
-      .backgroundMetadatas
-      .createAlias('frames__background_id__background_metadatas__id');
+  static $BackgroundMetadatasTable _backgroundIdTable(_$SceneGroup db) =>
+      db.backgroundMetadatas.createAlias(
+        $_aliasNameGenerator(db.frames.backgroundId, db.backgroundMetadatas.id),
+      );
 
   $$BackgroundMetadatasTableProcessedTableManager? get backgroundId {
     final $_column = $_itemColumn<int>('background_id');
@@ -7694,12 +7731,12 @@ typedef $$FramesTableProcessedTableManager =
 typedef $$ScenePartResolversTableCreateCompanionBuilder =
     ScenePartResolversCompanion Function({
       Value<int> scenePartId,
-      required String resolverScript,
+      required String dartResolverScript,
     });
 typedef $$ScenePartResolversTableUpdateCompanionBuilder =
     ScenePartResolversCompanion Function({
       Value<int> scenePartId,
-      Value<String> resolverScript,
+      Value<String> dartResolverScript,
     });
 
 final class $$ScenePartResolversTableReferences
@@ -7715,8 +7752,13 @@ final class $$ScenePartResolversTableReferences
     super.$_typedResult,
   );
 
-  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) => db.sceneParts
-      .createAlias('scene_part_resolvers__scene_part_id__scene_parts__id');
+  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) =>
+      db.sceneParts.createAlias(
+        $_aliasNameGenerator(
+          db.scenePartResolvers.scenePartId,
+          db.sceneParts.id,
+        ),
+      );
 
   $$ScenePartsTableProcessedTableManager get scenePartId {
     final $_column = $_itemColumn<int>('scene_part_id')!;
@@ -7742,8 +7784,8 @@ class $$ScenePartResolversTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get resolverScript => $composableBuilder(
-    column: $table.resolverScript,
+  ColumnFilters<String> get dartResolverScript => $composableBuilder(
+    column: $table.dartResolverScript,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7780,8 +7822,8 @@ class $$ScenePartResolversTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get resolverScript => $composableBuilder(
-    column: $table.resolverScript,
+  ColumnOrderings<String> get dartResolverScript => $composableBuilder(
+    column: $table.dartResolverScript,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -7818,8 +7860,8 @@ class $$ScenePartResolversTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get resolverScript => $composableBuilder(
-    column: $table.resolverScript,
+  GeneratedColumn<String> get dartResolverScript => $composableBuilder(
+    column: $table.dartResolverScript,
     builder: (column) => column,
   );
 
@@ -7881,18 +7923,18 @@ class $$ScenePartResolversTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> scenePartId = const Value.absent(),
-                Value<String> resolverScript = const Value.absent(),
+                Value<String> dartResolverScript = const Value.absent(),
               }) => ScenePartResolversCompanion(
                 scenePartId: scenePartId,
-                resolverScript: resolverScript,
+                dartResolverScript: dartResolverScript,
               ),
           createCompanionCallback:
               ({
                 Value<int> scenePartId = const Value.absent(),
-                required String resolverScript,
+                required String dartResolverScript,
               }) => ScenePartResolversCompanion.insert(
                 scenePartId: scenePartId,
-                resolverScript: resolverScript,
+                dartResolverScript: dartResolverScript,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -7983,8 +8025,10 @@ final class $$CustomScenePartsTableReferences
     super.$_typedResult,
   );
 
-  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) => db.sceneParts
-      .createAlias('custom_scene_parts__scene_part_id__scene_parts__id');
+  static $ScenePartsTable _scenePartIdTable(_$SceneGroup db) =>
+      db.sceneParts.createAlias(
+        $_aliasNameGenerator(db.customSceneParts.scenePartId, db.sceneParts.id),
+      );
 
   $$ScenePartsTableProcessedTableManager get scenePartId {
     final $_column = $_itemColumn<int>('scene_part_id')!;
@@ -8389,7 +8433,9 @@ final class $$FramePosesTableReferences
   $$FramePosesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $PoseMetadatasTable _poseIdTable(_$SceneGroup db) =>
-      db.poseMetadatas.createAlias('frame_poses__pose_id__pose_metadatas__id');
+      db.poseMetadatas.createAlias(
+        $_aliasNameGenerator(db.framePoses.poseId, db.poseMetadatas.id),
+      );
 
   $$PoseMetadatasTableProcessedTableManager? get poseId {
     final $_column = $_itemColumn<int>('pose_id');

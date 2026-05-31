@@ -9,7 +9,7 @@ class NovelEditableText extends StatelessWidget {
   const NovelEditableText({
     super.key,
     required this.builder,
-    this.sourceText = "",
+    required this.sourceText,
   });
 
   @override
@@ -19,14 +19,21 @@ class NovelEditableText extends StatelessWidget {
         final controller = useTextEditingController(text: sourceText);
         final focusNode = useFocusNode();
 
-        // Safety precaution. Just in case!
-        useValueChanged<String, Null>(sourceText, (_, __) {
-          if (sourceText != controller.text && !focusNode.hasFocus) {
-            controller.text = sourceText;
+        useEffect(() {
+          void syncText() {
+            if (!focusNode.hasFocus && sourceText != controller.text) {
+              controller.text = sourceText;
+            }
           }
 
-          return null;
-        });
+          syncText();
+
+          focusNode.addListener(syncText);
+
+          return () {
+            focusNode.removeListener(syncText);
+          };
+        }, [sourceText]);
 
         return builder(controller, focusNode);
       },

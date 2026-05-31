@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:junction/junction.dart';
+import 'package:prac_res/components/icon_buttons/outlined_button.dart';
 
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/components/design_values.dart';
@@ -27,7 +29,28 @@ class NovelSceneGroupEditorPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0.0,
         toolbarHeight: 45,
+        title: Consumer(
+          builder: (context, ref, child) {
+            return NovelOutlinedButton(
+              onPressed: () async {
+                final sceneGroup = ref.read(sceneGroupProvider);
+
+                await WebWriteHandle().write(
+                  CrossInMemoryFile(
+                    name: CrossFilesystemName(
+                      await sceneGroup.databaseDisplayName(),
+                    ),
+                    data: CrossFileData(bytes: await sceneGroup.toBytes()),
+                  ),
+                );
+              },
+              child: Text("Save"),
+            );
+          },
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Padding(

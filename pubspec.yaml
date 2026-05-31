@@ -37,7 +37,7 @@ dependencies:
   flutter_resizable_container: ^4.2.0
 
   # Used for its [intersperse] function on iterables. Also I wrote this library!
-  handy: ^1.1.5
+  handy: ^1.1.6
 
 dev_dependencies:
   flutter_test:

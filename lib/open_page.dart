@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:junction/junction.dart';
+import 'package:prac_res/components/icon_buttons/fitted_icon.dart';
 
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/components/design_values.dart';
@@ -47,7 +48,7 @@ class NovelOpenPage extends StatelessWidget {
               buildSceneGroup: () async {
                 final selected = await WebReadHandle.showOpenFileDialog(
                   accept: [
-                    XTypeGroup(extensions: ["novel"]),
+                    XTypeGroup(extensions: ["novel", "db"]),
                   ],
                 );
 
@@ -89,33 +90,41 @@ class SceneGroupOpener extends StatelessWidget {
       width: DesignValues.veryLarge * 2,
       child: Consumer(
         builder: (context, ref, _) {
-          return NovelOutlinedButton(
-            onPressed: () async {
-              final sceneGroupFuture = await buildSceneGroup();
+          return AspectRatio(
+            aspectRatio: 1,
+            child: NovelOutlinedButton(
+              onPressed: () async {
+                final sceneGroupFuture = await buildSceneGroup();
 
-              await NovelLoadingPage.load(context, (context) async {
-                final sceneGroup = await sceneGroupFuture;
+                await NovelLoadingPage.load(context, (context) async {
+                  final sceneGroup = await sceneGroupFuture;
 
-                final navigator = Navigator.of(context);
+                  final navigator = Navigator.of(context);
 
-                if (sceneGroup == null) {
-                  navigator.pop();
-                  return;
-                }
+                  if (sceneGroup == null) {
+                    navigator.pop();
+                    return;
+                  }
 
-                ref
-                    .read(NovelSceneGroupEditorPage.sceneGroupProvider.notifier)
-                    .set(sceneGroup);
+                  ref
+                      .read(
+                        NovelSceneGroupEditorPage.sceneGroupProvider.notifier,
+                      )
+                      .set(sceneGroup);
 
-                // SAFETY: This should be safe because [context] shouldn't unmount until this navigator function pushes through!
-                await navigator.pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => NovelSceneGroupEditorPage(),
-                  ),
-                );
-              });
-            },
-            icon: icon,
+                  // SAFETY: This should be safe because [context] shouldn't unmount until this navigator function pushes through!
+                  await navigator.pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => NovelSceneGroupEditorPage(),
+                    ),
+                  );
+                });
+              },
+              child: NovelFittedIcon(
+                icon: icon,
+                sizePercentage: DesignValues.semiLargePercent,
+              ),
+            ),
           );
         },
       ),

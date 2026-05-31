@@ -30,7 +30,7 @@ class NovelCard extends StatelessWidget {
       clipBehavior: Clip.hardEdge,
       child: Stack(
         children: [
-          Positioned.fill(child: child),
+          child,
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
