@@ -10,12 +10,12 @@ import 'package:prac_res/editor_page/components/scene_viewer/components/frame.da
 import 'package:prac_res/editor_page/editor_page.dart';
 
 class NovelPosesInspector extends StatelessWidget {
-  final int selectedScenePartId;
+  final int frameScenePartId;
 
-  const NovelPosesInspector({super.key, required this.selectedScenePartId});
+  const NovelPosesInspector({super.key, required this.frameScenePartId});
 
   static final actorsTable = Provider<$ActorsTable>((ref) {
-    return ref.read(NovelSceneGroupEditorPage.sceneGroupProvider).actors;
+    return ref.watch(NovelSceneGroupEditorPage.sceneGroupProvider).actors;
   });
 
   static final poseMetadataTableProvider = Provider<$PoseMetadatasTable>((ref) {
@@ -26,8 +26,7 @@ class NovelPosesInspector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NovelQueryBuilder(
-      query: (ref) =>
-          ref.watch(NovelPoses.framePoseProvider(selectedScenePartId)),
+      query: (ref) => ref.watch(NovelPoses.framePoseProvider(frameScenePartId)),
       builder: (context, ref, framePoses) {
         return NovelReorderableListView(
           shrinkWrap: true,
@@ -50,7 +49,7 @@ class NovelPosesInspector extends StatelessWidget {
 
             await sceneGroup.framePoses.insert().insert(
               FramePosesCompanion.insert(
-                frameScenePartId: selectedScenePartId,
+                frameScenePartId: frameScenePartId,
                 order: newOrder,
               ),
             );

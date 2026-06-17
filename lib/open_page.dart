@@ -11,6 +11,7 @@ import 'package:prac_res/data/data.dart';
 import 'package:prac_res/components/design_values.dart';
 import 'package:prac_res/components/dialogs/new_name_dialog.dart';
 import 'package:prac_res/components/icon_buttons/outlined_button.dart';
+import 'package:prac_res/data/web.dart';
 import 'package:prac_res/editor_page/editor_page.dart';
 import 'package:prac_res/loading_page.dart';
 
@@ -38,9 +39,18 @@ class NovelOpenPage extends StatelessWidget {
                   return Future.syncValue(Future.syncValue(null));
                 }
 
-                return SceneGroup.instance.replace(
+                return SceneGroupManager.replace(
                   (replacer) => replacer.empty(name),
                 );
+              },
+            ),
+            SceneGroupOpener(
+              icon: Icon(Icons.arrow_right_rounded),
+              buildSceneGroup: () async {
+                final loaded = Future.value(
+                  Future.value(SceneGroupManager.instance.sceneGroup),
+                );
+                return loaded;
               },
             ),
             SceneGroupOpener(
@@ -59,7 +69,7 @@ class NovelOpenPage extends StatelessWidget {
                 final computeSceneGroup = compute((selected) async {
                   final file = await selected.first.read();
 
-                  return await SceneGroup.instance.replace((replacer) {
+                  return await SceneGroupManager.replace((replacer) {
                     return replacer.fromBytes(file.key, file.value.bytes);
                   });
                 }, selected);

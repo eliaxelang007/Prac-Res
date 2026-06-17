@@ -1,7 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
-import 'package:drift/wasm.dart';
 import 'package:handy/handy.dart';
+import 'data.steps.dart';
 
 part 'data.g.dart';
 
@@ -319,31 +318,30 @@ class PoseImages extends ImageDataTable {
 
 /* -- Choices & Options -- */
 
-class Choices extends GroupTable {
-  @override
+class Choices extends Table {
   late final id = integer().autoIncrement()();
-
-  @override
   late final name = text()();
 }
 
+@DataClassName("ChoiceOption", implementing: [Group])
 @TableIndex.sql('''
   CREATE UNIQUE INDEX IF NOT EXISTS one_selected_per_choice 
   ON choice_options(choice_id) 
   WHERE is_selected = 1;
 ''')
-class ChoiceOptions extends Table {
+class ChoiceOptions extends GroupTable {
+  @override
   late final id = integer().autoIncrement()();
   late final choiceId = integer().references(
     Choices,
     #id,
     onDelete: KeyAction.cascade,
   )();
-  late final optionText = text()();
 
-  late final IntColumn isSelected = integer()
-      .withDefault(const Constant(0))
-      .check(isSelected.isIn([0, 1]))();
+  @override
+  late final name = text()();
+
+  late final isSelected = boolean().withDefault(const Constant(false))();
 }
 
 /* -- Scenes -- */
@@ -416,6 +414,36 @@ class ScenePartResolvers extends ScenePartSpecificsTable {
   Set<Column> get primaryKey => {scenePartId};
 }
 
+class ResolverChoiceReference extends Table {
+  late final id = integer().autoIncrement()();
+  late final resolverScenePartId = integer().references(
+    ScenePartResolvers,
+    #scenePartId,
+    onDelete: KeyAction.cascade,
+  )();
+  late final choiceId = integer().nullable().references(
+    Choices,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+  late final identifier = text()();
+}
+
+class ResolverScenePartReference extends Table {
+  late final id = integer().autoIncrement()();
+  late final resolverScenePartId = integer().references(
+    ScenePartResolvers,
+    #scenePartId,
+    onDelete: KeyAction.cascade,
+  )();
+  late final scenePartId = integer().nullable().references(
+    SceneParts,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+  late final identifier = text()();
+}
+
 class CustomSceneParts extends ScenePartSpecificsTable {
   @override
   late final scenePartId = integer().references(
@@ -443,6 +471,23 @@ class DialogueBoxes extends Table {
   Set<Column> get primaryKey => {frameScenePartId};
 }
 
+class FrameChoices extends Table {
+  late final frameScenePartId = integer().references(
+    Frames,
+    #scenePartId,
+    onDelete: KeyAction.cascade,
+  )();
+
+  late final choiceId = integer().nullable().references(
+    Choices,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+
+  @override
+  Set<Column> get primaryKey => {frameScenePartId};
+}
+
 class FramePoses extends Table {
   late final id = integer().autoIncrement()();
   late final frameScenePartId = integer().references(
@@ -456,50 +501,6 @@ class FramePoses extends Table {
     onDelete: KeyAction.setNull,
   )();
   late final order = real()();
-}
-
-abstract class FramePosesView extends View {
-  FramePoses get framePoses;
-  PoseMetadatas get poses;
-
-  @override
-  Query as() =>
-      select([
-        framePoses.id,
-        framePoses.frameScenePartId,
-        framePoses.poseId,
-        framePoses.order,
-        poses.groupId,
-        poses.name,
-      ]).from(framePoses).join([
-        leftOuterJoin(poses, poses.id.equalsExp(framePoses.poseId)),
-      ]);
-}
-
-abstract class SceneTimelineView extends View {
-  SceneParts get sceneParts;
-  Frames get frames;
-  ScenePartResolvers get scenePartResolvers;
-  CustomSceneParts get custom;
-
-  @override
-  Query as() =>
-      select([
-        sceneParts.id,
-        sceneParts.sceneId,
-        sceneParts.order,
-        sceneParts.partType,
-        frames.backgroundId,
-        scenePartResolvers.dartResolverScript,
-        custom.eventId,
-      ]).from(sceneParts).join([
-        leftOuterJoin(frames, frames.scenePartId.equalsExp(sceneParts.id)),
-        leftOuterJoin(
-          scenePartResolvers,
-          scenePartResolvers.scenePartId.equalsExp(sceneParts.id),
-        ),
-        leftOuterJoin(custom, custom.scenePartId.equalsExp(sceneParts.id)),
-      ]);
 }
 
 class SceneTimelineItem {
@@ -577,142 +578,40 @@ class TimelineCustom extends SceneTimelineItemSpecifics {
     PoseImages,
     Choices,
     ChoiceOptions,
+    FrameChoices,
     Scenes,
     SceneParts,
     Frames,
     ScenePartResolvers,
+    ResolverChoiceReference,
+    ResolverScenePartReference,
     CustomSceneParts,
     DialogueBoxes,
     FramePoses,
   ],
-  views: [SceneTimelineView, FramePosesView],
+  include: {'views.drift'},
 )
 class SceneGroup extends _$SceneGroup {
-  final Future<ExistingDatabase> webDetailsFuture;
-
-  static final Uri sqlite3Uri = Uri.parse("sqlite3.wasm");
-  static final Uri driftWorkerUri = Uri.parse("drift_worker.js");
-
-  static SceneGroup instance = SceneGroupBuilder._().empty("Untitled");
-
-  static final Future<WasmProbeResult> probe = WasmDatabase.probe(
-    sqlite3Uri: sqlite3Uri,
-    driftWorkerUri: driftWorkerUri,
-  );
-
-  Future<String> databaseDisplayName() async {
-    final uniqueDatabaseNameParts = (await webDetailsFuture).$2.split("_");
-
-    return uniqueDatabaseNameParts
-        .sublist(0, uniqueDatabaseNameParts.length - 1)
-        .join("_");
-  }
-
-  // SAFETY: This also causes an
-  // `InvalidStateError: Failed to read the 'error' property from 'IDBRequest': The request has not finished.`
-  // which is probably safe to ignore? Fix this someday.
-  Future<SceneGroup> replace(
-    SceneGroup Function(SceneGroupBuilder) replacer,
-  ) async {
-    final webDetails = await webDetailsFuture;
-
-    // Currently, something is making [close] hang when awaited.
-    // Not sure what's causing it, but for now, I'm doing this so
-    // that I'm still technically delete the database *once* it finishes closing.
-    close().then((_) async {
-      // SAFETY: This may seem unsafe, but this only deletes the copy of the database in OPFS. It doesn't delete the file its bytes were loaded from.
-      // SAFETY: [webDetailsFuture] is an instance variable, not a static variable. This doesn't delete the current [instance]'s [webDetailsFuture].
-      await (await probe).deleteDatabase(webDetails);
-    });
-
-    instance = replacer(SceneGroupBuilder._());
-
-    // SAFETY: NOOP Just to ensure that the database is actually loaded.
-    await instance.customStatement("SELECT 1");
-
-    return instance;
-  }
-
-  SceneGroup._(this.webDetailsFuture, super.e);
+  SceneGroup(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
-      onCreate: (Migrator m) async {
-        await m.createAll();
+      onUpgrade: stepByStep(
+        from1To2: (migrator, schema) async {
+          await migrator.createTable(schema.resolverChoiceReference);
+          await migrator.createTable(schema.resolverScenePartReference);
+        },
+      ),
+      onCreate: (migrator) async {
+        await migrator.createAll();
       },
       beforeOpen: (details) async {
         await customStatement('PRAGMA foreign_keys = ON');
       },
     );
-  }
-
-  Future<Uint8List> toBytes() async {
-    return (await (await probe).exportDatabase(await webDetailsFuture))!;
-  }
-}
-
-class SceneGroupBuilder {
-  static int _uniqueId = 0;
-
-  bool _used;
-
-  SceneGroupBuilder._() : _used = false;
-
-  SceneGroup _fromWasmDatabaseResult(
-    String databaseDisplayName, {
-    Uint8List? initialBytes,
-  }) {
-    if (_used) {
-      throw StateError("You can only make one Database instance at a time!");
-    }
-
-    _used = true;
-
-    final uniqueDatabaseName = "${databaseDisplayName}_$_uniqueId";
-    _uniqueId += 1;
-
-    final resultFuture = WasmDatabase.open(
-      databaseName: uniqueDatabaseName,
-      sqlite3Uri: SceneGroup.sqlite3Uri,
-      driftWorkerUri: SceneGroup.driftWorkerUri,
-      initializeDatabase: (initialBytes != null) ? (() => initialBytes) : null,
-    );
-
-    final connectionFuture = resultFuture.then((result) {
-      if (result.missingFeatures.isNotEmpty) {
-        debugPrint(
-          'Using ${result.chosenImplementation} due to missing browser '
-          'features: ${result.missingFeatures}',
-        );
-      }
-      return result.resolvedExecutor;
-    });
-
-    final webDetailsFuture = resultFuture.then((result) {
-      final storageApi = result.chosenImplementation.storageApi;
-      if (storageApi == null) {
-        throw StateError(
-          "We can't export this database to bytes because the browser its running on doesn't support a valid storage API!",
-        );
-      }
-      return (storageApi, uniqueDatabaseName);
-    });
-
-    return SceneGroup._(
-      webDetailsFuture,
-      DatabaseConnection.delayed(connectionFuture),
-    );
-  }
-
-  SceneGroup fromBytes(String databaseName, Uint8List bytes) {
-    return _fromWasmDatabaseResult(databaseName, initialBytes: bytes);
-  }
-
-  SceneGroup empty(String databaseName) {
-    return _fromWasmDatabaseResult(databaseName);
   }
 }

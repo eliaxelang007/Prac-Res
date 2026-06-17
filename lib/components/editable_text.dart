@@ -3,7 +3,11 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 
 class NovelEditableText extends StatelessWidget {
   final String sourceText;
-  final Widget Function(TextEditingController controller, FocusNode focusNode)
+  final Widget Function(
+    BuildContext context,
+    TextEditingController controller,
+    FocusNode focusNode,
+  )
   builder;
 
   const NovelEditableText({
@@ -35,7 +39,7 @@ class NovelEditableText extends StatelessWidget {
           };
         }, [sourceText]);
 
-        return builder(controller, focusNode);
+        return builder(context, controller, focusNode);
       },
     );
   }

@@ -34,7 +34,7 @@ dependencies:
   # Used for UI elements
   device_frame: ^1.4.0
   animated_text_kit: ^4.3.0
-  flutter_resizable_container: ^4.2.0
+  # flutter_resizable_container: ^4.2.0
 
   # Used for its [intersperse] function on iterables. Also I wrote this library!
   handy: ^1.1.6

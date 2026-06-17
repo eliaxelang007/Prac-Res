@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:junction/junction.dart';
+import 'package:prac_res/components/lists/scrolling.dart';
 
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/components/card.dart';
@@ -174,13 +175,16 @@ class NovelImageGroupSelector<G extends Group> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox.expand(
-      child: NovelGroupSelector(
-        title: Text("Image Group"),
-        onChanged: (selectedGroup) {
-          selectedGroupState.value = selectedGroup;
-        },
-        groupTableProvider: imageGroupTable,
-        selectedGroup: selectedGroupState.value,
+      child: SingleChildScrollbarView(
+        scrollDirection: Axis.vertical,
+        child: NovelGroupSelector(
+          title: Text("Image Group"),
+          onChanged: (selectedGroup) {
+            selectedGroupState.value = selectedGroup;
+          },
+          groupTableProvider: imageGroupTable,
+          selectedGroup: selectedGroupState.value,
+        ),
       ),
     );
   }
@@ -344,7 +348,7 @@ class NovelImageSelectable<M extends ImageMetadata> extends StatelessWidget {
               builder: (context, ref, child) {
                 return NovelEditableText(
                   sourceText: metadata.name,
-                  builder: (controller, focusNode) => TextField(
+                  builder: (context, controller, focusNode) => TextField(
                     focusNode: focusNode,
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.zero,

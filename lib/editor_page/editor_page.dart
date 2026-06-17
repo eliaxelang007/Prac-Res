@@ -6,13 +6,14 @@ import 'package:prac_res/components/icon_buttons/outlined_button.dart';
 
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/components/design_values.dart';
+import 'package:prac_res/data/web.dart';
 import 'package:prac_res/editor_page/components/scene_selector.dart';
 import 'package:prac_res/editor_page/components/inspector/novel_inspector.dart';
 import 'package:prac_res/editor_page/components/scene_viewer/scene_viewer.dart';
 
 class SceneGroupNotifier extends Notifier<SceneGroup> {
   @override
-  SceneGroup build() => SceneGroup.instance;
+  SceneGroup build() => SceneGroupManager.instance.sceneGroup;
 
   void set(SceneGroup newSceneGroup) {
     state = newSceneGroup;
@@ -36,14 +37,14 @@ class NovelSceneGroupEditorPage extends StatelessWidget {
           builder: (context, ref, child) {
             return NovelOutlinedButton(
               onPressed: () async {
-                final sceneGroup = ref.read(sceneGroupProvider);
-
                 await WebWriteHandle().write(
                   CrossInMemoryFile(
                     name: CrossFilesystemName(
-                      await sceneGroup.databaseDisplayName(),
+                      "${await SceneGroupManager.databaseDisplayName()}.novel",
                     ),
-                    data: CrossFileData(bytes: await sceneGroup.toBytes()),
+                    data: CrossFileData(
+                      bytes: await SceneGroupManager.toBytes(),
+                    ),
                   ),
                 );
               },

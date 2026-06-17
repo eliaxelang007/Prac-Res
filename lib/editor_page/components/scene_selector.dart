@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:prac_res/components/lists/scrolling.dart';
 
 import 'package:prac_res/data/data.dart';
 import 'package:prac_res/components/database/group_selector.dart';
@@ -37,13 +38,16 @@ class NovelSceneSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer(
       builder: (context, ref, _) {
-        return NovelGroupSelector(
-          title: Text("Scenes"),
-          onChanged: (selection) {
-            ref.read(selectedSceneIdProvider.notifier).set(selection);
-          },
-          groupTableProvider: scenesTableProvider,
-          selectedGroup: ref.watch(selectedSceneIdProvider),
+        return SingleChildScrollbarView(
+          scrollDirection: Axis.vertical,
+          child: NovelGroupSelector(
+            title: Text("Scenes"),
+            onChanged: (selection) {
+              ref.read(selectedSceneIdProvider.notifier).set(selection);
+            },
+            groupTableProvider: scenesTableProvider,
+            selectedGroup: ref.watch(selectedSceneIdProvider),
+          ),
         );
       },
     );

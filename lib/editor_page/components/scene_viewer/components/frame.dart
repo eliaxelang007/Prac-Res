@@ -42,6 +42,7 @@ class NovelFrame extends StatelessWidget {
               child: NovelFrameSafeArea(
                 poses: NovelPoses(scenePartId: scenePartId),
                 dialogue: NovelDialogueArea(scenePartId: scenePartId),
+                choice: NovelChoice(scenePartId: scenePartId),
               ),
             ),
           ),
@@ -54,11 +55,13 @@ class NovelFrame extends StatelessWidget {
 class NovelFrameSafeArea extends StatelessWidget {
   final Widget poses;
   final Widget dialogue;
+  final Widget choice;
 
   const NovelFrameSafeArea({
     super.key,
     required this.poses,
     required this.dialogue,
+    required this.choice,
   });
 
   @override
@@ -85,6 +88,15 @@ class NovelFrameSafeArea extends StatelessWidget {
                 bottom: DesignValues.medium,
               ),
               child: dialogue,
+            ),
+          ),
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: DesignValues.large * 9.7,
+                right: DesignValues.large * 9.7,
+              ),
+              child: Center(child: choice),
             ),
           ),
         ],
@@ -313,14 +325,15 @@ class NovelDialogueBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(DesignValues.small),
-      child: ColoredBox(
-        color: Colors.blueGrey,
-        child: Padding(
-          padding: EdgeInsets.all(DesignValues.semiSmall),
-          child: dialogue,
-        ),
+    return Card(
+      color: Color.fromARGB(255, 247, 220, 158),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.all(Radius.circular(10)),
+        side: BorderSide(color: Color.fromARGB(255, 55, 33, 7), width: 5),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(DesignValues.semiSmall),
+        child: SizedBox.expand(child: dialogue),
       ),
     );
   }
@@ -333,18 +346,125 @@ class NovelNameBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(DesignValues.small),
-        topRight: Radius.circular(DesignValues.small),
-      ),
-      child: ColoredBox(
-        color: Colors.blueGrey,
-        child: Padding(
-          padding: EdgeInsets.all(DesignValues.small),
-          child: name,
+    return Card(
+      color: Color.fromARGB(255, 247, 220, 158),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(DesignValues.small),
+          topRight: Radius.circular(DesignValues.small),
         ),
+        side: BorderSide(color: Color.fromARGB(255, 55, 33, 7), width: 5),
       ),
+      child: Padding(
+        padding: EdgeInsets.all(DesignValues.small),
+        child: SizedBox.expand(child: name),
+      ),
+    );
+  }
+}
+
+/* choices.dart */
+
+class NovelChoice extends StatelessWidget {
+  final int scenePartId;
+
+  const NovelChoice({super.key, required this.scenePartId});
+
+  static final frameChoiceProvider =
+      StreamProvider.family<FrameChoicesViewData?, int>((
+        ref,
+        frameScenePartId,
+      ) {
+        return (ref
+                .watch(NovelSceneGroupEditorPage.sceneGroupProvider)
+                .frameChoicesView
+                .select()
+              ..where(
+                (frameChoiceEntry) =>
+                    frameChoiceEntry.frameScenePartId.equals(frameScenePartId),
+              ))
+            .watchSingleOrNull();
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelQueryBuilder(
+      query: (ref) => ref.watch(frameChoiceProvider(scenePartId)),
+      builder: (context, ref, frameChoice) {
+        final choiceId = frameChoice?.choiceId;
+
+        if (choiceId == null) return SizedBox.shrink();
+
+        return NovelChoiceOptions(choiceId: choiceId);
+      },
+    );
+  }
+}
+
+class NovelChoiceOptions extends StatelessWidget {
+  final int choiceId;
+
+  const NovelChoiceOptions({super.key, required this.choiceId});
+
+  static final choiceOptionsProvider =
+      StreamProvider.family<List<ChoiceOption>, int>((ref, int choiceId) {
+        return (ref
+                .watch(NovelSceneGroupEditorPage.sceneGroupProvider)
+                .choiceOptions
+                .select()
+              ..where(
+                (choiceOptionEntry) =>
+                    choiceOptionEntry.choiceId.equals(choiceId),
+              ))
+            .watch();
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelQueryBuilder(
+      query: (ref) => ref.watch(choiceOptionsProvider(choiceId)),
+      builder: (context, ref, choiceOptions) {
+        return Card(
+          child: RadioGroup<int?>(
+            groupValue: choiceOptions
+                .where((choiceOption) => choiceOption.isSelected)
+                .firstOrNull
+                ?.id,
+            onChanged: (selectedChoiceOption) async {
+              final sceneGroup = ref.read(
+                NovelSceneGroupEditorPage.sceneGroupProvider,
+              );
+
+              await sceneGroup.transaction(() async {
+                await (sceneGroup.choiceOptions.update()..where(
+                      (choiceOptionEntry) =>
+                          choiceOptionEntry.choiceId.equals(choiceId),
+                    ))
+                    .write(ChoiceOptionsCompanion(isSelected: Value(false)));
+
+                if (selectedChoiceOption == null) return;
+
+                await (sceneGroup.choiceOptions.update()..where(
+                      (choiceOptionEntry) =>
+                          choiceOptionEntry.id.equals(selectedChoiceOption),
+                    ))
+                    .write(ChoiceOptionsCompanion(isSelected: Value(true)));
+              });
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final choiceOption in choiceOptions)
+                  RadioListTile<int?>(
+                    toggleable: true,
+                    value: choiceOption.id,
+                    title: Text(choiceOption.name),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -28,11 +28,11 @@ class NovelBackgroundInspector extends StatelessWidget {
 
   const NovelBackgroundInspector({
     super.key,
-    required this.selectedBackgroundId,
+    required this.backgroundId,
     required this.selectedFrameScenePartId,
   });
 
-  final int? selectedBackgroundId;
+  final int? backgroundId;
   final int selectedFrameScenePartId;
 
   @override
@@ -44,7 +44,7 @@ class NovelBackgroundInspector extends StatelessWidget {
           imageGroupTable: placesTableProvider,
           imageDataTable: NovelBackground.backgroundImageTableProvider,
           imageMetadataTable: backgroundMetadataTableProvider,
-          selectedImageId: selectedBackgroundId,
+          selectedImageId: backgroundId,
           onImageSelected: (newBackgroundId) async {
             await (ref.read(framesTableProvider).update()..where(
                   (frameEntry) =>

@@ -1,0 +1,43 @@
+import 'data.dart';
+
+CREATE VIEW scene_timeline_view AS
+SELECT 
+  scene_parts.id,
+  scene_parts.scene_id,
+  scene_parts."order",
+  scene_parts.part_type,
+  frames.background_id,
+  scene_part_resolvers.dart_resolver_script,
+  custom_scene_parts.event_id
+FROM scene_parts
+LEFT OUTER JOIN frames 
+  ON frames.scene_part_id = scene_parts.id
+LEFT OUTER JOIN scene_part_resolvers 
+  ON scene_part_resolvers.scene_part_id = scene_parts.id
+LEFT OUTER JOIN custom_scene_parts 
+  ON custom_scene_parts.scene_part_id = scene_parts.id;
+
+---
+
+CREATE VIEW frame_poses_view AS
+SELECT 
+  frame_poses.id,
+  frame_poses.frame_scene_part_id,
+  frame_poses.pose_id,
+  frame_poses."order",
+  pose_metadatas.group_id,
+  pose_metadatas.name
+FROM frame_poses
+LEFT OUTER JOIN pose_metadatas 
+  ON pose_metadatas.id = frame_poses.pose_id;
+
+---
+
+CREATE VIEW frame_choices_view AS
+SELECT 
+  frame_choices.frame_scene_part_id,
+  frame_choices.choice_id,
+  choices.name
+FROM frame_choices
+LEFT OUTER JOIN choices 
+  ON choices.id = frame_choices.choice_id;

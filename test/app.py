@@ -19,7 +19,7 @@ POSE_FILES = [
 # --- Helper Functions ---
 
 
-def get_image_bytes(filepath):
+def get_image_bytes(filepath: str) -> bytes:
     if os.path.exists(filepath):
         with open(filepath, 'rb') as f:
             return f.read()
@@ -28,7 +28,7 @@ def get_image_bytes(filepath):
         return b"DUMMY_IMAGE_DATA"
 
 
-def create_schema(cursor):
+def create_schema(cursor: sqlite3.Connection) -> None:
     # 1. Image Groups & Metadata
     cursor.executescript("""
         CREATE TABLE IF NOT EXISTS places (
@@ -122,7 +122,7 @@ def create_schema(cursor):
     """)
 
 
-def populate_database(conn):
+def populate_database(conn: sqlite3.Connection) -> None:
     cursor = conn.cursor()
 
     # --- 1. Populate Places & Backgrounds ---
@@ -170,7 +170,7 @@ def populate_database(conn):
     pose_ref = pose_metadata_ids[0]
 
     # --- Helper to create a Frame ---
-    def make_frame(scene_id, order, dialogue_text):
+    def make_frame(scene_id: int | None, order: float, dialogue_text: str) -> int | None:
         cursor.execute(
             "INSERT INTO scene_parts (scene_id, \"order\", part_type) VALUES (?, ?, 'frame')", (scene_id, order))
         part_id = cursor.lastrowid

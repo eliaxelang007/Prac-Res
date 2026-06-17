@@ -65,65 +65,69 @@ class NovelScenePartDropdown extends StatelessWidget {
       builder: (context, ref, _) {
         return NovelEditableText(
           sourceText: partType.toString(),
-          builder: (controller, focusNode) => DropdownMenu<ScenePartType>(
-            controller: controller,
-            focusNode: focusNode,
-            initialSelection: partType,
-            dropdownMenuEntries: [
-              for (final partType in ScenePartType.values)
-                DropdownMenuEntry(value: partType, label: partType.toString()),
-            ],
-            onSelected: (newPartType) async {
-              if (newPartType == null || newPartType == partType) return;
+          builder: (context, controller, focusNode) =>
+              DropdownMenu<ScenePartType>(
+                controller: controller,
+                focusNode: focusNode,
+                initialSelection: partType,
+                dropdownMenuEntries: [
+                  for (final partType in ScenePartType.values)
+                    DropdownMenuEntry(
+                      value: partType,
+                      label: partType.toString(),
+                    ),
+                ],
+                onSelected: (newPartType) async {
+                  if (newPartType == null || newPartType == partType) return;
 
-              final sceneGroup = ref.read(
-                NovelSceneGroupEditorPage.sceneGroupProvider,
-              );
-
-              switch (newPartType) {
-                case ScenePartType.frame:
-                  {
-                    await sceneGroup.frames.insert().insert(
-                      mode: InsertMode.insertOrIgnore,
-                      FramesCompanion.insert(
-                        scenePartId: Value(selectedScenePartId),
-                      ),
-                    );
-                    break;
-                  }
-                case ScenePartType.resolver:
-                  {
-                    await sceneGroup.scenePartResolvers.insert().insert(
-                      mode: InsertMode.insertOrIgnore,
-                      ScenePartResolversCompanion.insert(
-                        scenePartId: Value(selectedScenePartId),
-                        dartResolverScript: "",
-                      ),
-                    );
-                    break;
-                  }
-                case ScenePartType.custom:
-                  {
-                    await sceneGroup.customSceneParts.insert().insert(
-                      mode: InsertMode.insertOrIgnore,
-                      CustomScenePartsCompanion.insert(
-                        scenePartId: Value(selectedScenePartId),
-                        eventId: "",
-                      ),
-                    );
-                    break;
-                  }
-              }
-
-              await (sceneGroup.sceneParts.update()..where(
-                    (scenePartEntry) =>
-                        scenePartEntry.id.equals(selectedScenePartId),
-                  ))
-                  .write(
-                    ScenePartsCompanion(partType: Value(newPartType.name)),
+                  final sceneGroup = ref.read(
+                    NovelSceneGroupEditorPage.sceneGroupProvider,
                   );
-            },
-          ),
+
+                  switch (newPartType) {
+                    case ScenePartType.frame:
+                      {
+                        await sceneGroup.frames.insert().insert(
+                          mode: InsertMode.insertOrIgnore,
+                          FramesCompanion.insert(
+                            scenePartId: Value(selectedScenePartId),
+                          ),
+                        );
+                        break;
+                      }
+                    case ScenePartType.resolver:
+                      {
+                        await sceneGroup.scenePartResolvers.insert().insert(
+                          mode: InsertMode.insertOrIgnore,
+                          ScenePartResolversCompanion.insert(
+                            scenePartId: Value(selectedScenePartId),
+                            dartResolverScript: "",
+                          ),
+                        );
+                        break;
+                      }
+                    case ScenePartType.custom:
+                      {
+                        await sceneGroup.customSceneParts.insert().insert(
+                          mode: InsertMode.insertOrIgnore,
+                          CustomScenePartsCompanion.insert(
+                            scenePartId: Value(selectedScenePartId),
+                            eventId: "",
+                          ),
+                        );
+                        break;
+                      }
+                  }
+
+                  await (sceneGroup.sceneParts.update()..where(
+                        (scenePartEntry) =>
+                            scenePartEntry.id.equals(selectedScenePartId),
+                      ))
+                      .write(
+                        ScenePartsCompanion(partType: Value(newPartType.name)),
+                      );
+                },
+              ),
         );
       },
     );

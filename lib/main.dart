@@ -21,7 +21,7 @@ class App extends StatelessWidget {
 
 void main() {
   // SAFETY: If we're not properly calling close on the database before we open a new one, this is unsafe.
-  // As of May 13, 2026, we are, so this is safe. Periodically update this so that we know it's still safe.
+  // As of June 9, 2026, we are, so this is safe. Periodically update this so that we know it's still safe.
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
   // SAFETY: For some reason, when Drift returns stack traces, they're from package:stack_trace. That's why this demangle function has to be here.
