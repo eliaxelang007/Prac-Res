@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:prac_res/features/startup/screens/open_page.dart';
 
 import 'package:stack_trace/stack_trace.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:prac_res/open_page.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
