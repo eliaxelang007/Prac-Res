@@ -1,0 +1,26 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:prac_res/core/database/data.dart';
+import 'package:prac_res/core/widgets/fitted_icon.dart';
+import 'package:prac_res/features/custom/screens/provider.dart';
+
+class NovelCustomScenePart extends StatelessWidget {
+  final CustomScenePart custom;
+
+  const NovelCustomScenePart({super.key, required this.custom});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final customWidget = ref.watch(customScenePartProvider(custom.eventId));
+
+        return customWidget ??
+            NovelFittedIcon(
+              icon: Icon(Icons.build_circle_rounded),
+              sizePercentage: 0.5,
+            );
+      },
+    );
+  }
+}

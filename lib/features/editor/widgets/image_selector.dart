@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:junction/junction.dart';
 import 'package:prac_res/core/theme/design_values.dart';
+import 'package:prac_res/core/widgets/deletion_dialog.dart';
 import 'package:prac_res/core/widgets/new_name_dialog.dart';
 import 'package:prac_res/core/widgets/scrolling.dart';
 
@@ -331,15 +332,44 @@ class NovelImageSelectable<M extends ImageMetadata> extends StatelessWidget {
       children: [
         Expanded(
           flex: 4,
-          child: NovelCard(
-            isSelected: selectedImageId == metadata.id,
-            onTap: () => onImageSelected(metadata.id),
-            child: SizedBox.expand(
-              child: NovelImage(
-                imageTable: imageDataTable,
-                maybeImageId: metadata.id,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: NovelCard(
+                  isSelected: selectedImageId == metadata.id,
+                  onTap: () => onImageSelected(metadata.id),
+                  child: NovelImage(
+                    imageTable: imageDataTable,
+                    maybeImageId: metadata.id,
+                  ),
+                ),
               ),
-            ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    return IconButton(
+                      icon: Icon(Icons.delete_rounded),
+                      onPressed: () async {
+                        final shouldDelete = await NovelDeletionDialog.show(
+                          context,
+                        );
+
+                        if (!shouldDelete) return;
+
+                        final metadataTable = ref.read(imageMetadataTable);
+
+                        await (metadataTable.delete()..where(
+                              (metadataEntry) =>
+                                  metadataEntry.id.equals(metadata.id),
+                            ))
+                            .go();
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(

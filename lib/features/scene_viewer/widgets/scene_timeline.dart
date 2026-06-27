@@ -134,11 +134,11 @@ class NovelSceneTimelineItem extends StatelessWidget {
     return Consumer(
       builder: (context, ref, child) {
         final selectedScenePartId = ref.watch(
-          NovelSelectedScenePart.selectedScenePartIdProvider,
+          NovelSelectedScenePart.selectedScenePartProvider,
         );
 
         final scenePartId = scenePart.part.id;
-        final isSelected = scenePartId == selectedScenePartId;
+        final isSelected = scenePartId == selectedScenePartId?.part.id;
 
         return AspectRatio(
           aspectRatio: 16 / 9,
@@ -151,10 +151,10 @@ class NovelSceneTimelineItem extends StatelessWidget {
                     ref
                         .read(
                           NovelSelectedScenePart
-                              .selectedScenePartIdProvider
+                              .selectedScenePartProvider
                               .notifier,
                         )
-                        .set(isSelected ? null : scenePartId);
+                        .set(isSelected ? null : scenePart);
                   },
                   child: SizedBox.expand(
                     child: NovelScenePartPreview(

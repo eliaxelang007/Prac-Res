@@ -15,7 +15,7 @@ class SelectedSceneIdProvider extends Notifier<int?> {
   void set(int? id) {
     state = id;
     ref
-        .read(NovelSelectedScenePart.selectedScenePartIdProvider.notifier)
+        .read(NovelSelectedScenePart.selectedScenePartProvider.notifier)
         .set(null);
   }
 }

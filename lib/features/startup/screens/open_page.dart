@@ -27,7 +27,7 @@ class NovelOpenPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           spacing: DesignValues.large,
           children: [
-            SceneGroupOpener(
+            _SceneGroupOpener(
               icon: Icon(Icons.add_rounded),
               buildSceneGroup: () async {
                 final name = await NovelNewNameDialog.show(
@@ -55,7 +55,7 @@ class NovelOpenPage extends StatelessWidget {
                 );
               },
             ),
-            SceneGroupOpener(
+            _SceneGroupOpener(
               icon: Icon(Icons.arrow_right_rounded),
               buildSceneGroup: () async {
                 final loaded = Future.value(
@@ -64,7 +64,7 @@ class NovelOpenPage extends StatelessWidget {
                 return loaded;
               },
             ),
-            SceneGroupOpener(
+            _SceneGroupOpener(
               icon: Icon(Icons.file_open_rounded),
               buildSceneGroup: () async {
                 final selected = await WebReadHandle.showOpenFileDialog(
@@ -95,15 +95,11 @@ class NovelOpenPage extends StatelessWidget {
   }
 }
 
-class SceneGroupOpener extends StatelessWidget {
+class _SceneGroupOpener extends StatelessWidget {
   final Widget icon;
   final Future<Future<SceneGroup?>> Function() buildSceneGroup;
 
-  const SceneGroupOpener({
-    super.key,
-    required this.buildSceneGroup,
-    required this.icon,
-  });
+  const _SceneGroupOpener({required this.buildSceneGroup, required this.icon});
 
   @override
   Widget build(BuildContext context) {

@@ -28,9 +28,10 @@ class NovelFrame extends StatelessWidget {
 
     return Stack(
       children: [
-        Positioned.fill(child: ColoredBox(color: Colors.white)),
-
-        Positioned.fill(child: AnimatedBackground(backgroundId: backgroundId)),
+        // Positioned.fill(child: ColoredBox(color: Colors.black)),
+        Positioned.fill(
+          child: NovelAnimatedBackground(backgroundId: backgroundId),
+        ),
 
         Positioned.fill(
           child: FittedBox(
@@ -127,8 +128,8 @@ class NovelBackground extends StatelessWidget {
   }
 }
 
-class AnimatedBackground extends StatelessWidget {
-  const AnimatedBackground({super.key, required this.backgroundId});
+class NovelAnimatedBackground extends StatelessWidget {
+  const NovelAnimatedBackground({super.key, required this.backgroundId});
 
   final int? backgroundId;
 

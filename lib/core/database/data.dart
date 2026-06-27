@@ -473,6 +473,12 @@ class FramePoses extends Table {
   late final order = real()();
 }
 
+extension IntoSceneTimelineItem on SceneTimelineViewData {
+  SceneTimelineItem intoSceneTimelineItem() {
+    return SceneTimelineItem.fromSceneTimelineViewData(this);
+  }
+}
+
 class SceneTimelineItem {
   final ScenePart part;
   final SceneTimelineItemSpecifics specifics;

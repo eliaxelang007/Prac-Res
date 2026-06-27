@@ -23,9 +23,9 @@ class NovelFittedIcon extends StatelessWidget {
         height: kArbitrarySize,
         child: Center(
           child: IconTheme(
-            data: Theme.of(
+            data: IconTheme.of(
               context,
-            ).iconTheme.copyWith(size: kArbitrarySize * sizePercentage),
+            ).copyWith(size: kArbitrarySize * sizePercentage),
             child: icon,
           ),
         ),

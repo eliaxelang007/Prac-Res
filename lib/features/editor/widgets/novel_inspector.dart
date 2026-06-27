@@ -2,15 +2,16 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:prac_res/core/theme/design_values.dart';
 import 'package:prac_res/core/widgets/editable_text.dart';
 
 import 'package:prac_res/core/database/data.dart';
-import 'package:prac_res/core/widgets/database/query_builder.dart';
 import 'package:prac_res/core/widgets/outlined_button.dart';
 import 'package:prac_res/features/editor/screens/editor_page.dart';
 import 'package:prac_res/features/editor/widgets/custom_scene_part_inspector.dart';
 import 'package:prac_res/features/editor/widgets/frame_inspector.dart';
 import 'package:prac_res/features/editor/widgets/scene_part_resolver_inspector.dart';
+import 'package:prac_res/features/play/screens/play_mode.dart';
 import 'package:prac_res/features/scene_viewer/widgets/selected_scene_part.dart';
 
 class NovelInspector extends StatelessWidget {
@@ -18,47 +19,79 @@ class NovelInspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NovelQueryBuilder(
-      query: (ref) =>
-          ref.watch(NovelSelectedScenePart.selectedScenePartProvider),
-      builder: (context, ref, selectedScenePart) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (selectedScenePart != null) ...[
-            NovelOutlinedButton(
-              onPressed: () async {
-                await Clipboard.setData(
-                  ClipboardData(text: selectedScenePart.part.id.toString()),
-                );
+    return Consumer(
+      builder: (context, ref, _) {
+        final selectedScenePart = ref.watch(
+          NovelSelectedScenePart.selectedScenePartProvider,
+        );
 
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Copied to clipboard!')));
-              },
-              child: Text("Id: ${selectedScenePart.part.id}"),
-            ),
-            Divider(),
-            NovelScenePartDropdown(
-              partType: ScenePartType.values.byName(
-                selectedScenePart.part.partType,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (selectedScenePart != null) ...[
+              Row(
+                spacing: DesignValues.small,
+                children: [
+                  NovelCopyableText(
+                    displayText: Text("Id: ${selectedScenePart.part.id}"),
+                    copyText: selectedScenePart.part.id.toString(),
+                  ),
+                  NovelOutlinedButton(
+                    onPressed: () async {
+                      await ref.read(playingScenePartProvider.notifier).next();
+                    },
+                    child: Text("Next"),
+                  ),
+                ],
               ),
-              selectedScenePartId: selectedScenePart.part.id,
-            ),
-            Divider(),
-            Expanded(
-              child: switch (selectedScenePart.specifics) {
-                TimelineFrame(:final frameData) => NovelFrameInspector(
-                  frame: frameData,
+              Divider(),
+              NovelScenePartDropdown(
+                partType: ScenePartType.values.byName(
+                  selectedScenePart.part.partType,
                 ),
-                TimelineResolver(:final resolverData) =>
-                  NovelScenePartResolverInspector(resolver: resolverData),
-                TimelineCustom(:final customData) =>
-                  NovelCustomScenePartInspector(custom: customData),
-              },
-            ),
+                selectedScenePartId: selectedScenePart.part.id,
+              ),
+              Divider(),
+              Expanded(
+                child: switch (selectedScenePart.specifics) {
+                  TimelineFrame(:final frameData) => NovelFrameInspector(
+                    frame: frameData,
+                  ),
+                  TimelineResolver(:final resolverData) =>
+                    NovelScenePartResolverInspector(resolver: resolverData),
+                  TimelineCustom(:final customData) =>
+                    NovelCustomScenePartInspector(custom: customData),
+                },
+              ),
+            ],
           ],
-        ],
-      ),
+        );
+      },
+    );
+  }
+}
+
+class NovelCopyableText extends StatelessWidget {
+  final Widget displayText;
+  final String copyText;
+
+  const NovelCopyableText({
+    super.key,
+    required this.displayText,
+    required this.copyText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NovelOutlinedButton(
+      onPressed: () async {
+        await Clipboard.setData(ClipboardData(text: copyText));
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Copied to clipboard!')));
+      },
+      child: displayText,
     );
   }
 }

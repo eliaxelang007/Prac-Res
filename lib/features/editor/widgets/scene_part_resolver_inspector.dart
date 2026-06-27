@@ -4,12 +4,14 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prac_res/core/theme/design_values.dart';
+import 'package:prac_res/core/widgets/database/query_builder.dart';
 import 'package:prac_res/core/widgets/editable_text.dart';
 import 'package:prac_res/core/widgets/outlined_button.dart';
 import 'package:prac_res/core/widgets/scrolling.dart';
 import 'package:prac_res/core/database/data.dart';
 import 'package:prac_res/features/editor/screens/editor_page.dart';
-import 'package:prac_res/features/editor/widgets/scene_selector.dart';
+import 'package:prac_res/features/editor/widgets/novel_inspector.dart';
+import 'package:prac_res/features/play/screens/play_mode.dart';
 import 'package:prac_res/features/scene_viewer/widgets/selected_scene_part.dart';
 
 class NovelScenePartResolverInspector extends StatelessWidget {
@@ -29,10 +31,7 @@ class NovelScenePartResolverInspector extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           sectionTitle("Resolver Script"),
-          NovelResolverScriptInspector(
-            resolverScenePartId: resolver.scenePartId,
-            dartResolverScript: resolver.dartResolverScript,
-          ),
+          NovelResolverScriptInspector(scenePartResolver: resolver),
           Divider(),
           sectionTitle("Choice Options Ids"),
           NovelChoiceOptionIds(),
@@ -45,33 +44,89 @@ class NovelScenePartResolverInspector extends StatelessWidget {
 class NovelChoiceOptionIds extends StatelessWidget {
   const NovelChoiceOptionIds({super.key});
 
+  static final choicesProvider = StreamProvider((ref) {
+    final sceneGroup = ref.read(NovelSceneGroupEditorPage.sceneGroupProvider);
+
+    return sceneGroup.choices.select().watch();
+  });
+
+  static final choiceOptionsProvider = StreamProvider((ref) {
+    final sceneGroup = ref.read(NovelSceneGroupEditorPage.sceneGroupProvider);
+
+    return sceneGroup.choiceOptions.select().watch();
+  });
+
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignValues.small),
-        child: Column(
-          children: [
-            // for (final choiceOption in )
-          ],
-        ),
-      ),
+    return NovelQueryBuilder(
+      query: (ref) => ref.watch(choicesProvider),
+      builder: (context, ref, choices) {
+        return NovelQueryBuilder(
+          query: (ref) => ref.watch(choiceOptionsProvider),
+          builder: (context, ref, choiceOptions) {
+            final Map<int, List<ChoiceOption>> groupedChoiceOptions = {};
+
+            for (final choiceOption in choiceOptions) {
+              final group = groupedChoiceOptions.putIfAbsent(
+                choiceOption.choiceId,
+                () => [],
+              );
+              group.add(choiceOption);
+            }
+
+            return Column(
+              children: [
+                for (final choice in choices)
+                  Card(
+                    child: Column(
+                      children: [
+                        ListTile(
+                          title: Text(choice.name),
+                          trailing: NovelCopyableText(
+                            displayText: Text("Id: ${choice.id}"),
+                            copyText: choice.id.toString(),
+                          ),
+                        ),
+                        Card(
+                          child: Column(
+                            children: [
+                              for (final choiceOption
+                                  in groupedChoiceOptions[choice.id]!)
+                                ListTile(
+                                  title: Text(choiceOption.name),
+                                  trailing: NovelCopyableText(
+                                    displayText: Text("Id: ${choiceOption.id}"),
+                                    copyText: choiceOption.id.toString(),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
 
 class NovelResolverScriptInspector extends StatelessWidget {
-  final String dartResolverScript;
-  final int resolverScenePartId;
+  final ScenePartResolver scenePartResolver;
 
   const NovelResolverScriptInspector({
     super.key,
-    required this.resolverScenePartId,
-    required this.dartResolverScript,
+    required this.scenePartResolver,
   });
 
   @override
   Widget build(BuildContext context) {
+    final String dartResolverScript = scenePartResolver.dartResolverScript;
+    final int resolverScenePartId = scenePartResolver.scenePartId;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(DesignValues.small),
@@ -121,50 +176,17 @@ class NovelResolverScriptInspector extends StatelessWidget {
                     final sceneGroup = ref.read(
                       NovelSceneGroupEditorPage.sceneGroupProvider,
                     );
+                    final nextScenePart = await scenePartResolver.resolve(
+                      sceneGroup,
+                    );
 
-                    final selectedOptions =
-                        await (sceneGroup.choiceOptions.select()
-                              ..orderBy([(u) => OrderingTerm(expression: u.id)])
-                              ..where((t) => t.isSelected.equals(true)))
-                            .get();
-
-                    final resolvedScenePartId =
-                        eval(
-                              "int resolve(Map<int, int> choiceIdToSelectedId) {$dartResolverScript}",
-                              function: "resolve",
-                              args: [
-                                $Map.wrap({
-                                  for (var option in selectedOptions)
-                                    option.choiceId: option.id,
-                                }),
-                              ],
-                            )
-                            as int;
-
-                    final scenePart =
-                        await (sceneGroup.sceneParts.select()..where(
-                              (scenePartEntry) =>
-                                  scenePartEntry.id.equals(resolvedScenePartId),
-                            ))
-                            .getSingleOrNull();
-
-                    if (scenePart == null) {
-                      debugPrint("No scene part found!");
-                      return;
-                    }
-
-                    ref
-                        .read(
-                          NovelSceneSelector.selectedSceneIdProvider.notifier,
-                        )
-                        .set(scenePart.sceneId);
                     ref
                         .read(
                           NovelSelectedScenePart
-                              .selectedScenePartIdProvider
+                              .selectedScenePartProvider
                               .notifier,
                         )
-                        .set(scenePart.id);
+                        .set(nextScenePart);
                   },
                   child: Text("Resolve"),
                 ),
