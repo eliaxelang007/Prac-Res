@@ -8,15 +8,16 @@ import 'package:prac_res/core/widgets/database/group_selector.dart';
 import 'package:prac_res/features/editor/screens/editor_page.dart';
 import 'package:prac_res/features/scene_viewer/widgets/selected_scene_part.dart';
 
-class SelectedSceneIdProvider extends Notifier<int?> {
+class SelectedSceneIdNotifier extends Notifier<int?> {
   @override
   int? build() => null;
 
   void set(int? id) {
-    state = id;
     ref
-        .read(NovelSelectedScenePart.selectedScenePartProvider.notifier)
+        .read(NovelSelectedScenePart.selectedScenePartIdProvider.notifier)
         .set(null);
+
+    state = id;
   }
 }
 
@@ -24,8 +25,8 @@ class NovelSceneSelector extends StatelessWidget {
   const NovelSceneSelector({super.key});
 
   static final selectedSceneIdProvider =
-      NotifierProvider<SelectedSceneIdProvider, int?>(
-        SelectedSceneIdProvider.new,
+      NotifierProvider<SelectedSceneIdNotifier, int?>(
+        SelectedSceneIdNotifier.new,
       );
 
   static final scenesTableProvider = Provider<$ScenesTable>((ref) {

@@ -131,12 +131,10 @@ class NovelSceneTimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final selectedScenePartId = ref.watch(
-          NovelSelectedScenePart.selectedScenePartProvider,
-        );
-
+    return NovelQueryBuilder(
+      query: (ref) =>
+          ref.watch(NovelSelectedScenePart.selectedScenePartProvider),
+      builder: (context, ref, selectedScenePartId) {
         final scenePartId = scenePart.part.id;
         final isSelected = scenePartId == selectedScenePartId?.part.id;
 
@@ -151,10 +149,10 @@ class NovelSceneTimelineItem extends StatelessWidget {
                     ref
                         .read(
                           NovelSelectedScenePart
-                              .selectedScenePartProvider
+                              .selectedScenePartIdProvider
                               .notifier,
                         )
-                        .set(isSelected ? null : scenePart);
+                        .set(isSelected ? null : scenePart.part.id);
                   },
                   child: SizedBox.expand(
                     child: NovelScenePartPreview(

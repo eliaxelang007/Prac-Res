@@ -1,71 +1,66 @@
+import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 
 import 'package:device_frame/device_frame.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:prac_res/core/database/data.dart';
+import 'package:prac_res/core/widgets/database/query_builder.dart';
 import 'package:prac_res/core/widgets/fitted_icon.dart';
-import 'package:prac_res/features/editor/widgets/scene_selector.dart';
+import 'package:prac_res/features/editor/screens/editor_page.dart';
 import 'package:prac_res/features/scene_viewer/widgets/custom.dart';
 import 'package:prac_res/features/scene_viewer/widgets/frame.dart';
 
-class SelectedScenePartProvider extends Notifier<SceneTimelineItem?> {
+class SelectedScenePartIdNotifier extends Notifier<int?> {
   @override
-  SceneTimelineItem? build() => null;
+  int? build() => null;
 
-  void set(SceneTimelineItem? newScenePart) {
-    if (newScenePart != null) {
-      ref
-          .read(NovelSceneSelector.selectedSceneIdProvider.notifier)
-          .set(newScenePart.part.sceneId);
-    }
-
-    state = newScenePart;
+  void set(int? newScenePartId) {
+    state = newScenePartId;
   }
 }
 
 class NovelSelectedScenePart extends StatelessWidget {
   const NovelSelectedScenePart({super.key});
 
-  static final selectedScenePartProvider =
-      NotifierProvider<SelectedScenePartProvider, SceneTimelineItem?>(
-        SelectedScenePartProvider.new,
+  static final selectedScenePartIdProvider =
+      NotifierProvider<SelectedScenePartIdNotifier, int?>(
+        SelectedScenePartIdNotifier.new,
       );
 
-  // static final scenePartProvider =
-  //     StreamProvider.family<SceneTimelineItem?, int>((ref, scenePartId) {
-  //       final sceneGroup = ref.watch(
-  //         NovelSceneGroupEditorPage.sceneGroupProvider,
-  //       );
+  static final scenePartProvider =
+      StreamProvider.family<SceneTimelineItem?, int>((ref, scenePartId) {
+        final sceneGroup = ref.watch(
+          NovelSceneGroupEditorPage.sceneGroupProvider,
+        );
 
-  //       return (sceneGroup.sceneTimelineView.select()
-  //             ..where((scenePart) => scenePart.id.equals(scenePartId)))
-  //           .watchSingleOrNull()
-  //           .map(
-  //             (selectedScenePart) => (selectedScenePart != null)
-  //                 ? SceneTimelineItem.fromSceneTimelineViewData(
-  //                     selectedScenePart,
-  //                   )
-  //                 : null,
-  //           );
-  //     });
+        return (sceneGroup.sceneTimelineView.select()
+              ..where((scenePart) => scenePart.id.equals(scenePartId)))
+            .watchSingleOrNull()
+            .map(
+              (selectedScenePart) => (selectedScenePart != null)
+                  ? SceneTimelineItem.fromSceneTimelineViewData(
+                      selectedScenePart,
+                    )
+                  : null,
+            );
+      });
 
-  // static final selectedScenePartProvider = FutureProvider<SceneTimelineItem?>((
-  //   ref,
-  // ) async {
-  //   final selectedScenePart = ref.watch(selectedScenePartIdProvider);
+  static final selectedScenePartProvider = FutureProvider<SceneTimelineItem?>((
+    ref,
+  ) async {
+    final selectedScenePart = ref.watch(selectedScenePartIdProvider);
 
-  //   return (selectedScenePart != null)
-  //       ? (await ref.watch(scenePartProvider(selectedScenePart).future))
-  //       : null;
-  // });
+    return (selectedScenePart != null)
+        ? (await ref.watch(scenePartProvider(selectedScenePart).future))
+        : null;
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final selectedScenePart = ref.watch(selectedScenePartProvider);
-
+    return NovelQueryBuilder(
+      query: (ref) => ref.watch(selectedScenePartProvider),
+      builder: (context, ref, selectedScenePart) {
         return (selectedScenePart != null)
             ? DeviceFrame(
                 device: Devices.android.bigPhone,

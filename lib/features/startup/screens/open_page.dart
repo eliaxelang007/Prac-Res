@@ -56,7 +56,7 @@ class NovelOpenPage extends StatelessWidget {
               },
             ),
             _SceneGroupOpener(
-              icon: Icon(Icons.arrow_right_rounded),
+              icon: Icon(Icons.arrow_forward_rounded),
               buildSceneGroup: () async {
                 final loaded = Future.value(
                   Future.value(SceneGroupManager.instance.sceneGroup),

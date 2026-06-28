@@ -1,3 +1,4 @@
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart' hide Table;
 
 import 'package:drift/drift.dart' hide Column;
@@ -21,33 +22,45 @@ class NovelFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final commonPhoneResolution = const Size(800, 360); // 20:9 Aspect Ratio
-
     final backgroundId = frame.backgroundId;
     final scenePartId = frame.scenePartId;
 
     return Stack(
       children: [
-        // Positioned.fill(child: ColoredBox(color: Colors.black)),
         Positioned.fill(
           child: NovelAnimatedBackground(backgroundId: backgroundId),
         ),
 
         Positioned.fill(
-          child: FittedBox(
-            fit: BoxFit.fitHeight,
-            child: SizedBox(
-              width: commonPhoneResolution.width,
-              height: commonPhoneResolution.height,
-              child: NovelFrameSafeArea(
-                poses: NovelPoses(scenePartId: scenePartId),
-                dialogue: NovelDialogueArea(scenePartId: scenePartId),
-                choice: NovelChoice(scenePartId: scenePartId),
-              ),
+          child: NovelFrameFit(
+            child: NovelFrameSafeArea(
+              poses: NovelPoses(scenePartId: scenePartId),
+              dialogue: NovelDialogueArea(scenePartId: scenePartId),
+              choice: NovelChoice(scenePartId: scenePartId),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class NovelFrameFit extends StatelessWidget {
+  const NovelFrameFit({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final commonPhoneResolution = const Size(800, 360); // 20:9 Aspect Ratio
+
+    return FittedBox(
+      fit: BoxFit.fitHeight,
+      child: SizedBox(
+        width: commonPhoneResolution.width,
+        height: commonPhoneResolution.height,
+        child: child,
+      ),
     );
   }
 }
@@ -225,15 +238,19 @@ class NovelPoses extends StatelessWidget {
                   AnimatedSwitcher(
                     key: ValueKey(framePose.groupId),
                     duration: switchPoseDuration,
-                    child: Align(
+                    child: SizedBox(
                       key: ValueKey(framePose.poseId),
-                      alignment: Alignment.bottomCenter,
-                      child: SizedBox(
-                        width:
-                            (constraints.maxWidth - betweenSize * (slots - 1)) /
-                            slots,
-                        height: constraints.maxHeight,
-                        child: NovelPose(poseId: framePose.poseId),
+                      width:
+                          (constraints.maxWidth - betweenSize * (slots - 1)) /
+                          slots,
+                      height: constraints.maxHeight,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          NovelPose(poseId: framePose.poseId),
+                          Flexible(child: SizedBox(height: 110)),
+                        ],
                       ),
                     ),
                   ),
@@ -247,6 +264,44 @@ class NovelPoses extends StatelessWidget {
 }
 
 /* dialogue.dart */
+
+extension Templater on IMap<String, String> {
+  String fillIn(String toFill) {
+    final regex = RegExp(r'(?<!\\)\{([^}]+)\}');
+
+    final parsed = toFill.replaceAllMapped(regex, (match) {
+      final key = match.group(1);
+
+      if (key != null && containsKey(key)) {
+        return get(key).toString();
+      }
+
+      return match.group(0)!;
+    });
+
+    return parsed.replaceAll(r'\{', '{').replaceAll(r'\}', '}');
+  }
+}
+
+class TemplaterNotifier extends Notifier<IMap<String, String>> {
+  @override
+  IMap<String, String> build() {
+    return IMap();
+  }
+
+  void add(String key, String value) {
+    state = state.add(key, value);
+  }
+
+  void remove(String key) {
+    state = state.remove(key);
+  }
+}
+
+final templaterProvider =
+    NotifierProvider<TemplaterNotifier, IMap<String, String>>(
+      TemplaterNotifier.new,
+    );
 
 class NovelDialogueArea extends StatelessWidget {
   final int scenePartId;
@@ -273,33 +328,39 @@ class NovelDialogueArea extends StatelessWidget {
     return NovelQueryBuilder(
       query: (ref) => ref.watch(dialogueProvider(scenePartId)),
       builder: (context, ref, dialogueBox) {
-        if (dialogueBox != null) {
-          final name = dialogueBox.name;
-          final dialogue = dialogueBox.dialogue;
+        if (dialogueBox == null) {
+          return SizedBox.shrink();
+        }
 
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                height: DesignValues.large * 1.2,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: DesignValues.large,
-                    right: DesignValues.large * 10,
-                  ),
-                  child: (name != null) ? NovelNameBox(name: Text(name)) : null,
-                ),
-              ),
-              SizedBox(
-                height: DesignValues.large * 3,
+        final templater = ref.watch(templaterProvider);
+
+        final name = dialogueBox.name;
+        final dialogue = dialogueBox.dialogue;
+
+        return Stack(
+          children: [
+            Positioned(
+              bottom: DesignValues.large * 2.45,
+              left: DesignValues.large,
+              child: (name != null)
+                  ? SizedBox(
+                      width: DesignValues.large * 3.5,
+                      height: DesignValues.large * 1.7,
+                      child: NovelNameBox(name: Text(templater.fillIn(name))),
+                    )
+                  : SizedBox.shrink(),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                height: DesignValues.large * 3.2,
                 child: NovelDialogueBox(
                   dialogue: AnimatedTextKit(
                     key: ValueKey(dialogue),
                     animatedTexts: [
                       TypewriterAnimatedText(
-                        dialogue,
-                        speed: const Duration(milliseconds: 50),
+                        templater.fillIn(dialogue),
+                        speed: const Duration(milliseconds: 25),
                         cursor: "",
                       ),
                     ],
@@ -308,11 +369,9 @@ class NovelDialogueArea extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
-          );
-        } else {
-          return SizedBox.shrink();
-        }
+            ),
+          ],
+        );
       },
     );
   }
@@ -325,14 +384,24 @@ class NovelDialogueBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
-      color: Color.fromARGB(255, 247, 220, 158),
+      color: colorScheme.surface.withAlpha((255 * 0.93).toInt()),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadiusGeometry.all(Radius.circular(10)),
-        side: BorderSide(color: Color.fromARGB(255, 55, 33, 7), width: 5),
+        borderRadius: BorderRadiusGeometry.all(
+          Radius.circular(DesignValues.small),
+        ),
+        side: BorderSide(
+          color: colorScheme.primary,
+          width: DesignValues.verySmall,
+        ),
       ),
       child: Padding(
-        padding: EdgeInsets.all(DesignValues.semiSmall),
+        padding: EdgeInsets.symmetric(
+          vertical: DesignValues.small,
+          horizontal: DesignValues.small * 1.4,
+        ),
         child: SizedBox.expand(child: dialogue),
       ),
     );
@@ -346,17 +415,25 @@ class NovelNameBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
-      color: Color.fromARGB(255, 247, 220, 158),
+      color: colorScheme.surface.withAlpha((255 * 0.93).toInt()),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(DesignValues.small),
           topRight: Radius.circular(DesignValues.small),
         ),
-        side: BorderSide(color: Color.fromARGB(255, 55, 33, 7), width: 5),
+        side: BorderSide(
+          color: colorScheme.primary,
+          width: DesignValues.verySmall,
+        ),
       ),
       child: Padding(
-        padding: EdgeInsets.all(DesignValues.small),
+        padding: EdgeInsets.symmetric(
+          vertical: DesignValues.small,
+          horizontal: DesignValues.small * 1.4,
+        ),
         child: SizedBox.expand(child: name),
       ),
     );
@@ -426,6 +503,9 @@ class NovelChoiceOptions extends StatelessWidget {
       query: (ref) => ref.watch(choiceOptionsProvider(choiceId)),
       builder: (context, ref, choiceOptions) {
         return Card(
+          color: Theme.of(
+            context,
+          ).colorScheme.surface.withAlpha((255 * 0.9).toInt()),
           child: RadioGroup<int?>(
             groupValue: choiceOptions
                 .where((choiceOption) => choiceOption.isSelected)

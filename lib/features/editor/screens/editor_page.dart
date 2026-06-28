@@ -38,6 +38,7 @@ class IsPlayingNotifier extends Notifier<EditorState> {
   EditorState build() => EditorState.editing;
 
   void set(EditorState isPlaying) {
+    ref.read(playingHistoryProvider.notifier).reset();
     state = isPlaying;
   }
 }

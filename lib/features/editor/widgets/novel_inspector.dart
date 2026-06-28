@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prac_res/core/theme/design_values.dart';
+import 'package:prac_res/core/widgets/database/query_builder.dart';
 import 'package:prac_res/core/widgets/editable_text.dart';
 
 import 'package:prac_res/core/database/data.dart';
@@ -19,12 +20,10 @@ class NovelInspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final selectedScenePart = ref.watch(
-          NovelSelectedScenePart.selectedScenePartProvider,
-        );
-
+    return NovelQueryBuilder(
+      query: (ref) =>
+          ref.watch(NovelSelectedScenePart.selectedScenePartProvider),
+      builder: (context, ref, selectedScenePart) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

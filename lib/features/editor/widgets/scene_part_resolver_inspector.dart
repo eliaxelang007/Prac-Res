@@ -1,5 +1,3 @@
-import 'package:dart_eval/dart_eval.dart';
-import 'package:dart_eval/stdlib/core.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +9,7 @@ import 'package:prac_res/core/widgets/scrolling.dart';
 import 'package:prac_res/core/database/data.dart';
 import 'package:prac_res/features/editor/screens/editor_page.dart';
 import 'package:prac_res/features/editor/widgets/novel_inspector.dart';
+import 'package:prac_res/features/editor/widgets/scene_selector.dart';
 import 'package:prac_res/features/play/screens/play_mode.dart';
 import 'package:prac_res/features/scene_viewer/widgets/selected_scene_part.dart';
 
@@ -176,17 +175,25 @@ class NovelResolverScriptInspector extends StatelessWidget {
                     final sceneGroup = ref.read(
                       NovelSceneGroupEditorPage.sceneGroupProvider,
                     );
+
                     final nextScenePart = await scenePartResolver.resolve(
                       sceneGroup,
                     );
 
+                    if (nextScenePart == null) return;
+
+                    ref
+                        .read(
+                          NovelSceneSelector.selectedSceneIdProvider.notifier,
+                        )
+                        .set(nextScenePart.part.sceneId);
                     ref
                         .read(
                           NovelSelectedScenePart
-                              .selectedScenePartProvider
+                              .selectedScenePartIdProvider
                               .notifier,
                         )
-                        .set(nextScenePart);
+                        .set(nextScenePart.part.id);
                   },
                   child: Text("Resolve"),
                 ),
