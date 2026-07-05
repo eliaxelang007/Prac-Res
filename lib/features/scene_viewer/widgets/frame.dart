@@ -34,9 +34,11 @@ class NovelFrame extends StatelessWidget {
         Positioned.fill(
           child: NovelFrameFit(
             child: NovelFrameSafeArea(
-              poses: NovelPoses(scenePartId: scenePartId),
-              dialogue: NovelDialogueArea(scenePartId: scenePartId),
-              choice: NovelChoice(scenePartId: scenePartId),
+              child: NovelFrameLayout(
+                poses: NovelPoses(scenePartId: scenePartId),
+                dialogue: NovelDialogueArea(scenePartId: scenePartId),
+                choice: NovelChoice(scenePartId: scenePartId),
+              ),
             ),
           ),
         ),
@@ -66,54 +68,62 @@ class NovelFrameFit extends StatelessWidget {
 }
 
 class NovelFrameSafeArea extends StatelessWidget {
-  final Widget poses;
-  final Widget dialogue;
-  final Widget choice;
+  final Widget child;
 
-  const NovelFrameSafeArea({
+  const NovelFrameSafeArea({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(aspectRatio: 16 / 9, child: child);
+  }
+}
+
+class NovelFrameLayout extends StatelessWidget {
+  const NovelFrameLayout({
     super.key,
     required this.poses,
     required this.dialogue,
     required this.choice,
   });
 
+  final Widget poses;
+  final Widget dialogue;
+  final Widget choice;
+
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: DesignValues.large * 5,
-                right: DesignValues.large * 5,
-                top: DesignValues.large,
-              ),
-              child: poses,
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: DesignValues.large * 5,
+              right: DesignValues.large * 5,
+              top: DesignValues.large,
             ),
+            child: poses,
           ),
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: DesignValues.large * 5,
-                right: DesignValues.large * 5,
-                bottom: DesignValues.medium,
-              ),
-              child: dialogue,
+        ),
+        Positioned.fill(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: DesignValues.large * 5,
+              right: DesignValues.large * 5,
+              bottom: DesignValues.medium,
             ),
+            child: dialogue,
           ),
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: DesignValues.large * 9.7,
-                right: DesignValues.large * 9.7,
-              ),
-              child: Center(child: choice),
+        ),
+        Positioned.fill(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: DesignValues.large * 6,
+              right: DesignValues.large * 6,
             ),
+            child: Center(child: choice),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -21,18 +21,27 @@ extension ScenePartResolverResolve on ScenePartResolver {
               ..where((t) => t.isSelected.equals(true)))
             .get();
 
-    final resolvedScenePartId =
-        eval(
-              "int resolve(Map<dynamic, dynamic> choiceIdToSelectedId) {$dartResolverScript}",
-              function: "resolve",
-              args: [
-                $Map.wrap({
-                  for (var option in selectedOptions)
-                    $int(option.choiceId): $int(option.id),
-                }),
-              ],
-            )
-            as int;
+    final int resolvedScenePartId;
+
+    try {
+      resolvedScenePartId =
+          eval(
+                "int resolve(Map<int, int> choiceIdToSelectedId) {$dartResolverScript}",
+                function: "resolve",
+                args: [
+                  $Map.wrap({
+                    for (var option in selectedOptions)
+                      $int(option.choiceId): $int(option.id),
+                  }),
+                ],
+              )
+              as int;
+    } catch (error) {
+      debugPrint(
+        "Something went wrong while trying to resolve the scene part ID!\n$error",
+      );
+      return null;
+    }
 
     final scenePart =
         (await (sceneGroup.sceneTimelineView.select()..where(

@@ -46,13 +46,18 @@ class NovelChoiceOptionIds extends StatelessWidget {
   static final choicesProvider = StreamProvider((ref) {
     final sceneGroup = ref.read(NovelSceneGroupEditorPage.sceneGroupProvider);
 
-    return sceneGroup.choices.select().watch();
+    return (sceneGroup.choices.select()..orderBy([
+          (u) => OrderingTerm(expression: u.id, mode: OrderingMode.desc),
+        ]))
+        .watch();
   });
 
   static final choiceOptionsProvider = StreamProvider((ref) {
     final sceneGroup = ref.read(NovelSceneGroupEditorPage.sceneGroupProvider);
 
-    return sceneGroup.choiceOptions.select().watch();
+    return (sceneGroup.choiceOptions.select()
+          ..orderBy([(u) => OrderingTerm(expression: u.id)]))
+        .watch();
   });
 
   @override
@@ -73,6 +78,12 @@ class NovelChoiceOptionIds extends StatelessWidget {
               group.add(choiceOption);
             }
 
+            T getOrDefault<T>(T? maybe, T Function() orDefault) {
+              if (maybe != null) return maybe;
+
+              return orDefault();
+            }
+
             return Column(
               children: [
                 for (final choice in choices)
@@ -89,8 +100,16 @@ class NovelChoiceOptionIds extends StatelessWidget {
                         Card(
                           child: Column(
                             children: [
-                              for (final choiceOption
-                                  in groupedChoiceOptions[choice.id]!)
+                              for (final choiceOption in getOrDefault(
+                                groupedChoiceOptions[choice.id],
+                                () {
+                                  debugPrint(
+                                    "Choice Id [${choice.id}] was null!",
+                                  );
+
+                                  return [];
+                                },
+                              ))
                                 ListTile(
                                   title: Text(choiceOption.name),
                                   trailing: NovelCopyableText(
