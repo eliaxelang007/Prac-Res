@@ -66,6 +66,7 @@ class NovelSelectedScenePart extends StatelessWidget {
                 device: Devices.android.bigPhone,
                 screen: SizedBox.expand(
                   child: NovelScenePartPreview(
+                    showCustom: true,
                     specifics: selectedScenePart.specifics,
                   ),
                 ),
@@ -79,8 +80,13 @@ class NovelSelectedScenePart extends StatelessWidget {
 
 class NovelScenePartPreview extends StatelessWidget {
   final SceneTimelineItemSpecifics specifics;
+  final bool showCustom;
 
-  const NovelScenePartPreview({super.key, required this.specifics});
+  const NovelScenePartPreview({
+    super.key,
+    required this.specifics,
+    required this.showCustom,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +105,7 @@ class NovelScenePartPreview extends StatelessWidget {
                 sizePercentage: 0.5,
               ),
               TimelineCustom(:final customData) => NovelCustomScenePart(
+                show: showCustom,
                 custom: customData,
               ),
             },

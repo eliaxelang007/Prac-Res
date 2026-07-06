@@ -156,6 +156,7 @@ class NovelSceneTimelineItem extends StatelessWidget {
                   },
                   child: SizedBox.expand(
                     child: NovelScenePartPreview(
+                      showCustom: false,
                       specifics: scenePart.specifics,
                     ),
                   ),

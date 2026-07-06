@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:prac_res/features/play/screens/main_menu.dart';
 import 'package:prac_res/features/startup/screens/open_page.dart';
+// import 'package:prac_res/features/startup/screens/open_page.dart';
 
 import 'package:stack_trace/stack_trace.dart';
 import 'package:drift/drift.dart';
@@ -13,7 +15,7 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'Sociolingo Editor',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: NovelOpenPage(),
+      home: NovelMainMenu(), // NovelCookingMinigame2()
     );
   }
 }

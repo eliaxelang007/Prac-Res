@@ -102,8 +102,16 @@ class PlayingScenePartNotifier extends AsyncNotifier<SceneTimelineItem?> {
 
     final sceneGroup = ref.watch(NovelSceneGroupEditorPage.sceneGroupProvider);
 
+    final query = sceneGroup.sceneTimelineView.select();
+
+    final scene = ref.watch(NovelSceneSelector.selectedSceneIdProvider);
+
+    if (scene != null) {
+      query.where((scenePartEntry) => scenePartEntry.sceneId.equals(scene));
+    }
+
     final firstScene =
-        await (sceneGroup.sceneTimelineView.select()
+        await (query
               ..orderBy([
                 (u) => OrderingTerm(expression: u.sceneId),
                 (u) => OrderingTerm(expression: u.order),
@@ -194,12 +202,28 @@ class NovelPlayMode extends StatelessWidget {
           builder: (context) {
             useEffect(() {
               bool handleGlobalKeyEvent(KeyEvent keyEvent) {
-                if (keyEvent is KeyDownEvent) {
-                  if (keyEvent.logicalKey == LogicalKeyboardKey.arrowRight) {
-                    // Should be awaited.
-                    ref.read(playingScenePartProvider.notifier).next();
+                ref.read(playingScenePartProvider.future).then((
+                  sceneTimelineItem,
+                ) async {
+                  if (sceneTimelineItem?.specifics is TimelineCustom) {
+                    return false;
                   }
-                }
+
+                  if (keyEvent is KeyDownEvent) {
+                    final logicalKey = keyEvent.logicalKey;
+                    final playingScenePart = ref.read(
+                      playingScenePartProvider.notifier,
+                    );
+
+                    if (logicalKey == LogicalKeyboardKey.arrowRight) {
+                      await playingScenePart.next();
+                    }
+
+                    if (logicalKey == LogicalKeyboardKey.arrowLeft) {
+                      playingScenePart.back();
+                    }
+                  }
+                });
 
                 return false;
               }
@@ -222,7 +246,10 @@ class NovelPlayMode extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: (scenePart != null)
-                        ? NovelScenePartPreview(specifics: scenePart)
+                        ? NovelScenePartPreview(
+                            specifics: scenePart,
+                            showCustom: true,
+                          )
                         : NovelFittedIcon(
                             icon: Icon(Icons.image_not_supported_rounded),
                             sizePercentage: 0.5,

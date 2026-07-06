@@ -15,7 +15,7 @@ class NovelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedColor = Theme.of(context).colorScheme.onPrimaryContainer;
+    final selectedColor = Theme.of(context).colorScheme.primary;
 
     final cardBuilder = (isSelected) ? Card.outlined : Card.new;
     final shape = (isSelected)

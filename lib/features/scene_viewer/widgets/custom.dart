@@ -6,8 +6,13 @@ import 'package:prac_res/features/custom/screens/provider.dart';
 
 class NovelCustomScenePart extends StatelessWidget {
   final CustomScenePart custom;
+  final bool show;
 
-  const NovelCustomScenePart({super.key, required this.custom});
+  const NovelCustomScenePart({
+    super.key,
+    required this.custom,
+    required this.show,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,11 +20,14 @@ class NovelCustomScenePart extends StatelessWidget {
       builder: (context, ref, child) {
         final customWidget = ref.watch(customScenePartProvider(custom.eventId));
 
-        return customWidget ??
-            NovelFittedIcon(
-              icon: Icon(Icons.build_circle_rounded),
-              sizePercentage: 0.5,
-            );
+        if (customWidget != null && show) {
+          return customWidget;
+        }
+
+        return NovelFittedIcon(
+          icon: Icon(Icons.build_circle_rounded),
+          sizePercentage: 0.5,
+        );
       },
     );
   }
