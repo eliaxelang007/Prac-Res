@@ -12,6 +12,7 @@ import 'package:prac_res/core/widgets/animated_list.dart';
 import 'package:prac_res/core/widgets/database/query_builder.dart';
 import 'package:prac_res/core/widgets/fitted_icon.dart';
 import 'package:prac_res/features/editor/screens/editor_page.dart';
+import 'package:prac_res/features/play/screens/play_mode.dart';
 
 /* frame.dart */
 
@@ -541,6 +542,8 @@ class NovelChoiceOptions extends StatelessWidget {
                     ))
                     .write(ChoiceOptionsCompanion(isSelected: Value(true)));
               });
+
+              await ref.read(playingScenePartProvider.notifier).next();
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,

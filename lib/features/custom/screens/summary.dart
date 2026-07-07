@@ -94,6 +94,31 @@ class NovelSummary extends StatelessWidget {
                                   ),
                                 ],
                               ),
+                              DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text("*TIme till spaghetti off stove"),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      (() {
+                                        final secondsElapsed = ref.watch(
+                                          timeTilOffStove,
+                                        );
+
+                                        final minutes = (secondsElapsed ~/ 60)
+                                            .toString()
+                                            .padLeft(2, '0');
+                                        final seconds = (secondsElapsed % 60)
+                                            .toString()
+                                            .padLeft(2, '0');
+
+                                        return "$minutes:$seconds";
+                                      })(),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),

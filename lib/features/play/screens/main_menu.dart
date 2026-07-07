@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:junction/junction.dart';
-import 'package:prac_res/core/database/data.dart';
 import 'package:prac_res/core/database/web.dart';
 import 'package:prac_res/core/theme/design_values.dart';
 import 'package:prac_res/core/widgets/editable_text.dart';
@@ -27,7 +26,7 @@ class NovelMainMenu extends StatelessWidget {
           builder: (context) {
             final futureData = useMemoized(() {
               final computeSceneGroup = compute((selected) async {
-                final file = await rootBundle.load("game.novel");
+                final file = await rootBundle.load("assets/game.novel");
 
                 return await SceneGroupManager.replace((replacer) {
                   return replacer.fromBytes(
@@ -110,7 +109,7 @@ class NovelMainMenu extends StatelessWidget {
 
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => NovelPlayMode(),
+                                  builder: (context) => NovelPlayModeRoute(),
                                 ),
                               );
                             },
@@ -134,7 +133,7 @@ class NovelMainMenu extends StatelessWidget {
 
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => NovelPlayMode(),
+                                  builder: (context) => NovelPlayModeRoute(),
                                 ),
                               );
                             },
@@ -158,7 +157,7 @@ class NovelMainMenu extends StatelessWidget {
 
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => NovelPlayMode(),
+                                  builder: (context) => NovelPlayModeRoute(),
                                 ),
                               );
                             },
@@ -182,7 +181,9 @@ class NovelMainMenu extends StatelessWidget {
 
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => NovelPlayMode(),
+                                  builder: (context) => NovelPlayModeRoute(
+                                    backButtonColor: Colors.black,
+                                  ),
                                 ),
                               );
                             },
@@ -200,7 +201,6 @@ class NovelMainMenu extends StatelessWidget {
             );
 
             if (snapshot.hasData) {
-              print("asdf");
               return a;
             }
 
@@ -208,6 +208,35 @@ class NovelMainMenu extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class NovelPlayModeRoute extends StatelessWidget {
+  final Color backButtonColor;
+
+  const NovelPlayModeRoute({super.key, this.backButtonColor = Colors.white});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: Consumer(
+          builder: (context, ref, child) {
+            return BackButton(
+              color: backButtonColor,
+              onPressed: () {
+                ref.read(playingHistoryProvider.notifier).reset();
+                Navigator.maybePop(context);
+              },
+            );
+          },
+        ),
+      ),
+      body: NovelPlayMode(),
     );
   }
 }

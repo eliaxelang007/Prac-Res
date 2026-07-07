@@ -411,6 +411,7 @@ class NovelPreCookingMinigame4 extends StatelessWidget {
                 ref.read(firstTimeState.notifier).state = true;
                 ref.read(isOvercookedState.notifier).state = false;
                 ref.read(timeLeftState.notifier).state = 60;
+                ref.read(timeTilOffStove.notifier).state = 0;
 
                 ref.read(playingScenePartProvider.notifier).next();
               });
@@ -429,6 +430,7 @@ class NovelPreCookingMinigame4 extends StatelessWidget {
 final firstTimeState = StateProvider<bool>((ref) => true);
 final isOvercookedState = StateProvider<bool>((ref) => false);
 final timeLeftState = StateProvider<int>((ref) => 60);
+final timeTilOffStove = StateProvider<int>((ref) => 0);
 
 class NovelCookingMinigame4 extends StatelessWidget {
   const NovelCookingMinigame4({super.key});
@@ -448,6 +450,7 @@ class NovelCookingMinigame4 extends StatelessWidget {
                 duration: Duration(seconds: 40),
               );
 
+              final isOffStove = useState(false);
               final isDone = useState(false);
 
               useEffect(() {
@@ -458,7 +461,6 @@ class NovelCookingMinigame4 extends StatelessWidget {
                 final double timeProgress =
                     ((60 - ref.read(timeLeftState)) / 40).clamp(0, 1);
 
-                print("me $timeProgress");
                 spaghettiController.forward(from: timeProgress);
 
                 void sauceListener(state) {
@@ -470,9 +472,9 @@ class NovelCookingMinigame4 extends StatelessWidget {
                 sauceController.addStatusListener(sauceListener);
 
                 void spaghettiListener(state) {
-                  // if (state == AnimationStatus.completed) {
-                  //   isDone.value = true;
-                  // }
+                  if (state == AnimationStatus.completed) {
+                    isDone.value = true;
+                  }
                 }
 
                 spaghettiController.addStatusListener(spaghettiListener);
@@ -489,7 +491,7 @@ class NovelCookingMinigame4 extends StatelessWidget {
                 Tween<double>(begin: 0, end: 1).animate(
                   CurvedAnimation(
                     parent: sauceController,
-                    curve: Curves.linear,
+                    curve: Curves.easeOutCirc,
                   ),
                 ),
               );
@@ -498,7 +500,7 @@ class NovelCookingMinigame4 extends StatelessWidget {
                 Tween<double>(begin: 1, end: 0).animate(
                   CurvedAnimation(
                     parent: spaghettiController,
-                    curve: Curves.easeInOutQuart,
+                    curve: Curves.easeInCirc,
                   ),
                 ),
               );
@@ -508,6 +510,11 @@ class NovelCookingMinigame4 extends StatelessWidget {
                   timer,
                 ) {
                   final timeLeft = ref.read(timeLeftState);
+
+                  if (timeLeft <= 20 && !isOffStove.value) {
+                    print("tick");
+                    ref.read(timeTilOffStove.notifier).state += 1;
+                  }
 
                   if (timeLeft <= 0) {
                     timer.cancel();
@@ -542,7 +549,7 @@ class NovelCookingMinigame4 extends StatelessWidget {
                     NovelCookingMinigame4a(
                       saucePercentage: saucePercentage,
                       spaghettiPercentage: spaghettiPercentage,
-                      spaghettiOffStove: isDone.value,
+                      spaghettiOffStove: isOffStove.value,
                     ),
 
                     Positioned(
@@ -552,6 +559,27 @@ class NovelCookingMinigame4 extends StatelessWidget {
                         "$minutes:$seconds",
                         style: textTheme.headlineMedium?.copyWith(
                           color: Colors.white,
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      top: 160,
+                      left: 230,
+                      child: ColoredBox(
+                        color: Colors.transparent,
+                        child: SizedBox(
+                          width: 150,
+                          height: 190,
+                          child: Center(
+                            child: Text(
+                              "Click me so I don't burn!",
+                              textAlign: TextAlign.center,
+                              style: DefaultTextStyle.of(
+                                context,
+                              ).style.copyWith(color: Colors.white),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -571,13 +599,33 @@ class NovelCookingMinigame4 extends StatelessWidget {
                         ),
                       ),
                     ),
+
+                    if (isDone.value && !isOffStove.value)
+                      Positioned(
+                        top: 160,
+                        left: 230 + 150 + 30,
+                        child: SizedBox(
+                          width: 150,
+                          height: 190,
+                          child: Center(
+                            child: Text(
+                              "Take me off the stove!",
+                              textAlign: TextAlign.center,
+                              style: DefaultTextStyle.of(
+                                context,
+                              ).style.copyWith(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+
                     Positioned(
                       top: 160,
                       left: 230 + 150 + 30,
                       child: GestureDetector(
                         onTap: () {
                           if (secondsLeft <= 20) {
-                            isDone.value = true;
+                            isOffStove.value = true;
                           }
                         },
                         child: ColoredBox(

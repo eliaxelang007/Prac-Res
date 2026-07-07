@@ -145,6 +145,39 @@ class PlayingScenePartNotifier extends AsyncNotifier<SceneTimelineItem?> {
     // This must mean there are no scenes in the scene group at all, right?
     if (playingScenePart == null) return;
 
+    final specifics = playingScenePart.specifics;
+
+    if (specifics is TimelineFrame) {
+      final frameChoice =
+          await (sceneGroup.frameChoicesView.select()..where(
+                (frameChoiceViewEntry) => frameChoiceViewEntry.frameScenePartId
+                    .equals(playingScenePart.part.id),
+              ))
+              .getSingleOrNull();
+
+      if (frameChoice != null) {
+        final choiceId = frameChoice.choiceId;
+
+        if (choiceId != null) {
+          final selectedOption =
+              await (sceneGroup.choiceOptions.select()
+                    ..where(
+                      (choiceOptionEntry) =>
+                          choiceOptionEntry.choiceId.equals(choiceId),
+                    )
+                    ..where(
+                      (choiceOptionEntry) =>
+                          choiceOptionEntry.isSelected.equals(true),
+                    ))
+                  .getSingleOrNull();
+
+          if (selectedOption == null) {
+            return;
+          }
+        }
+      }
+    }
+
     ref.read(playingHistoryProvider.notifier).push(playingScenePart.part);
 
     final nextScenePart =
